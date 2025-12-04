@@ -116,7 +116,7 @@ const EditPortfolio = () => {
                     onClick={() => navigate('/portfolio')}
                     className="flex items-center mb-6 text-gray-400 hover:text-cyan-400 transition-colors"
                 >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Portfolio
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Projects
                 </button>
 
                 <h1 className="mb-6 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">

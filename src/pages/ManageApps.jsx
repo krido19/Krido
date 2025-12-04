@@ -97,7 +97,7 @@ const ManageApps = () => {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 flex items-center tracking-wider">
-                    <Smartphone className="mr-3 text-cyan-400" />
+                    <Smartphone className="mr-3 text-cyan-600 dark:text-cyan-400" />
                     Manage Applications
                 </h1>
                 <Link
@@ -112,12 +112,12 @@ const ManageApps = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {apps.map((app) => (
-                    <div key={app.id} className={`group bg-gray-900/80 backdrop-blur-sm border ${app.is_pinned ? 'border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'border-gray-800'} rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]`}>
+                    <div key={app.id} className={`group bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border ${app.is_pinned ? 'border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'border-gray-200 dark:border-gray-800'} rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 shadow-lg dark:shadow-lg hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]`}>
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <div className="flex items-center space-x-4">
-                                        <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-700 group-hover:border-cyan-500/50 transition-colors">
+                                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-700 group-hover:border-cyan-500/50 transition-colors">
                                             {app.image_url ? (
                                                 <img
                                                     src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/apks/${app.image_url}`}
@@ -125,13 +125,13 @@ const ManageApps = () => {
                                                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                                                 />
                                             ) : (
-                                                <Smartphone className="w-8 h-8 text-cyan-400" />
+                                                <Smartphone className="w-8 h-8 text-gray-400 dark:text-cyan-400" />
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">{app.app_name}</h3>
+                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">{app.app_name}</h3>
                                             <div className="flex items-center space-x-2 mt-1">
-                                                <span className="inline-block px-2 py-1 text-xs font-mono bg-gray-800 text-cyan-400 rounded border border-gray-700">
+                                                <span className="inline-block px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-gray-800 text-cyan-600 dark:text-cyan-400 rounded border border-gray-200 dark:border-gray-700">
                                                     v{app.version}
                                                 </span>
                                                 {app.is_pinned && (
@@ -146,32 +146,32 @@ const ManageApps = () => {
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={() => togglePin(app)}
-                                        className={`p-2 rounded transition-colors ${app.is_pinned ? 'text-yellow-400 hover:text-yellow-300 bg-yellow-400/10' : 'text-gray-400 hover:text-yellow-400 hover:bg-gray-800/50'}`}
+                                        className={`p-2 rounded transition-colors ${app.is_pinned ? 'text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 bg-yellow-400/10' : 'text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}
                                         title={app.is_pinned ? "Unpin App" : "Pin App"}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={app.is_pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pin"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
                                     </button>
                                     <Link
                                         to={`/dashboard/apps/edit/${app.id}`}
-                                        className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-gray-800/50 rounded transition-colors"
+                                        className="p-2 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded transition-colors"
                                     >
                                         <Edit className="w-4 h-4" />
                                     </Link>
                                     <button
                                         onClick={() => handleDelete(app.id, app.apk_url)}
-                                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800/50 rounded transition-colors"
+                                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded transition-colors"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
 
-                            <p className="text-gray-400 text-sm mb-4 line-clamp-3 h-16">
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3 h-16">
                                 {app.description || 'No description provided.'}
                             </p>
 
-                            <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-800">
-                                <span className="flex items-center group-hover:text-cyan-400 transition-colors">
+                            <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">
+                                <span className="flex items-center group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                                     <Download className="w-4 h-4 mr-1" />
                                     {app.download_count} downloads
                                 </span>
@@ -184,12 +184,12 @@ const ManageApps = () => {
                 ))}
 
                 {apps.length === 0 && (
-                    <div className="col-span-full text-center py-12 bg-gray-900/30 backdrop-blur-sm rounded-xl border-2 border-dashed border-gray-800 hover:border-cyan-500/30 transition-colors">
-                        <Smartphone className="w-12 h-12 mx-auto text-gray-600 mb-4" />
-                        <p className="text-gray-400 mb-4">No applications uploaded yet.</p>
+                    <div className="col-span-full text-center py-12 bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-800 hover:border-cyan-500/30 transition-colors">
+                        <Smartphone className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">No applications uploaded yet.</p>
                         <Link
                             to="/dashboard/apps/new"
-                            className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline"
+                            className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 font-bold hover:underline"
                         >
                             Upload your first app
                         </Link>

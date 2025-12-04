@@ -155,21 +155,21 @@ const EditApp = () => {
         <div className="max-w-2xl mx-auto">
             <button
                 onClick={() => navigate('/dashboard/apps')}
-                className="flex items-center text-gray-400 hover:text-cyan-400 mb-6 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Apps
             </button>
 
-            <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl p-8 shadow-lg">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-xl p-8 shadow-lg">
                 <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 mb-6 flex items-center tracking-wider">
-                    <Smartphone className="mr-3 text-cyan-400" />
+                    <Smartphone className="mr-3 text-cyan-600 dark:text-cyan-400" />
                     {id ? 'Edit Application' : 'Add New Application'}
                 </h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-cyan-400 mb-2">
+                        <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2">
                             App Name
                         </label>
                         <input
@@ -177,13 +177,13 @@ const EditApp = () => {
                             name="app_name"
                             value={formData.app_name}
                             onChange={handleChange}
-                            className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                            className="w-full bg-gray-50 dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-cyan-400 mb-2">
+                        <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2">
                             Version
                         </label>
                         <input
@@ -192,13 +192,13 @@ const EditApp = () => {
                             value={formData.version}
                             onChange={handleChange}
                             placeholder="e.g. 1.0.0"
-                            className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                            className="w-full bg-gray-50 dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-cyan-400 mb-2">
+                        <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2">
                             Description
                         </label>
                         <textarea
@@ -206,12 +206,12 @@ const EditApp = () => {
                             value={formData.description}
                             onChange={handleChange}
                             rows="4"
-                            className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                            className="w-full bg-gray-50 dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-cyan-400 mb-2">
+                        <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2">
                             App Icon / Screenshot
                         </label>
                         <div className="flex items-center space-x-4">
@@ -219,10 +219,10 @@ const EditApp = () => {
                                 <img
                                     src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/apks/${formData.image_url}`}
                                     alt="Preview"
-                                    className="w-16 h-16 object-cover rounded-lg border border-gray-700"
+                                    className="w-16 h-16 object-cover rounded-lg border border-gray-300 dark:border-gray-700"
                                 />
                             )}
-                            <label className="flex items-center px-4 py-2 bg-gray-800 text-cyan-400 border border-gray-700 rounded-lg cursor-pointer hover:bg-gray-700 hover:text-white transition-all">
+                            <label className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-cyan-600 dark:text-cyan-400 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-black dark:hover:text-white transition-all">
                                 <Upload className="w-5 h-5 mr-2" />
                                 {uploadingImage ? 'Uploading...' : 'Upload Image'}
                                 <input
@@ -237,11 +237,11 @@ const EditApp = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-cyan-400 mb-2">
+                        <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2">
                             APK File
                         </label>
                         <div className="flex items-center space-x-4">
-                            <label className="flex items-center px-4 py-2 bg-gray-800 text-cyan-400 border border-gray-700 rounded-lg cursor-pointer hover:bg-gray-700 hover:text-white transition-all">
+                            <label className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-cyan-600 dark:text-cyan-400 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-black dark:hover:text-white transition-all">
                                 <Upload className="w-5 h-5 mr-2" />
                                 {uploading ? 'Uploading...' : 'Upload APK'}
                                 <input
@@ -253,7 +253,7 @@ const EditApp = () => {
                                 />
                             </label>
                             {formData.apk_url && (
-                                <span className="text-sm text-green-400 font-bold">
+                                <span className="text-sm text-green-600 dark:text-green-400 font-bold">
                                     APK Uploaded
                                 </span>
                             )}

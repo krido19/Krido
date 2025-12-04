@@ -1,9 +1,27 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Float, Text, MeshDistortMaterial, useCursor } from '@react-three/drei';
+import { OrbitControls, Stars, Float, Text, MeshDistortMaterial, useCursor, Torus, Icosahedron, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { useNavigate } from 'react-router-dom';
 
+// --- Shared Components ---
+const FloatingCube = ({ position, color }) => {
+    const mesh = useRef();
+    useFrame((state, delta) => {
+        mesh.current.rotation.x += delta * 0.5;
+        mesh.current.rotation.y += delta * 0.5;
+    });
+    return (
+        <Float speed={2} rotationIntensity={1} floatIntensity={1}>
+            <mesh ref={mesh} position={position}>
+                <boxGeometry args={[0.5, 0.5, 0.5]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
+            </mesh>
+        </Float>
+    );
+};
+
+// --- Dark Mode Scene Components ---
 const NeonSign = ({ position, text, color, onClick }) => {
     const [hovered, setHover] = useState(false);
     useCursor(hovered);
@@ -29,122 +47,162 @@ const NeonSign = ({ position, text, color, onClick }) => {
     );
 };
 
-const ShopStructure = () => {
-    return (
-        <group position={[0, -2, 0]}>
-            {/* Floor */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2]}>
-                <planeGeometry args={[10, 10]} />
-                <meshStandardMaterial color="#1a1a1a" roughness={0.8} metalness={0.2} />
-            </mesh>
-
-            {/* Counter */}
-            <mesh position={[0, 1, 0]}>
-                <boxGeometry args={[6, 2, 2]} />
-                <meshStandardMaterial color="#2a2a2a" roughness={0.5} metalness={0.8} />
-            </mesh>
-            {/* Counter Top */}
-            <mesh position={[0, 2.1, 0]}>
-                <boxGeometry args={[6.2, 0.2, 2.2]} />
-                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.2} />
-            </mesh>
-
-            {/* Pillars */}
-            <mesh position={[-2.8, 3, 0]}>
-                <boxGeometry args={[0.2, 4, 0.2]} />
-                <meshStandardMaterial color="#ff00de" emissive="#ff00de" emissiveIntensity={0.5} />
-            </mesh>
-            <mesh position={[2.8, 3, 0]}>
-                <boxGeometry args={[0.2, 4, 0.2]} />
-                <meshStandardMaterial color="#ff00de" emissive="#ff00de" emissiveIntensity={0.5} />
-            </mesh>
-
-            {/* Roof */}
-            <mesh position={[0, 5, 0]} rotation={[0.2, 0, 0]}>
-                <boxGeometry args={[6.5, 0.5, 4]} />
-                <meshStandardMaterial color="#111" />
-            </mesh>
-
-            {/* Back Wall */}
-            <mesh position={[0, 2.5, -2]}>
-                <boxGeometry args={[6, 5, 0.5]} />
-                <meshStandardMaterial color="#222" />
-            </mesh>
-        </group>
-    );
-};
-
-const FloatingCube = ({ position, color }) => {
-    const mesh = useRef();
-    useFrame((state, delta) => {
-        mesh.current.rotation.x += delta * 0.5;
-        mesh.current.rotation.y += delta * 0.5;
-    });
-    return (
-        <Float speed={2} rotationIntensity={1} floatIntensity={1}>
-            <mesh ref={mesh} position={position}>
-                <boxGeometry args={[0.5, 0.5, 0.5]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
-            </mesh>
-        </Float>
-    );
-};
-
-const Scene = () => {
-    // Note: useNavigate cannot be used directly inside Canvas if Canvas is outside Router context, 
-    // but here Scene is used inside Home which is inside Router. 
-    // However, Canvas creates a new React root. We need to bridge the context or just use window.location for simplicity in this demo.
-
+const DarkScene = () => {
     const handleSignClick = () => {
         window.location.href = '/login';
     };
 
+    const bgColor = '#050505';
+    const fogColor = '#050505';
+    const floorColor = '#1a1a1a';
+    const counterColor = '#2a2a2a';
+    const roofColor = '#111';
+    const wallColor = '#222';
+
     return (
-        <div className="fixed inset-0 z-0 pointer-events-auto">
-            <Canvas camera={{ position: [0, 2, 8], fov: 60 }}>
-                <color attach="background" args={['#050505']} />
-                <fog attach="fog" args={['#050505', 5, 20]} />
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} intensity={1} />
-                <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <Canvas camera={{ position: [0, 2, 8], fov: 60 }}>
+            <color attach="background" args={[bgColor]} />
+            <fog attach="fog" args={[fogColor, 5, 20]} />
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} intensity={1} />
+            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
-                <group position={[0, -1, 0]} rotation={[0, -Math.PI / 6, 0]}>
-                    <ShopStructure />
+            <group position={[0, -1, 0]} rotation={[0, -Math.PI / 6, 0]}>
+                <group position={[0, -2, 0]}>
+                    {/* Floor */}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2]}>
+                        <planeGeometry args={[10, 10]} />
+                        <meshStandardMaterial color={floorColor} roughness={0.8} metalness={0.2} />
+                    </mesh>
 
-                    {/* Main Signboard */}
-                    <Float speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
-                        <NeonSign
-                            position={[0, 3.5, 1]}
-                            text="DEVELOPING"
-                            color="#00ffff"
-                            onClick={handleSignClick}
-                        />
-                    </Float>
+                    {/* Counter */}
+                    <mesh position={[0, 1, 0]}>
+                        <boxGeometry args={[6, 2, 2]} />
+                        <meshStandardMaterial color={counterColor} roughness={0.5} metalness={0.8} />
+                    </mesh>
+                    {/* Counter Top */}
+                    <mesh position={[0, 2.1, 0]}>
+                        <boxGeometry args={[6.2, 0.2, 2.2]} />
+                        <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.2} />
+                    </mesh>
 
-                    {/* Decorative Signs */}
-                    <NeonSign
-                        position={[-2, 1.5, 1.2]}
-                        text="OPEN"
-                        color="#ff00de"
-                        onClick={handleSignClick}
-                    />
-                    <NeonSign position={[2, 1.5, 1.2]} text="24/7" color="#ffff00" />
+                    {/* Pillars */}
+                    <mesh position={[-2.8, 3, 0]}>
+                        <boxGeometry args={[0.2, 4, 0.2]} />
+                        <meshStandardMaterial color="#ff00de" emissive="#ff00de" emissiveIntensity={0.5} />
+                    </mesh>
+                    <mesh position={[2.8, 3, 0]}>
+                        <boxGeometry args={[0.2, 4, 0.2]} />
+                        <meshStandardMaterial color="#ff00de" emissive="#ff00de" emissiveIntensity={0.5} />
+                    </mesh>
+
+                    {/* Roof */}
+                    <mesh position={[0, 5, 0]} rotation={[0.2, 0, 0]}>
+                        <boxGeometry args={[6.5, 0.5, 4]} />
+                        <meshStandardMaterial color={roofColor} />
+                    </mesh>
+
+                    {/* Back Wall */}
+                    <mesh position={[0, 2.5, -2]}>
+                        <boxGeometry args={[6, 5, 0.5]} />
+                        <meshStandardMaterial color={wallColor} />
+                    </mesh>
                 </group>
 
-                <FloatingCube position={[-4, 2, 0]} color="#00ffff" />
-                <FloatingCube position={[4, 1, 0]} color="#ff00de" />
+                {/* Main Signboard */}
+                <Float speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
+                    <NeonSign
+                        position={[0, 3.5, 1]}
+                        text="DEVELOPING"
+                        color="#00ffff"
+                        onClick={handleSignClick}
+                    />
+                </Float>
 
-                <OrbitControls
-                    enableZoom={false}
-                    enablePan={false}
-                    maxPolarAngle={Math.PI / 2}
-                    minPolarAngle={Math.PI / 3}
-                    minAzimuthAngle={-Math.PI / 4}
-                    maxAzimuthAngle={Math.PI / 4}
+                {/* Decorative Signs */}
+                <NeonSign
+                    position={[-2, 1.5, 1.2]}
+                    text="OPEN"
+                    color="#ff00de"
+                    onClick={handleSignClick}
                 />
-            </Canvas>
+                <NeonSign position={[2, 1.5, 1.2]} text="24/7" color="#ffff00" />
+            </group>
+
+            <FloatingCube position={[-4, 2, 0]} color="#00ffff" />
+            <FloatingCube position={[4, 1, 0]} color="#ff00de" />
+
+            <OrbitControls
+                enableZoom={false}
+                enablePan={false}
+                maxPolarAngle={Math.PI / 2}
+                minPolarAngle={Math.PI / 3}
+                minAzimuthAngle={-Math.PI / 4}
+                maxAzimuthAngle={Math.PI / 4}
+            />
+        </Canvas>
+    );
+};
+
+// --- Light Mode Scene Components ---
+const AbstractShape = ({ position, color, Component, scale = 1, speed = 1 }) => {
+    return (
+        <Float speed={speed} rotationIntensity={2} floatIntensity={2}>
+            <Component position={position} scale={scale}>
+                <MeshDistortMaterial
+                    color={color}
+                    speed={2}
+                    distort={0.4}
+                    radius={1}
+                />
+            </Component>
+        </Float>
+    );
+};
+
+const LightScene = () => {
+    const bgColor = '#e0f2fe'; // Sky Blue
+
+    return (
+        <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
+            <color attach="background" args={[bgColor]} />
+            <fog attach="fog" args={[bgColor, 10, 30]} />
+
+            {/* Bright Lighting */}
+            <ambientLight intensity={1} />
+            <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
+            <directionalLight position={[-5, 5, 5]} intensity={0.5} color="#f472b6" />
+
+            {/* Floating Abstract Shapes */}
+            <group>
+                {/* Centerpiece */}
+                <AbstractShape position={[0, 0, 0]} color="#22d3ee" Component={Icosahedron} scale={2} speed={1.5} />
+
+                {/* Surrounding Shapes */}
+                <AbstractShape position={[-4, 2, -2]} color="#f472b6" Component={Torus} scale={1.2} speed={2} />
+                <AbstractShape position={[4, -2, -3]} color="#facc15" Component={Sphere} scale={1.5} speed={1.2} />
+                <AbstractShape position={[-3, -3, 1]} color="#a78bfa" Component={Icosahedron} scale={0.8} speed={2.5} />
+                <AbstractShape position={[3, 3, 1]} color="#34d399" Component={Torus} scale={1} speed={1.8} />
+            </group>
+
+            <OrbitControls
+                enableZoom={false}
+                enablePan={false}
+                autoRotate
+                autoRotateSpeed={0.5}
+            />
+        </Canvas>
+    );
+};
+
+const Scene = ({ theme = 'dark' }) => {
+    const isDark = theme === 'dark';
+
+    return (
+        <div className="fixed inset-0 z-0 pointer-events-auto transition-colors duration-1000">
+            {isDark ? <DarkScene /> : <LightScene />}
         </div>
     );
 };
 
-export default Scene;
+export default React.memo(Scene);

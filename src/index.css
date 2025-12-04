@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-    @apply bg-black text-white;
+    @apply bg-[#e0f2fe] text-gray-900 dark:bg-black dark:text-white transition-colors duration-300;
 }
 
 @layer utilities {

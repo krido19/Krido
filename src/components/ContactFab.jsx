@@ -29,7 +29,7 @@ const ContactFab = () => {
     if (!phone) return null;
 
     const handleClick = () => {
-        const message = "Hello, I'm interested in your portfolio!";
+        const message = "Hello, I'm interested in your project!";
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
     };

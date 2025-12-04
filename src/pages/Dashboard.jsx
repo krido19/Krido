@@ -40,7 +40,7 @@ const Dashboard = () => {
                 {/* Portfolio Card */}
                 <div className="group p-6 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl hover:border-pink-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(236,72,153,0.2)]">
                     <h2 className="mb-4 text-xl font-bold text-pink-500 group-hover:text-white transition-colors">
-                        {t('portfolio')}
+                        {t('project')}
                     </h2>
                     <p className="mb-6 text-gray-400 text-sm leading-relaxed">
                         {t('portfolio_desc')}
