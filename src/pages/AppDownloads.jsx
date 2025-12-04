@@ -5,10 +5,12 @@ import { Download, Smartphone, ArrowLeft, Terminal, Sun, Moon } from 'lucide-rea
 import { useTranslation } from 'react-i18next';
 
 import Scene from '../components/Scene';
+import SEO from '../components/SEO';
 
 const AppDownloads = () => {
     const [apps, setApps] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [notification, setNotification] = useState(null);
     const { t, i18n } = useTranslation();
 
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
@@ -50,6 +52,9 @@ const AppDownloads = () => {
 
     const handleDownload = async (app) => {
         try {
+            setNotification('Aplikasi sedang di download, tunggu sebentar...');
+            setTimeout(() => setNotification(null), 3000);
+
             // Increment download count
             await supabase.rpc('increment_download_count', { app_id: app.id });
 
@@ -91,10 +96,24 @@ const AppDownloads = () => {
 
     return (
         <div className="min-h-screen bg-[#e0f2fe] dark:bg-black text-gray-900 dark:text-gray-300 font-mono selection:bg-pink-500 selection:text-white overflow-x-hidden relative transition-colors duration-300">
+            <SEO
+                title="App Downloads"
+                description="Download latest Android APKs and applications by Krido Bahtiar."
+                url={`${window.location.origin}/apps`}
+            />
             {/* Background Scene */}
             <div className="fixed inset-0 z-0">
                 <Scene theme={theme} />
             </div>
+
+            {notification && (
+                <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+                    <div className="bg-cyan-500 text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] font-bold flex items-center space-x-2 border-2 border-white dark:border-gray-800">
+                        <Download className="w-5 h-5 animate-pulse" />
+                        <span>{notification}</span>
+                    </div>
+                </div>
+            )}
 
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

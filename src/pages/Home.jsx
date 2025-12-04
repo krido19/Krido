@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X } from 'lucide-react';
+import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign } from 'lucide-react';
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 
 const Home = () => {
     const [profile, setProfile] = useState(null);
@@ -176,6 +177,36 @@ const Home = () => {
                                 <p className={`text-xl md:text-2xl mb-10 max-w-3xl mx-auto font-light ${theme === 'dark' ? 'text-gray-300' : 'text-black'}`}>
                                     {t('hero_subtitle')}
                                 </p>
+
+                                {/* Call to Action */}
+                                <div className="flex flex-col items-center space-y-6 mb-12">
+                                    <p className={`text-lg font-light tracking-wide ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {t('cta_text')}
+                                    </p>
+                                    {profile.phone && (
+                                        <div className="flex flex-col space-y-4">
+                                            <button
+                                                onClick={() => window.open(`https://wa.me/${profile.phone}?text=${encodeURIComponent("Halo, saya tertarik untuk membuat website/aplikasi.")}`, '_blank')}
+                                                className="group relative px-8 py-3 bg-transparent overflow-hidden rounded-full transition-all duration-300 hover:scale-105"
+                                            >
+                                                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-cyan-500 to-pink-500 opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                                                <div className="relative flex items-center justify-center font-bold text-white tracking-wider">
+                                                    <MessageCircle className="w-5 h-5 mr-2" />
+                                                    {t('cta_button')}
+                                                </div>
+                                            </button>
+                                            <Link
+                                                to="/services"
+                                                className="group relative px-8 py-3 bg-transparent overflow-hidden rounded-full transition-all duration-300 hover:scale-105 border border-gray-500 hover:border-cyan-400"
+                                            >
+                                                <div className="relative flex items-center justify-center font-bold text-gray-600 dark:text-gray-300 group-hover:text-cyan-500 tracking-wider">
+                                                    <DollarSign className="w-5 h-5 mr-2" />
+                                                    {t('price_list')}
+                                                </div>
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="flex justify-center gap-6 pt-8">
@@ -318,6 +349,8 @@ const Home = () => {
                     </section>
                 )}
 
+
+
                 {/* Footer */}
                 <footer className="py-8 border-t border-gray-200 dark:border-gray-900 relative z-10 bg-white dark:bg-black pointer-events-auto transition-colors duration-300">
                     <div className="max-w-7xl mx-auto px-4 text-center">
@@ -347,6 +380,68 @@ const Home = () => {
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
+            )}
+
+            {/* SEO & Schema */}
+            {profile && (
+                <>
+                    <SEO
+                        title={profile.full_name}
+                        description={profile.bio}
+                        image={profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : null}
+                    />
+
+                    {/* Person Schema */}
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{
+                            __html: JSON.stringify({
+                                "@context": "https://schema.org",
+                                "@type": "Person",
+                                "name": profile.full_name || "Krido Bahtiar",
+                                "url": window.location.href,
+                                "jobTitle": "Frontend Developer",
+                                "worksFor": {
+                                    "@type": "Organization",
+                                    "name": "Freelance"
+                                },
+                                "knowsAbout": ["Next.js", "React", "JavaScript", "Tailwind CSS", "Web Development"],
+                                "sameAs": [
+                                    profile.linkedin_url,
+                                    profile.github_url,
+                                    profile.instagram_url,
+                                    profile.website
+                                ].filter(Boolean),
+                                "image": profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : "",
+                                "description": profile.bio || "Frontend Developer"
+                            }, null, 2)
+                        }}
+                    />
+
+                    {/* CreativeWorkProject Schema for Portfolio */}
+                    {portfolio.length > 0 && (
+                        <script
+                            type="application/ld+json"
+                            dangerouslySetInnerHTML={{
+                                __html: JSON.stringify({
+                                    "@context": "https://schema.org",
+                                    "@type": "ItemList",
+                                    "itemListElement": portfolio.map((item, index) => ({
+                                        "@type": "ListItem",
+                                        "position": index + 1,
+                                        "item": {
+                                            "@type": "CreativeWorkProject",
+                                            "name": item.title,
+                                            "description": item.description,
+                                            "image": item.image_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image_url}` : "",
+                                            "url": item.project_url || window.location.href
+                                        }
+                                    }))
+                                }, null, 2)
+                            }}
+                        />
+                    )}
+                </>
             )}
         </div>
     );

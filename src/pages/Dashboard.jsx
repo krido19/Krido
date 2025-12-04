@@ -87,6 +87,23 @@ const Dashboard = () => {
                         {t('manage_apps')}
                     </button>
                 </div>
+
+                {/* Services Card */}
+                <div className="group p-6 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl hover:border-green-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                    <h2 className="mb-4 text-xl font-bold text-green-500 group-hover:text-white transition-colors">
+                        Manage Services
+                    </h2>
+                    <p className="mb-6 text-gray-400 text-sm leading-relaxed">
+                        Manage your service packages and pricing.
+                    </p>
+                    <button
+                        onClick={() => navigate('/dashboard/services')}
+                        className="w-full px-4 py-2 text-white font-bold bg-green-600 hover:bg-green-500 transition-colors clip-path-polygon"
+                        style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%)' }}
+                    >
+                        Manage Services
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -12,6 +12,9 @@ import EditActivity from './pages/EditActivity';
 import ManageApps from './pages/ManageApps';
 import EditApp from './pages/EditApp';
 import AppDownloads from './pages/AppDownloads';
+import Services from './pages/Services';
+import ManageServices from './pages/ManageServices';
+import EditService from './pages/EditService';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import './i18n';
@@ -36,11 +39,15 @@ function App() {
           <Route path="/dashboard/apps" element={<ManageApps />} />
           <Route path="/dashboard/apps/new" element={<EditApp />} />
           <Route path="/dashboard/apps/edit/:id" element={<EditApp />} />
+          <Route path="/dashboard/services" element={<ManageServices />} />
+          <Route path="/dashboard/services/new" element={<EditService />} />
+          <Route path="/dashboard/services/edit/:id" element={<EditService />} />
         </Route>
 
         {/* Public Home Page */}
         <Route path="/" element={<Home />} />
         <Route path="/apps" element={<AppDownloads />} />
+        <Route path="/services" element={<Services />} />
       </Routes>
     </Router>
   );
