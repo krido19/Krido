@@ -21,6 +21,7 @@ const AppDownloads = () => {
             const { data, error } = await supabase
                 .from('app_releases')
                 .select('*')
+                .order('is_pinned', { ascending: false })
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -110,7 +111,7 @@ const AppDownloads = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {apps.map((app) => (
-                            <div key={app.id} className="group relative bg-gray-900/80 border border-gray-800 hover:border-pink-500 transition-all duration-300 overflow-hidden backdrop-blur-sm rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(236,72,153,0.3)]">
+                            <div key={app.id} className={`group relative bg-gray-900/80 border ${app.is_pinned ? 'border-cyan-500 shadow-[0_0_20px_rgba(34,211,238,0.2)]' : 'border-gray-800'} hover:border-pink-500 transition-all duration-300 overflow-hidden backdrop-blur-sm rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(236,72,153,0.3)]`}>
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
 
                                 <div className="relative h-48 w-full bg-gray-800 overflow-hidden group-hover:bg-gray-700 transition-colors">
@@ -125,7 +126,12 @@ const AppDownloads = () => {
                                             <Smartphone className="w-16 h-16 text-cyan-400/50" />
                                         </div>
                                     )}
-                                    <div className="absolute top-4 right-4">
+                                    <div className="absolute top-4 right-4 flex space-x-2">
+                                        {app.is_pinned && (
+                                            <span className="px-2 py-1 text-xs font-bold text-black bg-yellow-400 rounded-full shadow-lg flex items-center">
+                                                PINNED
+                                            </span>
+                                        )}
                                         <span className="px-3 py-1 text-xs font-bold text-black bg-cyan-400 rounded-full shadow-lg">
                                             {t('version')}{app.version}
                                         </span>

@@ -21,6 +21,7 @@ const ManageApps = () => {
                     .from('app_releases')
                     .select('*')
                     .eq('user_id', user.id)
+                    .order('is_pinned', { ascending: false })
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -30,6 +31,29 @@ const ManageApps = () => {
             console.error('Error fetching apps:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const togglePin = async (app) => {
+        try {
+            const { error } = await supabase
+                .from('app_releases')
+                .update({ is_pinned: !app.is_pinned })
+                .eq('id', app.id);
+
+            if (error) throw error;
+
+            // Update local state
+            setApps(apps.map(a => a.id === app.id ? { ...a, is_pinned: !a.is_pinned } : a).sort((a, b) => {
+                // Sort by pinned (desc) then created_at (desc)
+                if (a.is_pinned === b.is_pinned) {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                }
+                return a.is_pinned ? -1 : 1;
+            }));
+        } catch (error) {
+            console.error('Error toggling pin:', error);
+            alert('Error updating pin status');
         }
     };
 
@@ -88,7 +112,7 @@ const ManageApps = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {apps.map((app) => (
-                    <div key={app.id} className="group bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                    <div key={app.id} className={`group bg-gray-900/80 backdrop-blur-sm border ${app.is_pinned ? 'border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'border-gray-800'} rounded-xl overflow-hidden hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]`}>
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
@@ -106,13 +130,27 @@ const ManageApps = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">{app.app_name}</h3>
-                                            <span className="inline-block px-2 py-1 text-xs font-mono bg-gray-800 text-cyan-400 rounded mt-1 border border-gray-700">
-                                                v{app.version}
-                                            </span>
+                                            <div className="flex items-center space-x-2 mt-1">
+                                                <span className="inline-block px-2 py-1 text-xs font-mono bg-gray-800 text-cyan-400 rounded border border-gray-700">
+                                                    v{app.version}
+                                                </span>
+                                                {app.is_pinned && (
+                                                    <span className="inline-block px-2 py-1 text-xs font-bold bg-yellow-400 text-black rounded">
+                                                        PINNED
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => togglePin(app)}
+                                        className={`p-2 rounded transition-colors ${app.is_pinned ? 'text-yellow-400 hover:text-yellow-300 bg-yellow-400/10' : 'text-gray-400 hover:text-yellow-400 hover:bg-gray-800/50'}`}
+                                        title={app.is_pinned ? "Unpin App" : "Pin App"}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={app.is_pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pin"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
+                                    </button>
                                     <Link
                                         to={`/dashboard/apps/edit/${app.id}`}
                                         className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-gray-800/50 rounded transition-colors"
