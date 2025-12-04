@@ -147,14 +147,14 @@ const Login = () => {
                     </div>
                 </form>
 
-                <div className="text-sm text-center pt-4 border-t border-gray-200 dark:border-gray-800">
+                {/* <div className="text-sm text-center pt-4 border-t border-gray-200 dark:border-gray-800">
                     <p className="text-gray-500 dark:text-gray-500">
                         {t('no_account')}{' '}
                         <Link to="/signup" className="font-bold text-pink-500 hover:text-pink-400 transition-colors">
                             {t('signup_button')}
                         </Link>
                     </p>
-                </div>
+                </div> */}
             </div>
         </div>
     );
