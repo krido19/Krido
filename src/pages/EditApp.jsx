@@ -86,8 +86,14 @@ const EditApp = () => {
                 return;
             }
 
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
+            // Create a friendly filename
+            // Use app name if available, otherwise use original filename without extension
+            const baseName = formData.app_name
+                ? formData.app_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+                : file.name.replace(/\.apk$/i, '');
+
+            const timestamp = new Date().getTime();
+            const fileName = `${baseName}-${timestamp}.apk`;
             const filePath = `${fileName}`;
 
             const { error: uploadError } = await supabase.storage

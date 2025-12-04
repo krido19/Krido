@@ -58,13 +58,30 @@ const AppDownloads = () => {
                 .from('apks')
                 .getPublicUrl(app.apk_url);
 
-            // Trigger download
-            window.open(data.publicUrl, '_blank');
+            const fileUrl = data.publicUrl;
+            const fileName = `${app.app_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-v${app.version}.apk`;
+
+            // Fetch the file as a blob to force download with custom name
+            const response = await fetch(fileUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
             // Refresh list to update count
             fetchApps();
         } catch (error) {
             console.error('Error downloading app:', error);
+            // Fallback to direct open if fetch fails (e.g. CORS)
+            const { data } = supabase.storage
+                .from('apks')
+                .getPublicUrl(app.apk_url);
+            window.open(data.publicUrl, '_blank');
         }
     };
 
