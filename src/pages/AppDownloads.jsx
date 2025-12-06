@@ -58,24 +58,24 @@ const AppDownloads = () => {
             // Increment download count
             await supabase.rpc('increment_download_count', { app_id: app.id });
 
-            // Construct download URL
-            const { data } = supabase.storage
-                .from('apks')
-                .getPublicUrl(app.apk_url);
-
-            const fileUrl = data.publicUrl;
             const fileName = `${app.app_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-v${app.version}.apk`;
 
-            // Fetch the file as a blob to force download with custom name
-            const response = await fetch(fileUrl);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            // Creates a temporary signed URL that forces the browser to download the file 
+            // with the specified filename via Content-Disposition header.
+            // This is much more efficient than using Blobs as it doesn't load the whole file into RAM.
+            const { data, error } = await supabase.storage
+                .from('apks')
+                .createSignedUrl(app.apk_url, 60, {
+                    download: fileName
+                });
+
+            if (error) throw error;
+
             const a = document.createElement('a');
-            a.href = url;
+            a.href = data.signedUrl;
             a.download = fileName;
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
             // Refresh list to update count

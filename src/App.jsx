@@ -1,4 +1,5 @@
 import React from 'react';
+import { supabase } from './supabaseClient';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -20,6 +21,24 @@ import Layout from './components/Layout';
 import './i18n';
 
 function App() {
+  React.useEffect(() => {
+    const trackVisit = async () => {
+      const hasVisited = sessionStorage.getItem('hasVisited');
+      if (!hasVisited) {
+        try {
+          const { error } = await supabase.rpc('increment_visitor_count');
+          if (!error) {
+            sessionStorage.setItem('hasVisited', 'true');
+          }
+        } catch (error) {
+          console.error('Error tracking visit:', error);
+        }
+      }
+    };
+
+    trackVisit();
+  }, []);
+
   return (
     <Router>
       <Routes>
