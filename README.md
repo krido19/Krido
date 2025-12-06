@@ -105,3 +105,26 @@ The app supports **English** and **Indonesian**.
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+## 🔄 Recent Updates & Changelog (Version 1.0.1)
+
+### 🎨 Branding & UI/UX
+*   **New Logo Implementation**: Replaced the default Vite logo with a custom-generated "Circular Tech" brand logo (`logo.png`), featuring a cyan/pink neon aesthetic with a transparent background.
+*   **3D Visual Enhancements**: Added HTML-based label connectors to 3D charts for better readability and data association.
+*   **Theme Consistency**: Fixed dark/light mode issues to ensure consistent text visibility across all pages (especially in `Home.jsx` and `ContentEditor.jsx`).
+
+### 🛠️ Functionality & Features
+*   **Master Account Login**: Implemented a centralized authentication system. The main application uses a "Master Project" for auth (`VITE_SUPABASE_URL`), allowing seamless management of multiple client projects without re-login.
+*   **Password Change & Toggle**: Added a secure "Change Password" page in the settings menu, featuring visibility toggles (eye icon) for better user experience.
+*   **Downloads Architecture**: Optimized file serving logic. Switched recommendation context to "Direct Blob" vs "CDN" strategies based on server resource analysis.
+*   **Visitor Counter**: Integrated a visitor tracking module in the Admin Dashboard to monitor site traffic.
+
+### 📱 Mobile & Deployment
+*   **Android Release Build**: Successfully configured the Gradle build pipeline for Android.
+    *   Resolved Java version conflicts (upgraded build environment to JDK 21).
+    *   Generated signed release APK: `KridoBahtiar-Release.apk`.
+*   **Vercel Deployment**: Fixed custom domain configuration (`emkn1magelang-elektronika.web.id`) by correcting DNS records to match Vercel's requirements.
+
+### 🏗️ Database & Backend
+*   **Schema Updates**: Created `app_versions` table for managing APK versioning.
+*   **Foreign Key Fixes**: Updated `activities` table constraints (`ON DELETE CASCADE`) to prevent errors when deleting users with associated logs.
