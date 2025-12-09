@@ -128,3 +128,14 @@ This project is licensed under the MIT License.
 ### 🏗️ Database & Backend
 *   **Schema Updates**: Created `app_versions` table for managing APK versioning.
 *   **Foreign Key Fixes**: Updated `activities` table constraints (`ON DELETE CASCADE`) to prevent errors when deleting users with associated logs.
+
+## 📚 Documentation & Guides
+
+Detailed documentation for the recent optimizations and strategies implemented in this project:
+
+*   **[⚡ Performance Guide](README_PERFORMANCE.md)**:
+    *   Full explanation of the **7-Point Optimization Strategy** (Asset Caching, DB Tuning, Brotli, WebP, JS Minimization, HTML Structure, LCP Priority).
+*   **[🚀 SEO Strategy](README_SEO_STRATEGY.md)**:
+    *   Comprehensive guide on Personal Branding keywords, Schema Markup (JSON-LD), and On-Page/Off-Page SEO checklists.
+*   **[📈 SEO Setup & Troubleshooting](README_SEO_SETUP.md)**:
+    *   Step-by-step guide for registering with Google Search Console and troubleshooting "Couldn't fetch" or "Invalid sitemap address" errors.
