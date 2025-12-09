@@ -159,6 +159,7 @@ const Home = () => {
                                         src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`}
                                         alt={profile.full_name}
                                         className="relative w-48 h-48 mx-auto rounded-full object-cover border-2 border-black"
+                                        fetchPriority="high"
                                     />
                                 ) : (
                                     <div className="relative w-48 h-48 mx-auto rounded-full bg-gray-200 dark:bg-gray-900 flex items-center justify-center text-6xl font-bold text-cyan-600 dark:text-cyan-400 border-2 border-cyan-500">
@@ -275,6 +276,9 @@ const Home = () => {
                                                 src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image_url}`}
                                                 alt={item.title}
                                                 className="w-full h-64 object-cover opacity-80 dark:opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
+                                                loading="lazy"
+                                                decoding="async"
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                             />
                                         )}
                                         <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
@@ -339,6 +343,9 @@ const Home = () => {
                                                     alt={activity.title}
                                                     className="w-full h-32 object-cover rounded border border-gray-200 dark:border-gray-700 opacity-90 dark:opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer hover:scale-[1.02] duration-300"
                                                     onClick={() => setSelectedImage(activity.image_url)}
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                    sizes="(max-width: 768px) 100vw, 50vw"
                                                 />
                                             )}
                                         </div>
@@ -392,6 +399,7 @@ const Home = () => {
                     />
 
                     {/* Person Schema */}
+                    {/* Person Schema */}
                     <script
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{
@@ -401,6 +409,7 @@ const Home = () => {
                                 "name": profile.full_name || "Krido Bahtiar",
                                 "url": window.location.href,
                                 "jobTitle": "Frontend Developer",
+                                "alumniOf": "Universitas/Pendidikan Anda", // Placeholder - Update with actual data if available
                                 "worksFor": {
                                     "@type": "Organization",
                                     "name": "Freelance"
@@ -413,7 +422,7 @@ const Home = () => {
                                     profile.website
                                 ].filter(Boolean),
                                 "image": profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : "",
-                                "description": profile.bio || "Frontend Developer"
+                                "description": profile.bio || "Frontend Developer spesialis Next.js, React, dan modern web development."
                             }, null, 2)
                         }}
                     />
