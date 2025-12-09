@@ -58,6 +58,15 @@ Agar halaman utama cepat muncul:
 
 ## 🛠️ Troubleshooting
 
+### Masalah: "Invalid sitemap address"
+Jika muncul error ini saat submit sitemap.
+
+**Penyebab:**
+Anda hanya memasukkan `sitemap.xml` (path relatif), sedangkan untuk **Domain Property**, Google membutuhkan URL lengkap.
+
+**Solusi:**
+Masukkan full URL: `https://kridobahtiar.my.id/sitemap.xml` di kolom isian GSC.
+
 ### Masalah: Status Sitemap "Couldn't fetch" (Tidak dapat diambil)
 Jika Anda melihat status ini di GSC, jangan panik. Ini wajar terjadi terutama saat baru pertama kali submit.
 
