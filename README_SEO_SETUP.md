@@ -54,3 +54,19 @@ Agar halaman utama cepat muncul:
 ---
 
 **Tips**: Jika Anda memilih Opsi A (HTML Tag), silakan kirimkan kode meta tag-nya di chat ini, saya akan bantu pasangkan di kode Anda.
+---
+
+## 🛠️ Troubleshooting
+
+### Masalah: Status Sitemap "Couldn't fetch" (Tidak dapat diambil)
+Jika Anda melihat status ini di GSC, jangan panik. Ini wajar terjadi terutama saat baru pertama kali submit.
+
+**Penyebab:**
+1.  **Deployment Belum Selesai**: Vercel butuh waktu beberapa menit untuk men-deploy perubahan kode. Google mencoba mengakses file sebelum file tersebut "live".
+2.  **Google Pending**: Terkadang ini adalah bug tampilan sementara dari Google ("false alarm").
+
+**Solusi:**
+1.  Buka link sitemap di browser Anda: [https://kridobahtiar.my.id/sitemap.xml](https://kridobahtiar.my.id/sitemap.xml).
+2.  Jika muncul kode XML, berarti website **aman**.
+3.  Tunggu beberapa jam atau 1 hari, status di GSC akan berubah menjadi **Success** dengan sendirinya.
+4.  Pastikan Anda memasukkan **URL Lengkap** (`https://kridobahtiar.my.id/sitemap.xml`) saat submit, bukan hanya nama filenya.
