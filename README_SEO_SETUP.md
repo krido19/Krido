@@ -80,6 +80,15 @@ Jika Anda melihat status ini di GSC, jangan panik. Ini wajar terjadi terutama sa
 3.  Tunggu beberapa jam atau 1 hari, status di GSC akan berubah menjadi **Success** dengan sendirinya.
 4.  Pastikan Anda memasukkan **URL Lengkap** (`https://kridobahtiar.my.id/sitemap.xml`) saat submit, bukan hanya nama filenya.
 
+### Masalah: "URL is not on Google"
+Ini wajar terjadi pada halaman baru yang belum pernah dikunjungi Google.
+
+**Solusi:**
+1.  Klik tombol **TEST LIVE URL** di pojok kanan atas.
+2.  Tunggu hingga proses selesai.
+3.  Jika hasilnya hijau ("URL is available to Google"), klik **REQUEST INDEXING**.
+4.  Google akan memasukkan halaman tersebut ke antrian crawling. Biarkan waktu bekerja (bisa 1-2 hari).
+
 ---
 
 ## 🚀 Advanced Strategy: Sitelinks & Logo Optimization (New Feature)
