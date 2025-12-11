@@ -435,7 +435,7 @@ const Home = () => {
                                 "@context": "https://schema.org",
                                 "@type": "Organization",
                                 "name": profile.full_name || "Krido Bahtiar",
-                                "url": window.location.href,
+                                "url": "https://www.kridobahtiar.my.id",
                                 "logo": profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : `${window.location.origin}/logo.png`,
                                 "sameAs": [
                                     profile.linkedin_url,
