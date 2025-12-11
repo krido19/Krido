@@ -96,7 +96,7 @@ const EditActivity = () => {
             }
 
             if (error) throw error;
-            navigate('/activities');
+            navigate('/dashboard/activities');
         } catch (error) {
             alert(error.message);
         } finally {
@@ -108,7 +108,7 @@ const EditActivity = () => {
         <div className="flex justify-center min-h-screen">
             <div className="w-full max-w-2xl p-8 space-y-8 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl shadow-lg">
                 <button
-                    onClick={() => navigate('/activities')}
+                    onClick={() => navigate('/dashboard/activities')}
                     className="flex items-center mb-6 text-gray-400 hover:text-cyan-400 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back to Activities

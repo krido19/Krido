@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign } from 'lucide-react';
+import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign, ArrowRight } from 'lucide-react';
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
@@ -52,7 +52,8 @@ const Home = () => {
                     .from('portfolio')
                     .select('*')
                     .eq('user_id', mainProfile.id)
-                    .order('created_at', { ascending: false });
+                    .order('created_at', { ascending: false })
+                    .limit(3);
 
                 if (portfolioError) throw portfolioError;
                 setPortfolio(portfolioData);
@@ -61,7 +62,8 @@ const Home = () => {
                     .from('activities')
                     .select('*')
                     .eq('user_id', mainProfile.id)
-                    .order('date', { ascending: false });
+                    .order('date', { ascending: false })
+                    .limit(3);
 
                 if (activitiesError) throw activitiesError;
                 setActivities(activitiesData);
@@ -310,6 +312,16 @@ const Home = () => {
                                     </div>
                                 ))}
                             </div>
+
+                            <div className="text-center mt-12">
+                                <Link
+                                    to="/projects"
+                                    className="inline-flex items-center px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/30 clip-path-polygon"
+                                    style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
+                                >
+                                    {t('view_all_projects') || "VIEW ALL PROJECTS"} <ArrowRight className="w-4 h-4 ml-2" />
+                                </Link>
+                            </div>
                         </div>
                     </section>
                 )}
@@ -351,6 +363,16 @@ const Home = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+
+                            <div className="text-center mt-12">
+                                <Link
+                                    to="/activities"
+                                    className="inline-flex items-center px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-400 hover:to-purple-400 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-pink-500/30 clip-path-polygon"
+                                    style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
+                                >
+                                    {t('view_all_activities') || "VIEW ALL ACTIVITIES"} <ArrowRight className="w-4 h-4 ml-2" />
+                                </Link>
                             </div>
                         </div>
                     </section>

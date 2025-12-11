@@ -10,6 +10,8 @@ A modern, feature-rich personal portfolio and application management system buil
 *   **Immersive Home Page**: Features a 3D-style background, dynamic hero section, and responsive layout.
 *   **Portfolio Showcase**: Display projects with images, descriptions, and skill tags.
 *   **Activity Logs**: Timeline view of recent activities and updates.
+*   **Dedicated Projects Page**: Full portfolio listing accessible via `/projects`.
+*   **Dedicated Activities Page**: Full activity timeline accessible via `/activities`.
 *   **App Repository**: Dedicated page for users to download the latest versions of your Android apps.
 *   **Localization**: Full support for English (EN) and Indonesian (ID) languages with a global toggle.
 
@@ -128,6 +130,9 @@ This project is licensed under the MIT License.
 ### 🏗️ Database & Backend
 *   **Schema Updates**: Created `app_versions` table for managing APK versioning.
 *   **Foreign Key Fixes**: Updated `activities` table constraints (`ON DELETE CASCADE`) to prevent errors when deleting users with associated logs.
+*   **Route Conflict Resolution**: Resolved URL path conflict between Admin `/activities` and Public `/activities`. Admin routes now reside safely under `/dashboard/activities`.
+*   **Dedicated Pages**: Implemented specific routes (`/projects`, `/activities`) to display complete datasets, keeping the Home page clean with limited items.
+*   **SEO & Sitelinks**: Implemented Breadcrumb Schema and Organization Schema to optimize for Google Sitelinks and Logo visibility.
 
 ## 📚 Documentation & Guides
 

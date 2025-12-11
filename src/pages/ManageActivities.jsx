@@ -46,7 +46,7 @@ const ManageActivities = () => {
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">Manage Activities</h1>
                 <Link
-                    to="/activities/new"
+                    to="/dashboard/activities/new"
                     className="flex items-center px-6 py-2 bg-cyan-500 text-black font-bold rounded hover:bg-cyan-400 transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] clip-path-polygon"
                     style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
                 >
@@ -82,7 +82,7 @@ const ManageActivities = () => {
 
                                 <div className="flex justify-end space-x-2 pt-4 border-t border-gray-800">
                                     <button
-                                        onClick={() => navigate(`/activities/edit/${item.id}`)}
+                                        onClick={() => navigate(`/dashboard/activities/edit/${item.id}`)}
                                         className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-gray-800/50 rounded transition-colors"
                                     >
                                         <Edit className="w-5 h-5" />

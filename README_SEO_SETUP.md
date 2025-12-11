@@ -79,3 +79,20 @@ Jika Anda melihat status ini di GSC, jangan panik. Ini wajar terjadi terutama sa
 2.  Jika muncul kode XML, berarti website **aman**.
 3.  Tunggu beberapa jam atau 1 hari, status di GSC akan berubah menjadi **Success** dengan sendirinya.
 4.  Pastikan Anda memasukkan **URL Lengkap** (`https://kridobahtiar.my.id/sitemap.xml`) saat submit, bukan hanya nama filenya.
+
+---
+
+## 🚀 Advanced Strategy: Sitelinks & Logo Optimization (New Feature)
+
+Strategi ini baru saja diterapkan untuk memastikan Google menampilkan **Sitelinks** (link-link kecil di bawah hasil pencarian utama) dan **Logo** di hasil pencarian.
+
+### Apa yang Dilakukan?
+1.  **Organization Schema (`Home.jsx`)**: Menambahkan structured data `Organization` yang secara eksplisit memberitahu Google: "Ini adalah logo resmi website ini" dan "Ini adalah URL utamanya". Ini memaksimalkan peluang logo muncul di samping hasil pencarian (Knowledge Panel).
+2.  **BreadcrumbList Schema (`Projects.jsx`, `Activities.jsx`, etc.)**: Menambahkan structured data `BreadcrumbList` pada halaman sub (seperti `/services`, `/projects`). Ini memberitahu Google hirarki website: `Home > Services`. Google suka struktur yang jelas dan sering menghadiahi "Sitelinks" untuk ini.
+3.  **Canonical URL & Sitemap Fix**: Memaksa penggunaan domain `www` (`www.kridobahtiar.my.id`) di semua sitemap dan schema. Konsistensi domain sangat penting agar Google tidak bingung antara versi `non-www` dan `www`, yang bisa memecah kekuatan SEO (link juice).
+
+### Cara Verifikasi di GSC:
+1.  Tunggu beberapa hari setelah deployment.
+2.  Ketik `site:kridobahtiar.my.id` di Google Search.
+3.  Lihat apakah logo sudah muncul dan apakah ada sitelink di bawah hasil utama.
+4.  Di GSC, gunakan "URL Inspection" pada halaman utama dan cek bagian "Enhancements" -> "Sitelinks Searchbox" atau "Breadcrumbs".

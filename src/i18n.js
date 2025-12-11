@@ -72,7 +72,9 @@ const resources = {
             "price_start": "Starts from",
             "days": "Days",
             "weeks": "Weeks",
-            "price_list": "Price List"
+            "price_list": "Price List",
+            "view_all_projects": "View All Projects",
+            "view_all_activities": "View All Activities"
         }
     },
     id: {
@@ -145,7 +147,9 @@ const resources = {
             "price_start": "Mulai dari",
             "days": "Hari",
             "weeks": "Minggu",
-            "price_list": "Daftar Harga"
+            "price_list": "Daftar Harga",
+            "view_all_projects": "Lihat Semua Project",
+            "view_all_activities": "Lihat Semua Aktivitas"
         }
     }
 };

@@ -16,6 +16,8 @@ const ManageApps = React.lazy(() => import('./pages/ManageApps'));
 const EditApp = React.lazy(() => import('./pages/EditApp'));
 const AppDownloads = React.lazy(() => import('./pages/AppDownloads'));
 const Services = React.lazy(() => import('./pages/Services'));
+const Projects = React.lazy(() => import('./pages/Projects'));
+const Activities = React.lazy(() => import('./pages/Activities'));
 const ManageServices = React.lazy(() => import('./pages/ManageServices'));
 const EditService = React.lazy(() => import('./pages/EditService'));
 import ProtectedRoute from './components/ProtectedRoute';
@@ -55,9 +57,9 @@ function App() {
             <Route path="/portfolio" element={<ManagePortfolio />} />
             <Route path="/portfolio/new" element={<EditPortfolio />} />
             <Route path="/portfolio/edit/:id" element={<EditPortfolio />} />
-            <Route path="/activities" element={<ManageActivities />} />
-            <Route path="/activities/new" element={<EditActivity />} />
-            <Route path="/activities/edit/:id" element={<EditActivity />} />
+            <Route path="/dashboard/activities" element={<ManageActivities />} />
+            <Route path="/dashboard/activities/new" element={<EditActivity />} />
+            <Route path="/dashboard/activities/edit/:id" element={<EditActivity />} />
             <Route path="/dashboard/apps" element={<ManageApps />} />
             <Route path="/dashboard/apps/new" element={<EditApp />} />
             <Route path="/dashboard/apps/edit/:id" element={<EditApp />} />
@@ -70,6 +72,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/apps" element={<AppDownloads />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/activities" element={<Activities />} />
         </Routes>
       </React.Suspense>
     </Router>

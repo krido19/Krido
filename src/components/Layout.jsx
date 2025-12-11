@@ -40,7 +40,7 @@ const Layout = () => {
         { path: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
         { path: '/profile', label: t('profile'), icon: User },
         { path: '/portfolio', label: t('project'), icon: Briefcase },
-        { path: '/activities', label: t('activities'), icon: Calendar },
+        { path: '/dashboard/activities', label: t('activities'), icon: Calendar },
         { path: '/dashboard/apps', label: t('manage_apps'), icon: Smartphone },
     ];
 
