@@ -101,6 +101,30 @@ const AppDownloads = () => {
                 description="Download latest Android APKs and applications by Krido Bahtiar."
                 url={`${window.location.origin}/apps`}
             />
+            {/* Breadcrumb Schema for Sitelinks */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            {
+                                "@type": "ListItem",
+                                "position": 1,
+                                "name": "Home",
+                                "item": window.location.origin
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 2,
+                                "name": "App Downloads",
+                                "item": window.location.href
+                            }
+                        ]
+                    }, null, 2)
+                }}
+            />
             {/* Background Scene */}
             <div className="fixed inset-0 z-0">
                 <Scene theme={theme} />

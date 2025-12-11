@@ -70,6 +70,30 @@ const Services = () => {
                 description="Check out my services and pricing for Web Development and Android App Development."
                 url={`${window.location.origin}/services`}
             />
+            {/* Breadcrumb Schema for Sitelinks */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            {
+                                "@type": "ListItem",
+                                "position": 1,
+                                "name": "Home",
+                                "item": window.location.origin
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 2,
+                                "name": "Services",
+                                "item": window.location.href
+                            }
+                        ]
+                    }, null, 2)
+                }}
+            />
 
             {/* 3D Background Scene */}
             <div className="fixed inset-0 z-0">
