@@ -427,6 +427,26 @@ const Home = () => {
                         }}
                     />
 
+                    {/* Organization Schema for Logo Visibility */}
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{
+                            __html: JSON.stringify({
+                                "@context": "https://schema.org",
+                                "@type": "Organization",
+                                "name": profile.full_name || "Krido Bahtiar",
+                                "url": window.location.href,
+                                "logo": profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : `${window.location.origin}/logo.png`,
+                                "sameAs": [
+                                    profile.linkedin_url,
+                                    profile.github_url,
+                                    profile.instagram_url,
+                                    profile.website
+                                ].filter(Boolean)
+                            }, null, 2)
+                        }}
+                    />
+
                     {/* CreativeWorkProject Schema for Portfolio */}
                     {portfolio.length > 0 && (
                         <script
