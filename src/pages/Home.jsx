@@ -412,16 +412,37 @@ const Home = () => {
             )}
 
             {/* SEO & Schema */}
-            {profile && (
-                <>
-                    <SEO
-                        title={profile.full_name}
-                        description={profile.bio}
-                        image={profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : null}
+            <SEO
+                title={profile?.full_name || "Krido Bahtiar"}
+                description={profile?.bio || "Portfolio Resmi Krido Bahtiar"}
+                image={profile?.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : null}
+            />
+
+            {/* Static Schemas & Dynamic Profile Dependent Schemas */}
+            <>
+
+                    {/* Organization Schema for Logo Visibility - Rendered immediately */}
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{
+                            __html: JSON.stringify({
+                                "@context": "https://schema.org",
+                                "@type": "Organization",
+                                "name": profile?.full_name || "Krido Bahtiar",
+                                "url": "https://www.kridobahtiar.my.id",
+                                "logo": profile?.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : "https://www.kridobahtiar.my.id/logo.png",
+                                "sameAs": profile ? [
+                                    profile.linkedin_url,
+                                    profile.github_url,
+                                    profile.instagram_url,
+                                    profile.website
+                                ].filter(Boolean) : []
+                            }, null, 2)
+                        }}
                     />
 
                     {/* Person Schema */}
-                    {/* Person Schema */}
+                    {profile && (
                     <script
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{
@@ -448,52 +469,32 @@ const Home = () => {
                             }, null, 2)
                         }}
                     />
+                    )}
 
-                    {/* Organization Schema for Logo Visibility */}
+                {/* CreativeWorkProject Schema for Portfolio */}
+                {portfolio.length > 0 && (
                     <script
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{
                             __html: JSON.stringify({
                                 "@context": "https://schema.org",
-                                "@type": "Organization",
-                                "name": profile.full_name || "Krido Bahtiar",
-                                "url": "https://www.kridobahtiar.my.id",
-                                "logo": profile.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : `${window.location.origin}/logo.png`,
-                                "sameAs": [
-                                    profile.linkedin_url,
-                                    profile.github_url,
-                                    profile.instagram_url,
-                                    profile.website
-                                ].filter(Boolean)
+                                "@type": "ItemList",
+                                "itemListElement": portfolio.map((item, index) => ({
+                                    "@type": "ListItem",
+                                    "position": index + 1,
+                                    "item": {
+                                        "@type": "CreativeWorkProject",
+                                        "name": item.title,
+                                        "description": item.description,
+                                        "image": item.image_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image_url}` : "",
+                                        "url": item.project_url || window.location.href
+                                    }
+                                }))
                             }, null, 2)
                         }}
                     />
-
-                    {/* CreativeWorkProject Schema for Portfolio */}
-                    {portfolio.length > 0 && (
-                        <script
-                            type="application/ld+json"
-                            dangerouslySetInnerHTML={{
-                                __html: JSON.stringify({
-                                    "@context": "https://schema.org",
-                                    "@type": "ItemList",
-                                    "itemListElement": portfolio.map((item, index) => ({
-                                        "@type": "ListItem",
-                                        "position": index + 1,
-                                        "item": {
-                                            "@type": "CreativeWorkProject",
-                                            "name": item.title,
-                                            "description": item.description,
-                                            "image": item.image_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image_url}` : "",
-                                            "url": item.project_url || window.location.href
-                                        }
-                                    }))
-                                }, null, 2)
-                            }}
-                        />
-                    )}
-                </>
-            )}
+                )}
+            </>
         </div>
     );
 
