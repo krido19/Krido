@@ -190,6 +190,105 @@ const Services = () => {
                     </div>
                 </section>
 
+                {/* FAQ Section */}
+                <section className="py-20 bg-gray-100/80 dark:bg-black/80 relative z-10 border-t border-gray-200 dark:border-gray-900 backdrop-blur-md pointer-events-auto transition-colors duration-300">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex items-center mb-12">
+                            <Zap className="w-8 h-8 text-pink-500 mr-4" />
+                            <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-wider">FAQ</h2>
+                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800 ml-8"></div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {[
+                                {
+                                    q: i18n.language === 'id' ? "Berapa lama proses pembuatan website?" : "How long does it take to build a website?",
+                                    a: i18n.language === 'id' ? "Tergantung kompleksitas project. Website landing page biasanya 3-5 hari kerja, sedangkan website dengan fitur lengkap bisa 1-2 minggu." : "Depends on project complexity. A landing page typically takes 3-5 working days, while a full-featured website can take 1-2 weeks."
+                                },
+                                {
+                                    q: i18n.language === 'id' ? "Apakah ada garansi setelah project selesai?" : "Is there a warranty after the project is complete?",
+                                    a: i18n.language === 'id' ? "Ya! Saya memberikan garansi revisi minor dan perbaikan bug selama 30 hari setelah project selesai." : "Yes! I provide 30 days of minor revision and bug fix warranty after project completion."
+                                },
+                                {
+                                    q: i18n.language === 'id' ? "Bagaimana cara pembayaran?" : "What are the payment options?",
+                                    a: i18n.language === 'id' ? "Pembayaran bisa dilakukan via transfer bank. Skema: 50% di awal untuk memulai project, 50% setelah project selesai." : "Payment can be made via bank transfer. Scheme: 50% upfront to start, 50% upon completion."
+                                },
+                                {
+                                    q: i18n.language === 'id' ? "Apakah bisa request revisi?" : "Can I request revisions?",
+                                    a: i18n.language === 'id' ? "Tentu! Maksimal 3x revisi major sudah termasuk dalam harga. Revisi minor unlimited selama masa garansi." : "Of course! Up to 3 major revisions are included in the price. Unlimited minor revisions during warranty period."
+                                },
+                                {
+                                    q: i18n.language === 'id' ? "Apakah include domain dan hosting?" : "Does it include domain and hosting?",
+                                    a: i18n.language === 'id' ? "Harga tidak termasuk domain dan hosting. Namun saya bisa membantu setup dan merekomendasikan provider terbaik sesuai kebutuhan." : "Price does not include domain and hosting. However, I can help with setup and recommend the best provider for your needs."
+                                }
+                            ].map((faq, idx) => (
+                                <details key={idx} className="group bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+                                    <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                                        <span className="font-bold text-gray-900 dark:text-white pr-4">{faq.q}</span>
+                                        <span className="text-cyan-500 group-open:rotate-45 transition-transform duration-200 text-2xl font-light">+</span>
+                                    </summary>
+                                    <div className="px-6 pb-6 text-gray-600 dark:text-gray-400">
+                                        {faq.a}
+                                    </div>
+                                </details>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* FAQPage Schema for Rich Snippets */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "FAQPage",
+                            "mainEntity": [
+                                {
+                                    "@type": "Question",
+                                    "name": "Berapa lama proses pembuatan website?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Tergantung kompleksitas project. Website landing page biasanya 3-5 hari kerja, sedangkan website dengan fitur lengkap bisa 1-2 minggu."
+                                    }
+                                },
+                                {
+                                    "@type": "Question",
+                                    "name": "Apakah ada garansi setelah project selesai?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Ya! Saya memberikan garansi revisi minor dan perbaikan bug selama 30 hari setelah project selesai."
+                                    }
+                                },
+                                {
+                                    "@type": "Question",
+                                    "name": "Bagaimana cara pembayaran?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Pembayaran bisa dilakukan via transfer bank. Skema: 50% di awal untuk memulai project, 50% setelah project selesai."
+                                    }
+                                },
+                                {
+                                    "@type": "Question",
+                                    "name": "Apakah bisa request revisi?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Tentu! Maksimal 3x revisi major sudah termasuk dalam harga. Revisi minor unlimited selama masa garansi."
+                                    }
+                                },
+                                {
+                                    "@type": "Question",
+                                    "name": "Apakah include domain dan hosting?",
+                                    "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Harga tidak termasuk domain dan hosting. Namun saya bisa membantu setup dan merekomendasikan provider terbaik sesuai kebutuhan."
+                                    }
+                                }
+                            ]
+                        }, null, 2)
+                    }}
+                />
+
                 {/* Footer */}
                 <footer className="py-8 border-t border-gray-200 dark:border-gray-900 relative z-10 bg-white dark:bg-black pointer-events-auto transition-colors duration-300">
                     <div className="max-w-7xl mx-auto px-4 text-center">

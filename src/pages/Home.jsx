@@ -5,6 +5,8 @@ import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
+import Testimonials from '../components/Testimonials';
+import ContactForm from '../components/ContactForm';
 
 const Home = () => {
     const [profile, setProfile] = useState(null);
@@ -378,7 +380,11 @@ const Home = () => {
                     </section>
                 )}
 
+                {/* Testimonials Section */}
+                <Testimonials theme={theme} />
 
+                {/* Contact Form Section */}
+                <ContactForm theme={theme} />
 
                 {/* Footer */}
                 <footer className="py-8 border-t border-gray-200 dark:border-gray-900 relative z-10 bg-white dark:bg-black pointer-events-auto transition-colors duration-300">
@@ -421,28 +427,28 @@ const Home = () => {
             {/* Static Schemas & Dynamic Profile Dependent Schemas */}
             <>
 
-                    {/* Organization Schema for Logo Visibility - Rendered immediately */}
-                    <script
-                        type="application/ld+json"
-                        dangerouslySetInnerHTML={{
-                            __html: JSON.stringify({
-                                "@context": "https://schema.org",
-                                "@type": "Organization",
-                                "name": profile?.full_name || "Krido Bahtiar",
-                                "url": "https://www.kridobahtiar.my.id",
-                                "logo": profile?.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : "https://www.kridobahtiar.my.id/logo.png",
-                                "sameAs": profile ? [
-                                    profile.linkedin_url,
-                                    profile.github_url,
-                                    profile.instagram_url,
-                                    profile.website
-                                ].filter(Boolean) : []
-                            }, null, 2)
-                        }}
-                    />
+                {/* Organization Schema for Logo Visibility - Rendered immediately */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "Organization",
+                            "name": profile?.full_name || "Krido Bahtiar",
+                            "url": "https://www.kridobahtiar.my.id",
+                            "logo": profile?.avatar_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}` : "https://www.kridobahtiar.my.id/logo.png",
+                            "sameAs": profile ? [
+                                profile.linkedin_url,
+                                profile.github_url,
+                                profile.instagram_url,
+                                profile.website
+                            ].filter(Boolean) : []
+                        }, null, 2)
+                    }}
+                />
 
-                    {/* Person Schema */}
-                    {profile && (
+                {/* Person Schema */}
+                {profile && (
                     <script
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{
@@ -469,7 +475,7 @@ const Home = () => {
                             }, null, 2)
                         }}
                     />
-                    )}
+                )}
 
                 {/* CreativeWorkProject Schema for Portfolio */}
                 {portfolio.length > 0 && (
