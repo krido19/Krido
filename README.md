@@ -108,39 +108,47 @@ The app supports **English** and **Indonesian**.
 
 This project is licensed under the MIT License.
 
-## 🔄 Recent Updates & Changelog (Version 1.0.1)
+## 🔄 Recent Updates & Changelog (Version 1.0.2 - December 2024)
+
+### 📊 Analytics & Tracking
+*   **Google Analytics 4**: Integrated GA4 tracking with ID `G-ZCVT4G5J77` for visitor analytics.
+
+### 🎯 SEO Enhancements
+*   **FAQ Section with Schema**: Added FAQ accordion on Services page with FAQPage schema for rich snippets.
+*   **Static JSON-LD**: Moved Organization/Person schema to static `index.html` for better crawler visibility.
+
+### 💬 User Engagement
+*   **Testimonials Carousel**: New testimonial section on homepage with star ratings and carousel navigation.
+*   **Contact Form**: Added contact form that saves to Supabase `contacts` table.
+
+### 📱 PWA Support
+*   **Manifest.json**: Added PWA manifest for "Add to Home Screen" functionality.
+*   **Theme Color**: Cyan (#06b6d4) theme for mobile browsers.
+
+---
+
+## 🔄 Previous Updates (Version 1.0.1)
 
 ### 🎨 Branding & UI/UX
-*   **New Logo Implementation**: Replaced the default Vite logo with a custom-generated "Circular Tech" brand logo (`logo.png`), featuring a cyan/pink neon aesthetic with a transparent background.
-*   **3D Visual Enhancements**: Added HTML-based label connectors to 3D charts for better readability and data association.
-*   **Theme Consistency**: Fixed dark/light mode issues to ensure consistent text visibility across all pages (especially in `Home.jsx` and `ContentEditor.jsx`).
+*   **New Logo Implementation**: Custom "Circular Tech" brand logo with cyan/pink neon aesthetic.
+*   **3D Visual Enhancements**: HTML-based label connectors to 3D charts.
+*   **Theme Consistency**: Fixed dark/light mode issues across all pages.
 
 ### 🛠️ Functionality & Features
-*   **Master Account Login**: Implemented a centralized authentication system. The main application uses a "Master Project" for auth (`VITE_SUPABASE_URL`), allowing seamless management of multiple client projects without re-login.
-*   **Password Change & Toggle**: Added a secure "Change Password" page in the settings menu, featuring visibility toggles (eye icon) for better user experience.
-*   **Downloads Architecture**: Optimized file serving logic. Switched recommendation context to "Direct Blob" vs "CDN" strategies based on server resource analysis.
-*   **Visitor Counter**: Integrated a visitor tracking module in the Admin Dashboard to monitor site traffic.
+*   **Master Account Login**: Centralized authentication system.
+*   **Password Change & Toggle**: Secure password change with visibility toggles.
+*   **Visitor Counter**: Integrated visitor tracking in Admin Dashboard.
 
 ### 📱 Mobile & Deployment
-*   **Android Release Build**: Successfully configured the Gradle build pipeline for Android.
-    *   Resolved Java version conflicts (upgraded build environment to JDK 21).
-    *   Generated signed release APK: `KridoBahtiar-Release.apk`.
-*   **Vercel Deployment**: Fixed custom domain configuration (`emkn1magelang-elektronika.web.id`) by correcting DNS records to match Vercel's requirements.
+*   **Android Release Build**: Signed release APK: `KridoBahtiar-Release.apk`.
+*   **Vercel Deployment**: Custom domain configuration.
 
 ### 🏗️ Database & Backend
-*   **Schema Updates**: Created `app_versions` table for managing APK versioning.
-*   **Foreign Key Fixes**: Updated `activities` table constraints (`ON DELETE CASCADE`) to prevent errors when deleting users with associated logs.
-*   **Route Conflict Resolution**: Resolved URL path conflict between Admin `/activities` and Public `/activities`. Admin routes now reside safely under `/dashboard/activities`.
-*   **Dedicated Pages**: Implemented specific routes (`/projects`, `/activities`) to display complete datasets, keeping the Home page clean with limited items.
-*   **SEO & Sitelinks**: Implemented Breadcrumb Schema and Organization Schema to optimize for Google Sitelinks and Logo visibility.
+*   **Schema Updates**: Created `app_versions` and `contacts` tables.
+*   **SEO & Sitelinks**: Breadcrumb Schema and Organization Schema.
 
 ## 📚 Documentation & Guides
 
-Detailed documentation for the recent optimizations and strategies implemented in this project:
+*   **[📈 SEO Complete Guide](README_SEO.md)**: Combined SEO setup, strategy, and troubleshooting guide.
+*   **[⚡ Performance Guide](README_PERFORMANCE.md)**: 7-Point Optimization Strategy.
 
-*   **[⚡ Performance Guide](README_PERFORMANCE.md)**:
-    *   Full explanation of the **7-Point Optimization Strategy** (Asset Caching, DB Tuning, Brotli, WebP, JS Minimization, HTML Structure, LCP Priority).
-*   **[🚀 SEO Strategy](README_SEO_STRATEGY.md)**:
-    *   Comprehensive guide on Personal Branding keywords, Schema Markup (JSON-LD), and On-Page/Off-Page SEO checklists.
-*   **[📈 SEO Setup & Troubleshooting](README_SEO_SETUP.md)**:
-    *   Step-by-step guide for registering with Google Search Console and troubleshooting "Couldn't fetch" or "Invalid sitemap address" errors.
