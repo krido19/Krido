@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, LogOut, LayoutDashboard, User, Briefcase, Calendar, Menu, X, Smartphone, Globe } from 'lucide-react';
+import { Sun, Moon, LogOut, LayoutDashboard, User, Briefcase, Calendar, Menu, X, Smartphone, Globe, Database } from 'lucide-react';
+import { exportToSQL } from '../utils/sqlExport';
+import Modal from './Modal';
 import ContactFab from './ContactFab';
 import Scene from './Scene';
 
 const Layout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+    const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
@@ -92,6 +95,15 @@ const Layout = () => {
                             </Link>
                         );
                     })}
+
+                    {/* Sidebar Backup Button */}
+                    <button
+                        onClick={() => setIsBackupModalOpen(true)}
+                        className="flex items-center w-full px-4 py-3 rounded-lg transition-all duration-300 border border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 hover:border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.1)] group"
+                    >
+                        <Database className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium tracking-wide text-sm">Backup Database</span>
+                    </button>
                 </nav>
 
                 <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white/40 dark:bg-black/40 flex-shrink-0">
@@ -150,6 +162,29 @@ const Layout = () => {
                 </main>
             </div>
             <ContactFab />
+
+            {/* SQL Backup Modal with Instructions */}
+            <Modal
+                isOpen={isBackupModalOpen}
+                onClose={() => setIsBackupModalOpen(false)}
+                onConfirm={exportToSQL}
+                title="DATABASE_MIGRATION"
+                message={
+                    <div className="space-y-4">
+                        <p>Generate a "Smart" SQL backup for your database?</p>
+                        <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                            <h4 className="text-purple-400 font-bold text-xs uppercase tracking-widest mb-2">Panduan Migrasi:</h4>
+                            <ul className="text-xs text-gray-400 space-y-2 list-decimal ml-4">
+                                <li><strong>Sign Up Dulu:</strong> Di project baru, Anda HARUS mendaftar akun user pertama kali.</li>
+                                <li><strong>Jalankan SQL:</strong> Setelah ada 1 user, baru jalankan file backup ini di SQL Editor project baru.</li>
+                                <li><strong>Otomatis:</strong> Sistem Smart Migration akan otomatis menempelkan data ke akun baru tersebut.</li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+                confirmText="INITIATE_BACKUP"
+                type="purple"
+            />
         </div>
     );
 };

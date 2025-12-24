@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS public.app_releases (
   description text,
   apk_url text not null,
   download_count integer default 0,
+  image_url text,
+  is_pinned boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
