@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, Sun, Moon } from 'lucide-react';
+import { Lock, Mail, Sun, Moon, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import Scene from '../components/Scene';
@@ -59,6 +59,13 @@ const Login = () => {
             </div>
 
             <div className="absolute top-4 right-4 flex items-center space-x-2 z-20">
+                <Link
+                    to="/"
+                    className="flex items-center px-3 py-1 text-xs font-bold text-cyan-600 dark:text-cyan-400 bg-white/50 dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-cyan-500 transition-all"
+                >
+                    <Globe className="w-4 h-4 mr-2" />
+                    Website
+                </Link>
                 <button
                     onClick={() => changeLanguage('en')}
                     className={`px-3 py-1 text-xs font-bold rounded border transition-all ${i18n.language === 'en' ? 'bg-cyan-500 text-black border-cyan-500 shadow-[0_0_10px_rgba(34,211,238,0.4)]' : 'bg-white/50 dark:bg-black/50 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400'}`}

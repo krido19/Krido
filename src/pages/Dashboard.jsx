@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Users } from 'lucide-react';
+import { Users, Globe, LogOut } from 'lucide-react';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -85,6 +85,22 @@ const Dashboard = () => {
                 <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">
                     {t('dashboard')}
                 </h1>
+                <div className="flex items-center space-x-4">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="flex items-center px-4 py-2 text-sm font-bold bg-gray-800/80 hover:bg-gray-700/80 text-cyan-400 border border-cyan-500/30 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+                    >
+                        <Globe className="w-4 h-4 mr-2" />
+                        Go to Website
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center px-4 py-2 text-sm font-bold bg-pink-900/20 hover:bg-pink-900/40 text-pink-500 border border-pink-500/30 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_rgba(236,72,153,0.2)]"
+                    >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {t('logout')}
+                    </button>
+                </div>
             </div>
 
             {/* Visitor Stats Card */}

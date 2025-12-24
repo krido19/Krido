@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, LogOut, LayoutDashboard, User, Briefcase, Calendar, Menu, X, Smartphone } from 'lucide-react';
+import { Sun, Moon, LogOut, LayoutDashboard, User, Briefcase, Calendar, Menu, X, Smartphone, Globe } from 'lucide-react';
 import ContactFab from './ContactFab';
 import Scene from './Scene';
 
@@ -23,6 +23,11 @@ const Layout = () => {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
+    // Automatically close sidebar on route change
+    useEffect(() => {
+        setSidebarOpen(false);
+    }, [location.pathname]);
+
     const toggleTheme = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
@@ -42,6 +47,7 @@ const Layout = () => {
         { path: '/portfolio', label: t('project'), icon: Briefcase },
         { path: '/dashboard/activities', label: t('activities'), icon: Calendar },
         { path: '/dashboard/apps', label: t('manage_apps'), icon: Smartphone },
+        { path: '/', label: 'Go to Website', icon: Globe },
     ];
 
     return (
@@ -60,12 +66,12 @@ const Layout = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-30 w-64 flex-shrink-0 transition-transform duration-300 transform bg-white/90 dark:bg-black/60 backdrop-blur-md border-r border-gray-200 dark:border-gray-800 lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
+            <aside className={`fixed inset-y-0 left-0 z-30 w-64 flex-shrink-0 transition-transform duration-300 transform bg-white/90 dark:bg-black/60 backdrop-blur-md border-r border-gray-200 dark:border-gray-800 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
                 <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
                     <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 animate-pulse">
                         Krido Bahtiar
                     </span>
-                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-cyan-600 dark:text-cyan-400">
+                    <button onClick={() => setSidebarOpen(false)} className="text-cyan-600 dark:text-cyan-400">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
@@ -123,8 +129,8 @@ const Layout = () => {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden relative z-10 pointer-events-none">
-                <header className="flex items-center justify-between h-16 px-6 bg-white/90 dark:bg-black/60 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 lg:hidden pointer-events-auto">
+            <div className="flex-1 flex flex-col overflow-hidden relative z-10">
+                <header className="flex items-center justify-between h-16 px-6 bg-white/90 dark:bg-black/60 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
                     <button onClick={() => setSidebarOpen(true)} className="text-cyan-600 dark:text-cyan-400">
                         <Menu className="w-6 h-6" />
                     </button>
@@ -139,7 +145,7 @@ const Layout = () => {
                     </button>
                 </header>
 
-                <main className="flex-1 overflow-x-hidden overflow-y-auto pointer-events-auto">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto">
                     <Outlet />
                 </main>
             </div>
