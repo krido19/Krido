@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Smartphone, Download } from 'lucide-react';
+import Modal from '../components/Modal';
 
 const ManageApps = () => {
     const [apps, setApps] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     useEffect(() => {
         fetchApps();
@@ -57,31 +60,33 @@ const ManageApps = () => {
         }
     };
 
-    const handleDelete = async (id, apkUrl) => {
-        if (window.confirm('Are you sure you want to delete this app release?')) {
-            try {
-                // Delete APK file from storage
-                if (apkUrl) {
-                    const { error: storageError } = await supabase.storage
-                        .from('apks')
-                        .remove([apkUrl]);
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
 
-                    if (storageError) console.error('Error deleting APK file:', storageError);
-                }
+        try {
+            // Delete APK file from storage
+            if (itemToDelete.apkUrl) {
+                const { error: storageError } = await supabase.storage
+                    .from('apks')
+                    .remove([itemToDelete.apkUrl]);
 
-                // Delete record from database
-                const { error } = await supabase
-                    .from('app_releases')
-                    .delete()
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                setApps(apps.filter(app => app.id !== id));
-            } catch (error) {
-                console.error('Error deleting app:', error);
-                alert('Error deleting app');
+                if (storageError) console.error('Error deleting APK file:', storageError);
             }
+
+            // Delete record from database
+            const { error } = await supabase
+                .from('app_releases')
+                .delete()
+                .eq('id', itemToDelete.id);
+
+            if (error) throw error;
+
+            setApps(apps.filter(app => app.id !== itemToDelete.id));
+            setIsDeleteModalOpen(false);
+            setItemToDelete(null);
+        } catch (error) {
+            console.error('Error deleting app:', error);
+            alert('Error deleting app');
         }
     };
 
@@ -158,7 +163,10 @@ const ManageApps = () => {
                                         <Edit className="w-4 h-4" />
                                     </Link>
                                     <button
-                                        onClick={() => handleDelete(app.id, app.apk_url)}
+                                        onClick={() => {
+                                            setItemToDelete({ id: app.id, apkUrl: app.apk_url });
+                                            setIsDeleteModalOpen(true);
+                                        }}
                                         className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded transition-colors"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -196,6 +204,19 @@ const ManageApps = () => {
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setItemToDelete(null);
+                }}
+                onConfirm={handleDelete}
+                title="DELETE_APPLICATION"
+                message="Are you sure you want to permanently delete this application release? This will also remove the APK file from storage."
+                confirmText="DELETE_RELEASE"
+                type="pink"
+            />
         </div>
     );
 };

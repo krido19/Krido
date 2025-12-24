@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import Modal from '../components/Modal';
 
 const ManageActivities = () => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,15 +32,17 @@ const ManageActivities = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this activity?')) {
-            try {
-                const { error } = await supabase.from('activities').delete().eq('id', id);
-                if (error) throw error;
-                fetchActivities();
-            } catch (error) {
-                alert(error.message);
-            }
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+
+        try {
+            const { error } = await supabase.from('activities').delete().eq('id', itemToDelete);
+            if (error) throw error;
+            fetchActivities();
+            setIsDeleteModalOpen(false);
+            setItemToDelete(null);
+        } catch (error) {
+            alert(error.message);
         }
     };
 
@@ -88,7 +93,10 @@ const ManageActivities = () => {
                                         <Edit className="w-5 h-5" />
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item.id)}
+                                        onClick={() => {
+                                            setItemToDelete(item.id);
+                                            setIsDeleteModalOpen(true);
+                                        }}
                                         className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800/50 rounded transition-colors"
                                     >
                                         <Trash2 className="w-5 h-5" />
@@ -99,6 +107,19 @@ const ManageActivities = () => {
                     ))}
                 </div>
             )}
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setItemToDelete(null);
+                }}
+                onConfirm={handleDelete}
+                title="DELETE_ACTIVITY"
+                message="Are you sure you want to permanently delete this activity? This will remove it from your timeline."
+                confirmText="DELETE_ACTIVITY"
+                type="pink"
+            />
         </div>
     );
 };

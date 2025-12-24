@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Users, Globe, LogOut } from 'lucide-react';
+import { Users, Globe, LogOut, Database } from 'lucide-react';
+import { exportToSQL } from '../utils/sqlExport';
+import Modal from '../components/Modal';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -11,6 +13,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [initialPhone, setInitialPhone] = useState('');
     const [visitorCount, setVisitorCount] = useState(0);
+    const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -92,6 +95,13 @@ const Dashboard = () => {
                     >
                         <Globe className="w-4 h-4 mr-2" />
                         Go to Website
+                    </button>
+                    <button
+                        onClick={() => setIsBackupModalOpen(true)}
+                        className="flex items-center px-4 py-2 text-sm font-bold bg-purple-900/20 hover:bg-purple-900/40 text-purple-400 border border-purple-500/30 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                    >
+                        <Database className="w-4 h-4 mr-2" />
+                        Backup SQL
                     </button>
                     <button
                         onClick={handleLogout}
@@ -232,6 +242,17 @@ const Dashboard = () => {
                     </button>
                 </div>
             </div>
+
+            {/* SQL Backup Modal */}
+            <Modal
+                isOpen={isBackupModalOpen}
+                onClose={() => setIsBackupModalOpen(false)}
+                onConfirm={exportToSQL}
+                title="DATABASE_EXPORT"
+                message="Initiate SQL data dump? This will generate a complete backup of your profiles, portfolio, activities, apps, and services data."
+                confirmText="INITIATE_BACKUP"
+                type="purple"
+            />
         </div>
     );
 };

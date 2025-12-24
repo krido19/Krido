@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Zap, DollarSign } from 'lucide-react';
+import Modal from '../components/Modal';
 
 const ManageServices = () => {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     useEffect(() => {
         fetchServices();
@@ -33,21 +36,22 @@ const ManageServices = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this service?')) {
-            try {
-                const { error } = await supabase
-                    .from('services')
-                    .delete()
-                    .eq('id', id);
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
 
-                if (error) throw error;
+        try {
+            const { error } = await supabase
+                .from('services')
+                .delete()
+                .eq('id', itemToDelete);
 
-                setServices(services.filter(service => service.id !== id));
-            } catch (error) {
-                console.error('Error deleting service:', error);
-                alert('Error deleting service');
-            }
+            if (error) throw error;
+
+            setServices(services.filter(service => service.id !== itemToDelete));
+            setItemToDelete(null);
+        } catch (error) {
+            console.error('Error deleting service:', error);
+            alert('Error deleting service');
         }
     };
 
@@ -103,7 +107,10 @@ const ManageServices = () => {
                                         <Edit className="w-4 h-4" />
                                     </Link>
                                     <button
-                                        onClick={() => handleDelete(service.id)}
+                                        onClick={() => {
+                                            setItemToDelete(service.id);
+                                            setIsDeleteModalOpen(true);
+                                        }}
                                         className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded transition-colors"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -127,6 +134,19 @@ const ManageServices = () => {
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setItemToDelete(null);
+                }}
+                onConfirm={handleDelete}
+                title="DELETE_CONFIRMATION"
+                message="Are you sure you want to permanently delete this service? This action cannot be undone."
+                confirmText="DELETE_SERVICE"
+                type="pink"
+            />
         </div>
     );
 };

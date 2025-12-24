@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
+import Modal from '../components/Modal';
 
 const ManagePortfolio = () => {
     const [portfolio, setPortfolio] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,15 +32,17 @@ const ManagePortfolio = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this item?')) {
-            try {
-                const { error } = await supabase.from('portfolio').delete().eq('id', id);
-                if (error) throw error;
-                fetchPortfolio();
-            } catch (error) {
-                alert(error.message);
-            }
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+
+        try {
+            const { error } = await supabase.from('portfolio').delete().eq('id', itemToDelete);
+            if (error) throw error;
+            fetchPortfolio();
+            setIsDeleteModalOpen(false);
+            setItemToDelete(null);
+        } catch (error) {
+            alert(error.message);
         }
     };
 
@@ -95,7 +100,10 @@ const ManagePortfolio = () => {
                                             <Edit className="w-5 h-5" />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(item.id)}
+                                            onClick={() => {
+                                                setItemToDelete(item.id);
+                                                setIsDeleteModalOpen(true);
+                                            }}
                                             className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800/50 rounded transition-colors"
                                         >
                                             <Trash2 className="w-5 h-5" />
@@ -107,6 +115,19 @@ const ManagePortfolio = () => {
                     ))}
                 </div>
             )}
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setItemToDelete(null);
+                }}
+                onConfirm={handleDelete}
+                title="DELETE_PROJECT"
+                message="Are you sure you want to permanently delete this project? This action cannot be undone."
+                confirmText="DELETE_PROJECT"
+                type="pink"
+            />
         </div>
     );
 };
