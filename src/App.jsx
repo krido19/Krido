@@ -20,6 +20,7 @@ const Projects = React.lazy(() => import('./pages/Projects'));
 const Activities = React.lazy(() => import('./pages/Activities'));
 const ManageServices = React.lazy(() => import('./pages/ManageServices'));
 const EditService = React.lazy(() => import('./pages/EditService'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import './i18n';
@@ -74,6 +75,9 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/activities" element={<Activities />} />
+
+          {/* 404 Route - Must be last */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </React.Suspense>
     </Router>
