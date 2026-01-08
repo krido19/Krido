@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Code, ExternalLink, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Code, ExternalLink, Sun, Moon, Share2, Link as LinkIcon, MessageCircle, Facebook, Twitter, Linkedin, X } from 'lucide-react';
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
 
 const Projects = () => {
     const [portfolio, setPortfolio] = useState([]);
+    const [selectedImage, setSelectedImage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
     const { t, i18n } = useTranslation();
@@ -142,7 +143,7 @@ const Projects = () => {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {portfolio.map((item) => (
-                                    <div key={item.id} className="group relative bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden backdrop-blur-sm shadow-lg dark:shadow-none rounded-xl">
+                                    <div key={item.id} onClick={() => setSelectedImage(item)} className="group relative bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden backdrop-blur-sm shadow-lg dark:shadow-none rounded-xl cursor-pointer">
                                         <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent dark:from-black opacity-80 z-10"></div>
                                         {item.image_url && (
                                             <img
@@ -151,6 +152,8 @@ const Projects = () => {
                                                 className="w-full h-64 object-cover opacity-80 dark:opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
                                                 loading="lazy"
                                                 decoding="async"
+                                                onClick={() => setSelectedImage(item)}
+                                                className="w-full h-64 object-cover opacity-80 dark:opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
                                             />
                                         )}
                                         <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
@@ -173,6 +176,7 @@ const Projects = () => {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center px-4 py-2 mt-4 text-sm font-bold text-black bg-cyan-500 hover:bg-cyan-400 transition-all duration-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:shadow-[0_0_20px_rgba(34,211,238,0.5)] clip-path-polygon"
+                                                    onClick={(e) => e.stopPropagation()}
                                                     style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
                                                 >
                                                     VIEW PROJECT <ExternalLink className="w-4 h-4 ml-2" />
@@ -185,9 +189,147 @@ const Projects = () => {
                         )}
                     </div>
                 </section>
+                {/* Lightbox Modal */}
+                {selectedImage && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <button
+                            className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+
+                        <div className="flex flex-col items-center max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+                            <img
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${selectedImage.image_url}`}
+                                alt="Full view"
+                                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl mb-6"
+                            />
+
+                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 w-full max-w-md border border-white/20">
+                                <h3 className="text-white font-bold text-lg mb-2 text-center">{selectedImage.title}</h3>
+                                <div className="flex justify-center items-center gap-4 flex-wrap">
+                                    <button
+                                        onClick={async () => {
+                                            const shareText = `Check out "${selectedImage.title}"! Shared from https://www.kridobahtiar.my.id/`;
+                                            const url = 'https://www.kridobahtiar.my.id/';
+
+                                            try {
+                                                if (navigator.share) {
+                                                    const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${selectedImage.image_url}`;
+                                                    const response = await fetch(imageUrl);
+                                                    const blob = await response.blob();
+                                                    const file = new File([blob], 'image.jpg', { type: blob.type });
+
+                                                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                                        await navigator.share({
+                                                            files: [file],
+                                                            title: selectedImage.title,
+                                                            text: shareText,
+                                                            url: url
+                                                        });
+                                                        return;
+                                                    }
+                                                }
+                                                throw new Error('Fallback to text share');
+                                            } catch (error) {
+                                                if (navigator.share) {
+                                                    navigator.share({
+                                                        title: selectedImage.title,
+                                                        text: shareText,
+                                                        url: url
+                                                    }).catch(console.error);
+                                                } else {
+                                                    navigator.clipboard.writeText(shareText);
+                                                    alert('Link and message copied to clipboard!');
+                                                }
+                                            }
+                                        }}
+                                        className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                        title="Share via Web Share / Copy Link"
+                                    >
+                                        <Share2 className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            const shareText = `Check out "${selectedImage.title}"! Shared from https://www.kridobahtiar.my.id/`;
+                                            const url = 'https://www.kridobahtiar.my.id/';
+
+                                            try {
+                                                if (navigator.share) {
+                                                    const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${selectedImage.image_url}`;
+                                                    const response = await fetch(imageUrl);
+                                                    const blob = await response.blob();
+                                                    const file = new File([blob], 'image.jpg', { type: blob.type });
+
+                                                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                                        await navigator.share({
+                                                            files: [file],
+                                                            title: selectedImage.title,
+                                                            text: shareText,
+                                                            url: url
+                                                        });
+                                                        return;
+                                                    }
+                                                }
+                                                throw new Error('Fallback to text share');
+                                            } catch (error) {
+                                                // Fallback to standard WhatsApp link if system share fails
+                                                window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+                                            }
+                                        }}
+                                        className="p-3 bg-[#25D366]/80 hover:bg-[#25D366] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                        title="Share on WhatsApp (Image)"
+                                    >
+                                        <MessageCircle className="w-5 h-5" />
+                                    </button>
+                                    <a
+                                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://www.kridobahtiar.my.id/')}&quote=${encodeURIComponent(`Check out "${selectedImage.title}" on Krido's Portfolio`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-3 bg-[#1877F2]/80 hover:bg-[#1877F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                        title="Share on Facebook"
+                                    >
+                                        <Facebook className="w-5 h-5" />
+                                    </a>
+                                    <a
+                                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out "${selectedImage.title}"! Shared from`)}&url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-3 bg-[#1DA1F2]/80 hover:bg-[#1DA1F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                        title="Share on Twitter"
+                                    >
+                                        <Twitter className="w-5 h-5" />
+                                    </a>
+                                    <a
+                                        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-3 bg-[#0A66C2]/80 hover:bg-[#0A66C2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                        title="Share on LinkedIn"
+                                    >
+                                        <Linkedin className="w-5 h-5" />
+                                    </a>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`Check out "${selectedImage.title}"! Shared from https://www.kridobahtiar.my.id/`);
+                                            alert('Link and message copied to clipboard!');
+                                        }}
+                                        className="p-3 bg-gray-500/80 hover:bg-gray-500 rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                        title="Copy Link"
+                                    >
+                                        <LinkIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
-    );
+            );
 };
 
-export default Projects;
+            export default Projects;

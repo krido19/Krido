@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign, ArrowRight } from 'lucide-react';
+import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign, ArrowRight, Share2, Link as LinkIcon, Facebook, Twitter } from 'lucide-react';
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
@@ -273,13 +273,13 @@ const Home = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {portfolio.map((item) => (
-                                    <div key={item.id} className="group relative bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden backdrop-blur-sm shadow-lg dark:shadow-none">
+                                    <div key={item.id} onClick={() => setSelectedImage({ ...item, type: 'portfolio' })} className="group relative bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden backdrop-blur-sm shadow-lg dark:shadow-none cursor-pointer">
                                         <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent dark:from-black opacity-80 z-10"></div>
                                         {item.image_url && (
                                             <img
                                                 src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image_url}`}
                                                 alt={item.title}
-                                                className="w-full h-64 object-cover opacity-80 dark:opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
+                                                className="w-full h-64 object-cover opacity-80 dark:opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0 cursor-pointer"
                                                 loading="lazy"
                                                 decoding="async"
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -305,6 +305,7 @@ const Home = () => {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center px-4 py-2 mt-4 text-sm font-bold text-black bg-cyan-500 hover:bg-cyan-400 transition-all duration-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:shadow-[0_0_20px_rgba(34,211,238,0.5)] clip-path-polygon"
+                                                    onClick={(e) => e.stopPropagation()}
                                                     style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
                                                 >
                                                     VIEW PROJECT <ExternalLink className="w-4 h-4 ml-2" />
@@ -356,10 +357,8 @@ const Home = () => {
                                                     src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/activities/${activity.image_url}`}
                                                     alt={activity.title}
                                                     className="w-full h-32 object-cover rounded border border-gray-200 dark:border-gray-700 opacity-90 dark:opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer hover:scale-[1.02] duration-300"
-                                                    onClick={() => setSelectedImage(activity.image_url)}
-                                                    loading="lazy"
-                                                    decoding="async"
                                                     sizes="(max-width: 768px) 100vw, 50vw"
+                                                    onClick={() => setSelectedImage({ ...activity, type: 'activities' })}
                                                 />
                                             )}
                                         </div>
@@ -399,21 +398,144 @@ const Home = () => {
             {/* Lightbox Modal */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200"
                     onClick={() => setSelectedImage(null)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all"
+                        className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
                         onClick={() => setSelectedImage(null)}
                     >
                         <X className="w-8 h-8" />
                     </button>
-                    <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/activities/${selectedImage}`}
-                        alt="Full view"
-                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    />
+
+                    <div className="flex flex-col items-center max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+                        <img
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${selectedImage.type === 'portfolio' ? 'portfolio' : 'activities'}/${selectedImage.image_url}`}
+                            alt="Full view"
+                            className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl mb-6"
+                        />
+
+                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 w-full max-w-md border border-white/20">
+                            <h3 className="text-white font-bold text-lg mb-2 text-center">{selectedImage.title}</h3>
+                            <div className="flex justify-center items-center gap-4 flex-wrap">
+                                <button
+                                    onClick={async () => {
+                                        const typeName = selectedImage.type === 'portfolio' ? 'project' : 'activity';
+                                        const shareText = `Check out "${selectedImage.title}" (${typeName})! Shared from https://www.kridobahtiar.my.id/`;
+                                        const url = 'https://www.kridobahtiar.my.id/';
+
+                                        try {
+                                            if (navigator.share) {
+                                                const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${selectedImage.type === 'portfolio' ? 'portfolio' : 'activities'}/${selectedImage.image_url}`;
+                                                const response = await fetch(imageUrl);
+                                                const blob = await response.blob();
+                                                const file = new File([blob], 'image.jpg', { type: blob.type });
+
+                                                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                                    await navigator.share({
+                                                        files: [file],
+                                                        title: selectedImage.title,
+                                                        text: shareText,
+                                                        url: url
+                                                    });
+                                                    return;
+                                                }
+                                            }
+                                            throw new Error('Fallback to text share');
+                                        } catch (error) {
+                                            if (navigator.share) {
+                                                navigator.share({
+                                                    title: selectedImage.title,
+                                                    text: shareText,
+                                                    url: url
+                                                }).catch(console.error);
+                                            } else {
+                                                navigator.clipboard.writeText(shareText);
+                                                alert('Link and message copied to clipboard!');
+                                            }
+                                        }
+                                    }}
+                                    className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share via Web Share / Copy Link"
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const typeName = selectedImage.type === 'portfolio' ? 'project' : 'activity';
+                                        const shareText = `Check out "${selectedImage.title}" (${typeName})! Shared from https://www.kridobahtiar.my.id/`;
+                                        const url = 'https://www.kridobahtiar.my.id/';
+
+                                        try {
+                                            if (navigator.share) {
+                                                const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${selectedImage.type === 'portfolio' ? 'portfolio' : 'activities'}/${selectedImage.image_url}`;
+                                                const response = await fetch(imageUrl);
+                                                const blob = await response.blob();
+                                                const file = new File([blob], 'image.jpg', { type: blob.type });
+
+                                                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                                    await navigator.share({
+                                                        files: [file],
+                                                        title: selectedImage.title,
+                                                        text: shareText,
+                                                        url: url
+                                                    });
+                                                    return;
+                                                }
+                                            }
+                                            throw new Error('Fallback to text share');
+                                        } catch (error) {
+                                            // Fallback to standard WhatsApp link
+                                            window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+                                        }
+                                    }}
+                                    className="p-3 bg-[#25D366]/80 hover:bg-[#25D366] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on WhatsApp (Image)"
+                                >
+                                    <MessageCircle className="w-5 h-5" />
+                                </button>
+                                <a
+                                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://www.kridobahtiar.my.id/')}&quote=${encodeURIComponent(`Check out "${selectedImage.title}" on Krido's Portfolio`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#1877F2]/80 hover:bg-[#1877F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on Facebook"
+                                >
+                                    <Facebook className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out "${selectedImage.title}"! Shared from`)}&url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#1DA1F2]/80 hover:bg-[#1DA1F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on Twitter"
+                                >
+                                    <Twitter className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#0A66C2]/80 hover:bg-[#0A66C2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on LinkedIn"
+                                >
+                                    <Linkedin className="w-5 h-5" />
+                                </a>
+                                <button
+                                    onClick={() => {
+                                        const typeName = selectedImage.type === 'portfolio' ? 'project' : 'activity';
+                                        const shareText = `Check out "${selectedImage.title}" (${typeName})! Shared from https://www.kridobahtiar.my.id/`;
+                                        navigator.clipboard.writeText(shareText);
+                                        alert('Link and message copied to clipboard!');
+                                    }}
+                                    className="p-3 bg-gray-500/80 hover:bg-gray-500 rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Copy Link"
+                                >
+                                    <LinkIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

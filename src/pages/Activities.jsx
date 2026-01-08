@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Cpu, X, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Cpu, X, Sun, Moon, Share2, Link as LinkIcon, MessageCircle, Facebook, Twitter, Linkedin } from 'lucide-react';
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
@@ -159,7 +159,7 @@ const Activities = () => {
                                                     src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/activities/${activity.image_url}`}
                                                     alt={activity.title}
                                                     className="w-full h-32 object-cover rounded border border-gray-200 dark:border-gray-700 opacity-90 dark:opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer hover:scale-[1.02] duration-300"
-                                                    onClick={() => setSelectedImage(activity.image_url)}
+                                                    onClick={() => setSelectedImage(activity)}
                                                     loading="lazy"
                                                     decoding="async"
                                                 />
@@ -176,21 +176,94 @@ const Activities = () => {
             {/* Lightbox Modal */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200"
                     onClick={() => setSelectedImage(null)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all"
+                        className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
                         onClick={() => setSelectedImage(null)}
                     >
                         <X className="w-8 h-8" />
                     </button>
-                    <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/activities/${selectedImage}`}
-                        alt="Full view"
-                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                    
+                    <div className="flex flex-col items-center max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+                        <img
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/activities/${selectedImage.image_url}`}
+                            alt="Full view"
+                            className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl mb-6"
+                        />
+                        
+                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 w-full max-w-md border border-white/20">
+                            <h3 className="text-white font-bold text-lg mb-2 text-center">{selectedImage.title}</h3>
+                            <div className="flex justify-center items-center gap-4 flex-wrap">
+                                <button
+                                    onClick={() => {
+                                        const shareData = {
+                                            title: selectedImage.title,
+                                            text: `Check out this activity! Shared from https://www.kridobahtiar.my.id/`,
+                                            url: 'https://www.kridobahtiar.my.id/'
+                                        };
+                                        if (navigator.share) {
+                                            navigator.share(shareData).catch(console.error);
+                                        } else {
+                                            navigator.clipboard.writeText(`Check out this activity! Shared from https://www.kridobahtiar.my.id/`);
+                                            alert('Link copied to clipboard!');
+                                        }
+                                    }}
+                                    className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share via Web Share / Copy Link"
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+                                <a
+                                    href={`https://wa.me/?text=${encodeURIComponent(`Check out this activity! Shared from https://www.kridobahtiar.my.id/`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#25D366]/80 hover:bg-[#25D366] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on WhatsApp"
+                                >
+                                    <MessageCircle className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#1877F2]/80 hover:bg-[#1877F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on Facebook"
+                                >
+                                    <Facebook className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this activity! Shared from`)}&url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#1DA1F2]/80 hover:bg-[#1DA1F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on Twitter"
+                                >
+                                    <Twitter className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-[#0A66C2]/80 hover:bg-[#0A66C2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Share on LinkedIn"
+                                >
+                                    <Linkedin className="w-5 h-5" />
+                                </a>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`Check out this activity! Shared from https://www.kridobahtiar.my.id/`);
+                                        alert('Link copied to clipboard!');
+                                    }}
+                                    className="p-3 bg-gray-500/80 hover:bg-gray-500 rounded-full text-white transition-all hover:scale-110 active:scale-95"
+                                    title="Copy Link"
+                                >
+                                    <LinkIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
