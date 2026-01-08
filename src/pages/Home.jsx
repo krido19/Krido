@@ -358,6 +358,8 @@ const Home = () => {
                                                     alt={activity.title}
                                                     className="w-full h-32 object-cover rounded border border-gray-200 dark:border-gray-700 opacity-90 dark:opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer hover:scale-[1.02] duration-300"
                                                     sizes="(max-width: 768px) 100vw, 50vw"
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     onClick={() => setSelectedImage({ ...activity, type: 'activities' })}
                                                 />
                                             )}
