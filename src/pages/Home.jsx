@@ -106,11 +106,11 @@ const Home = () => {
                 <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/50 backdrop-blur-md border-b border-gray-200 dark:border-gray-800/50 pointer-events-auto transition-colors duration-300">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
-                            <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-pink-600 dark:from-cyan-400 dark:to-pink-500 animate-glitch cursor-pointer">
+                            <span className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-pink-600 dark:from-cyan-400 dark:to-pink-500 animate-glitch cursor-pointer">
                                 KRIDO BAHTIAR
                             </span>
-                            <div className="flex items-center space-x-4">
-                                <div className="flex space-x-2 mr-4">
+                            <div className="flex items-center space-x-2 md:space-x-4">
+                                <div className="flex space-x-1 md:space-x-2 mr-2 md:mr-4">
                                     <button
                                         onClick={() => changeLanguage('en')}
                                         className={`px-2 py-1 text-xs font-bold rounded transition-colors ${i18n.language === 'en' ? 'bg-cyan-500 text-black' : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:text-black dark:hover:text-white'}`}
@@ -126,26 +126,26 @@ const Home = () => {
                                 </div>
                                 <button
                                     onClick={toggleTheme}
-                                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors mr-2"
+                                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors mr-1 md:mr-2"
                                     title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                                 >
                                     {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                                 </button>
                                 <Link
                                     to="/apps"
-                                    className="flex items-center px-4 py-2 text-sm font-bold text-cyan-700 dark:text-cyan-400 border border-cyan-700 dark:border-cyan-400 hover:bg-cyan-400/10 transition-colors clip-path-polygon"
+                                    className="flex items-center px-3 md:px-4 py-2 text-sm font-bold text-cyan-700 dark:text-cyan-400 border border-cyan-700 dark:border-cyan-400 hover:bg-cyan-400/10 transition-colors clip-path-polygon"
                                     style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
                                 >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    {t('get_apk')}
+                                    <Download className="w-4 h-4 md:mr-2" />
+                                    <span className="hidden md:inline">{t('get_apk')}</span>
                                 </Link>
                                 <Link
                                     to="/login"
-                                    className="flex items-center px-4 py-2 text-sm font-bold text-black bg-cyan-400 hover:bg-cyan-300 transition-colors clip-path-polygon"
+                                    className="flex items-center px-3 md:px-4 py-2 text-sm font-bold text-black bg-cyan-400 hover:bg-cyan-300 transition-colors clip-path-polygon"
                                     style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
                                 >
-                                    <LogIn className="w-4 h-4 mr-2" />
-                                    {t('signin')}
+                                    <LogIn className="w-4 h-4 md:mr-2" />
+                                    <span className="hidden md:inline">{t('signin')}</span>
                                 </Link>
                             </div>
                         </div>
