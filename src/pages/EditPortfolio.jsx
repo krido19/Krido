@@ -10,6 +10,7 @@ const EditPortfolio = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [projectUrl, setProjectUrl] = useState('');
+    const [videoUrl, setVideoUrl] = useState('');
     const [imageUrl, setImageUrl] = useState(null);
     const [skills, setSkills] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -34,6 +35,7 @@ const EditPortfolio = () => {
                 setTitle(data.title);
                 setDescription(data.description);
                 setProjectUrl(data.project_url);
+                setVideoUrl(data.video_url || '');
                 setImageUrl(data.image_url);
                 setSkills(data.skills ? data.skills.join(', ') : '');
             }
@@ -82,6 +84,7 @@ const EditPortfolio = () => {
                 title,
                 description,
                 project_url: projectUrl,
+                video_url: videoUrl,
                 image_url: imageUrl,
                 skills: skillsArray,
             };
@@ -201,6 +204,21 @@ const EditPortfolio = () => {
                             onChange={(e) => setProjectUrl(e.target.value)}
                             className="block w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                         />
+                    </div>
+
+                    <div>
+                        <label htmlFor="videoUrl" className="block text-sm font-medium text-pink-400 mb-2">
+                            YouTube Video URL (optional)
+                        </label>
+                        <input
+                            id="videoUrl"
+                            type="url"
+                            value={videoUrl}
+                            onChange={(e) => setVideoUrl(e.target.value)}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            className="block w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Paste YouTube video link to show video player in project modal</p>
                     </div>
 
                     <div className="flex justify-end pt-4">

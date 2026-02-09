@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign, ArrowRight, Share2, Link as LinkIcon, Facebook, Twitter } from 'lucide-react';
+import { LogIn, Github, Linkedin, Instagram, FileText, User, Terminal, Code, Cpu, Download, Sun, Moon, ExternalLink, X, MessageCircle, DollarSign, ArrowRight, Share2, Link as LinkIcon, Facebook, Twitter, Play } from 'lucide-react';
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
@@ -15,7 +15,16 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
     const [selectedImage, setSelectedImage] = useState(null);
+    const [playingVideo, setPlayingVideo] = useState(false);
     const { t, i18n } = useTranslation();
+
+    // Extract YouTube video ID from URL
+    const getYouTubeId = (url) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
 
     useEffect(() => {
         fetchData();
@@ -401,21 +410,48 @@ const Home = () => {
             {selectedImage && (
                 <div
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200"
-                    onClick={() => setSelectedImage(null)}
+                    onClick={() => { setSelectedImage(null); setPlayingVideo(false); }}
                 >
                     <button
                         className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
-                        onClick={() => setSelectedImage(null)}
+                        onClick={() => { setSelectedImage(null); setPlayingVideo(false); }}
                     >
                         <X className="w-8 h-8" />
                     </button>
 
                     <div className="flex flex-col items-center max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-                        <img
-                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${selectedImage.type === 'portfolio' ? 'portfolio' : 'activities'}/${selectedImage.image_url}`}
-                            alt="Full view"
-                            className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl mb-6"
-                        />
+                        {/* Video or Image */}
+                        {playingVideo && selectedImage.type === 'portfolio' && getYouTubeId(selectedImage.video_url) ? (
+                            <div className="w-full max-w-3xl aspect-video mb-6 rounded-lg overflow-hidden shadow-2xl">
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${getYouTubeId(selectedImage.video_url)}?autoplay=1&rel=0`}
+                                    title={selectedImage.title}
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="w-full h-full"
+                                />
+                            </div>
+                        ) : (
+                            <div className="relative max-w-full">
+                                <img
+                                    src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${selectedImage.type === 'portfolio' ? 'portfolio' : 'activities'}/${selectedImage.image_url}`}
+                                    alt="Full view"
+                                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl mb-6"
+                                />
+                                {/* Play Button Overlay for Portfolio with video_url */}
+                                {selectedImage.type === 'portfolio' && selectedImage.video_url && getYouTubeId(selectedImage.video_url) && (
+                                    <button
+                                        onClick={() => setPlayingVideo(true)}
+                                        className="absolute inset-0 flex items-center justify-center group"
+                                    >
+                                        <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-red-500 transition-all duration-300">
+                                            <Play className="w-10 h-10 text-white ml-1" fill="white" />
+                                        </div>
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 w-full max-w-md border border-white/20">
                             <h3 className="text-white font-bold text-lg mb-2 text-center">{selectedImage.title}</h3>
