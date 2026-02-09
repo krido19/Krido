@@ -231,6 +231,23 @@ const Dashboard = () => {
                         Manage Services
                     </button>
                 </div>
+
+                {/* Orders Card */}
+                <div className="group p-6 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                    <h2 className="mb-4 text-xl font-bold text-orange-500 group-hover:text-white transition-colors">
+                        Manage Orders
+                    </h2>
+                    <p className="mb-6 text-gray-400 text-sm leading-relaxed">
+                        Manage orders and print invoices for your clients.
+                    </p>
+                    <button
+                        onClick={() => navigate('/dashboard/orders')}
+                        className="w-full px-4 py-2 text-black font-bold bg-orange-500 hover:bg-orange-400 transition-colors clip-path-polygon"
+                        style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%)' }}
+                    >
+                        Manage Orders
+                    </button>
+                </div>
             </div>
 
         </div>

@@ -20,6 +20,9 @@ const Projects = React.lazy(() => import('./pages/Projects'));
 const Activities = React.lazy(() => import('./pages/Activities'));
 const ManageServices = React.lazy(() => import('./pages/ManageServices'));
 const EditService = React.lazy(() => import('./pages/EditService'));
+const ManageOrders = React.lazy(() => import('./pages/ManageOrders'));
+const EditOrder = React.lazy(() => import('./pages/EditOrder'));
+const InvoicePrint = React.lazy(() => import('./pages/InvoicePrint'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -67,6 +70,10 @@ function App() {
             <Route path="/dashboard/services" element={<ManageServices />} />
             <Route path="/dashboard/services/new" element={<EditService />} />
             <Route path="/dashboard/services/edit/:id" element={<EditService />} />
+            <Route path="/dashboard/orders" element={<ManageOrders />} />
+            <Route path="/dashboard/orders/new" element={<EditOrder />} />
+            <Route path="/dashboard/orders/edit/:id" element={<EditOrder />} />
+            <Route path="/dashboard/orders/invoice/:id" element={<InvoicePrint />} />
           </Route>
 
           {/* Public Home Page */}
