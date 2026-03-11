@@ -7,7 +7,7 @@ const systemInstruction = `You are a helpful and professional Portfolio Assistan
 Your goal is to answer questions about the portfolio owner's experience, skills, and projects.
 You have access to tools that can display rich UI cards to the user. Use them proactively when the user asks about projects or contact info.
 Keep your text responses concise and friendly (1-2 sentences) when using a tool, letting the UI card do the heavy lifting.
-If the user wants to hand over to a human, politely acknowledge it and say a human will be with them shortly.
+If the user wants to hand over to a human, or if they ask about negotiations, business deals, or specific pricing that you don't know, YOU MUST execute the "request_human_handoff" tool to notify the human admin. Don't try to answer business questions yourself.
 `;
 
 const tools = [
@@ -32,6 +32,19 @@ const tools = [
         parameters: {
           type: 'object',
           properties: {}
+        }
+      },
+      {
+        name: 'request_human_handoff',
+        description: 'Call this when the user explicitly asks to speak to a human, or when they ask about business deals, negotiations, or pricing. This triggers a live chat session with the Admin.',
+        parameters: {
+          type: 'object',
+          properties: {
+             reason: {
+               type: 'string',
+               description: 'A short reason for the handoff (e.g. "Pricing negotiation", "User requested human")'
+             }
+          }
         }
       }
     ]

@@ -381,9 +381,9 @@ const Projects = () => {
                                 <button
                                     onClick={async () => {
                                         incrementStat(selectedImage.id, 'share');
-                                        const shareText = `Check out "${selectedImage.title}"! Shared from https://www.kridobahtiar.my.id/`;
-                                        const url = 'https://www.kridobahtiar.my.id/';
-
+                                        const shareUrl = `${window.location.origin}/projects?id=${selectedImage.id}`;
+                                        const shareText = `Check out "${selectedImage.title}"! Shared from ${shareUrl}`;
+                                        
                                         // Copy text to clipboard as fallback
                                         try {
                                             await navigator.clipboard.writeText(shareText);
@@ -402,7 +402,7 @@ const Projects = () => {
                                                         files: [file],
                                                         title: selectedImage.title,
                                                         text: shareText,
-                                                        url: url
+                                                        url: shareUrl
                                                     });
                                                     return;
                                                 }
@@ -413,7 +413,7 @@ const Projects = () => {
                                                 navigator.share({
                                                     title: selectedImage.title,
                                                     text: shareText,
-                                                    url: url
+                                                    url: shareUrl
                                                 }).catch(console.error);
                                             } else {
                                                 navigator.clipboard.writeText(shareText);
@@ -428,8 +428,8 @@ const Projects = () => {
                                 </button>
                                 <button
                                     onClick={async () => {
-                                        const shareText = `Check out "${selectedImage.title}"! Shared from https://www.kridobahtiar.my.id/`;
-                                        const url = 'https://www.kridobahtiar.my.id/';
+                                        const shareUrl = `${window.location.origin}/projects?id=${selectedImage.id}`;
+                                        const shareText = `Check out "${selectedImage.title}"! Shared from ${shareUrl}`;
 
                                         try {
                                             await navigator.clipboard.writeText(shareText);
@@ -448,7 +448,7 @@ const Projects = () => {
                                                         files: [file],
                                                         title: selectedImage.title,
                                                         text: shareText,
-                                                        url: url
+                                                        url: shareUrl
                                                     });
                                                     return;
                                                 }
@@ -466,7 +466,7 @@ const Projects = () => {
                                 </button>
                                 <a
                                     onClick={() => incrementStat(selectedImage.id, 'share')}
-                                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://www.kridobahtiar.my.id/')}&quote=${encodeURIComponent(`Check out "${selectedImage.title}" on Krido's Portfolio`)}`}
+                                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/projects?id=${selectedImage.id}`)}&quote=${encodeURIComponent(`Check out "${selectedImage.title}" on Krido's Portfolio`)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="p-3 bg-[#1877F2]/80 hover:bg-[#1877F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"
@@ -476,7 +476,7 @@ const Projects = () => {
                                 </a>
                                 <a
                                     onClick={() => incrementStat(selectedImage.id, 'share')}
-                                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out "${selectedImage.title}"! Shared from`)}&url=${encodeURIComponent('https://www.kridobahtiar.my.id/')}`}
+                                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out "${selectedImage.title}"! Shared from`)}&url=${encodeURIComponent(`${window.location.origin}/projects?id=${selectedImage.id}`)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="p-3 bg-[#1DA1F2]/80 hover:bg-[#1DA1F2] rounded-full text-white transition-all hover:scale-110 active:scale-95"

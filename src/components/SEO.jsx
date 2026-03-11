@@ -2,8 +2,8 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 const SEO = ({ title, description, image, url, type = 'website' }) => {
-    const siteTitle = 'Krido Bahtiar - Frontend Developer | Next.js & React';
-    const defaultDescription = 'Frontend Developer spesialis Next.js, React, dan modern web development.';
+    const siteTitle = 'Krido Bahtiar - Frontend Web Developer | Next.js, React, Astro & Svelte';
+    const defaultDescription = 'Portofolio profesional Krido Bahtiar. Frontend Web Developer spesialis dalam menciptakan pengalaman web modern, cepat, dan interaktif dengan React, Next.js, Astro, Svelte, dan ekosistem modern lainnya.';
     const siteUrl = window.location.origin;
     const defaultImage = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/default-og.jpg`; // Fallback if needed
 

@@ -30,3 +30,30 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 -- When you have thousands of portfolio items or activity logs, 
 -- PostgreSQL will not need to do a "Full Table Scan" to sort them by date.
 -- Instead, it will instantly look up the B-Tree index, making queries 10x faster.
+
+-- ----------------------------------------------------
+-- Phase 8: AI Chat Handoff (Multi-Agent Live Chat)
+-- ----------------------------------------------------
+
+-- Table to store active conversation sessions
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    visitor_id TEXT NOT NULL, -- UUID or Session Hash
+    visitor_name TEXT DEFAULT 'Guest',
+    status TEXT DEFAULT 'ai_active', -- 'ai_active', 'human_requested', 'human_active', 'resolved'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Table to store individual messages inside a session
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    role TEXT NOT NULL, -- 'user', 'ai', 'admin'
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Index for Faster Chat Loading
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_status ON chat_sessions(status);

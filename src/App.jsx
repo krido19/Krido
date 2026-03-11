@@ -23,6 +23,7 @@ const EditService = React.lazy(() => import('./pages/EditService'));
 const ManageOrders = React.lazy(() => import('./pages/ManageOrders'));
 const EditOrder = React.lazy(() => import('./pages/EditOrder'));
 const InvoicePrint = React.lazy(() => import('./pages/InvoicePrint'));
+const ManageChats = React.lazy(() => import('./pages/ManageChats'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -77,6 +78,7 @@ function App() {
             <Route path="/dashboard/orders/new" element={<EditOrder />} />
             <Route path="/dashboard/orders/edit/:id" element={<EditOrder />} />
             <Route path="/dashboard/orders/invoice/:id" element={<InvoicePrint />} />
+            <Route path="/dashboard/chats" element={<ManageChats />} />
           </Route>
 
           {/* Public Home Page */}

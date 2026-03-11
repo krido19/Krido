@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Users, Globe, LogOut } from 'lucide-react';
+import { Users, Globe, LogOut, Bell } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -15,6 +16,48 @@ const Dashboard = () => {
     useEffect(() => {
         fetchProfile();
         fetchVisitorCount();
+
+        // Phase 7: Setup Supabase Realtime Subscription for Orders
+        const channel = supabase.channel('schema-db-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'orders',
+                },
+                (payload) => {
+                    console.log('Realtime Order Received!', payload);
+                    toast.success(
+                        (t) => (
+                            <div className="flex flex-col gap-1">
+                                <strong className="text-sm">🔔 New Order Arrived!</strong>
+                                <span className="text-xs text-gray-600">From: {payload.new.customer_name}</span>
+                                <span className="text-xs text-gray-500 font-mono mt-1">Invoice: {payload.new.invoice_number}</span>
+                                <button
+                                    onClick={() => {
+                                        toast.dismiss(t.id);
+                                        navigate('/dashboard/orders');
+                                    }}
+                                    className="mt-2 text-xs bg-cyan-500 text-white px-2 py-1 rounded"
+                                >
+                                    View Order
+                                </button>
+                            </div>
+                        ),
+                        { duration: 8000, position: 'top-right' }
+                    );
+                }
+            )
+            .subscribe((status) => {
+                if(status === 'SUBSCRIBED') {
+                    console.log('Listening for realtime orders...');
+                }
+            });
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchVisitorCount = async () => {
@@ -81,6 +124,7 @@ const Dashboard = () => {
 
     return (
         <div className="p-8">
+            <Toaster />
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">
                     {t('dashboard')}
@@ -246,6 +290,23 @@ const Dashboard = () => {
                         style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%)' }}
                     >
                         Manage Orders
+                    </button>
+                </div>
+
+                {/* Live Chat Card */}
+                <div className="group p-6 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                    <h2 className="mb-4 text-xl font-bold text-blue-500 group-hover:text-white transition-colors">
+                        Live Web Chat
+                    </h2>
+                    <p className="mb-6 text-gray-400 text-sm leading-relaxed">
+                        Handle AI Chat Handoffs and communicate with visitors in real-time.
+                    </p>
+                    <button
+                        onClick={() => navigate('/dashboard/chats')}
+                        className="w-full px-4 py-2 text-white font-bold bg-blue-600 hover:bg-blue-500 transition-colors clip-path-polygon"
+                        style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%)' }}
+                    >
+                        Open Live Chat
                     </button>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
 const ChatContext = createContext(null);
 
@@ -14,6 +15,68 @@ export const ChatProvider = ({ children }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [isHumanHandoff, setIsHumanHandoff] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+
+  // Initialize or fetch session when widget opens
+  useEffect(() => {
+     if (isWidgetOpen && !sessionId) {
+        initSession();
+     }
+  }, [isWidgetOpen]);
+
+  // Listen to realtime messages if in Human Handoff mode
+  useEffect(() => {
+      if (!isHumanHandoff || !sessionId) return;
+
+      const channel = supabase.channel(`chat_${sessionId}`)
+         .on(
+             'postgres_changes',
+             { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` },
+             (payload) => {
+                 const newMessage = payload.new;
+                 if (newMessage.role === 'admin') {
+                     addMessage({
+                         id: newMessage.id,
+                         role: 'model', // Render as the AI chat bubble but text is from admin
+                         content: newMessage.content,
+                         type: 'text',
+                         isAdmin: true
+                     });
+                 }
+             }
+         )
+         .subscribe();
+
+      return () => {
+          supabase.removeChannel(channel);
+      }
+  }, [isHumanHandoff, sessionId]);
+
+  const initSession = async () => {
+      // Create a persistent session in Supabase when the chat is opened
+      let visitorId = localStorage.getItem('chat_visitor_id');
+      if (!visitorId) {
+          visitorId = crypto.randomUUID();
+          localStorage.setItem('chat_visitor_id', visitorId);
+      }
+
+      const { data, error } = await supabase
+          .from('chat_sessions')
+          .insert([{ visitor_id: visitorId, status: 'ai_active' }])
+          .select()
+          .single();
+          
+      if (data) {
+          setSessionId(data.id);
+      }
+  };
+
+  const handleCreateHandoff = async () => {
+      setIsHumanHandoff(true);
+      if (sessionId) {
+          await supabase.from('chat_sessions').update({ status: 'human_requested' }).eq('id', sessionId);
+      }
+  };
 
   const toggleWidget = useCallback(() => {
     setIsWidgetOpen(prev => !prev);
@@ -37,6 +100,17 @@ export const ChatProvider = ({ children }) => {
     setIsTyping(true);
 
     try {
+      // If Human Handoff is active, send direct to Supabase bypassing Gemini
+      if (isHumanHandoff && sessionId) {
+          setIsTyping(false); // No AI typing delay
+          await supabase.from('chat_messages').insert([{
+              session_id: sessionId,
+              role: 'user',
+              content: content
+          }]);
+          return;
+      }
+
       // Send message to the serverless function
       const history = [...messages, userMessage].map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
@@ -63,14 +137,24 @@ export const ChatProvider = ({ children }) => {
       }
 
       if (data.type === 'function_call') {
-        addMessage({
-          id: Date.now().toString(),
-          role: 'model',
-          content: data.text || '',
-          type: 'function_call',
-          functionName: data.functionName,
-          functionArgs: data.functionArgs
-        });
+        if (data.functionName === 'request_human_handoff') {
+            handleCreateHandoff();
+            addMessage({
+              id: Date.now().toString(),
+              role: 'model',
+              content: 'I have requested an Admin to join the chat. Please wait a moment while they connect...',
+              type: 'text'
+            });
+        } else {
+            addMessage({
+              id: Date.now().toString(),
+              role: 'model',
+              content: data.text || '',
+              type: 'function_call',
+              functionName: data.functionName,
+              functionArgs: data.functionArgs
+            });
+        }
       } else {
         addMessage({
           id: Date.now().toString(),
@@ -79,9 +163,12 @@ export const ChatProvider = ({ children }) => {
           type: 'text'
         });
         
-        // Very basic mock human handoff logic
-        if (data.text.toLowerCase().includes('human')) {
-            setIsHumanHandoff(true);
+        // Save AI reply to DB if session exists
+        if (sessionId) {
+            await Promise.all([
+               supabase.from('chat_messages').insert([{ session_id: sessionId, role: 'user', content: userMessage.content }]),
+               supabase.from('chat_messages').insert([{ session_id: sessionId, role: 'ai', content: data.text }])
+            ]);
         }
       }
     } catch (err) {
