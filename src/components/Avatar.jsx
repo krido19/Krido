@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Upload } from 'lucide-react';
+import { optimizeImage } from '../utils/imageOptimizer';
 
 const Avatar = ({ url, size, onUpload }) => {
     const [avatarUrl, setAvatarUrl] = useState(null);
@@ -31,8 +32,11 @@ const Avatar = ({ url, size, onUpload }) => {
                 throw new Error('You must select an image to upload.');
             }
 
-            const file = event.target.files[0];
-            const fileExt = file.name.split('.').pop();
+            const originalFile = event.target.files[0];
+            // Intercept and compress image (avatars only need 800px max)
+            const file = await optimizeImage(originalFile, 800, 0.8);
+
+            const fileExt = file.name.split('.').pop() || 'webp';
             const fileName = `${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 

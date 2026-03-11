@@ -9,6 +9,10 @@ const ManageOrders = () => {
     const { t } = useTranslation();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 10;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -17,20 +21,46 @@ const ManageOrders = () => {
         fetchOrders();
     }, []);
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (isLoadMore = false) => {
         try {
-            setLoading(true);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setPage(0);
+            }
+
+            const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
+            const to = from + ITEMS_PER_PAGE - 1;
+
             const { data, error } = await supabase
                 .from('orders')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .range(from, to);
 
             if (error) throw error;
-            setOrders(data || []);
+
+            const fetchedData = data || [];
+
+            if (fetchedData.length < ITEMS_PER_PAGE) {
+                setHasMore(false);
+            } else {
+                setHasMore(true);
+            }
+
+            if (isLoadMore) {
+                setOrders(prev => [...prev, ...fetchedData]);
+                setPage(prev => prev + 1);
+            } else {
+                setOrders(fetchedData);
+            }
+
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -214,6 +244,26 @@ const ManageOrders = () => {
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Load More Button */}
+            {!loading && hasMore && filteredOrders.length > 0 && (
+                <div className="flex justify-center mt-6">
+                    <button
+                        onClick={() => fetchOrders(true)}
+                        disabled={loadingMore}
+                        className="flex items-center px-6 py-2 text-sm font-bold bg-gray-800 hover:bg-gray-700 text-orange-400 border border-orange-500/30 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Memuat...
+                            </>
+                        ) : (
+                            'Muat Lebih Banyak'
+                        )}
+                    </button>
                 </div>
             )}
 

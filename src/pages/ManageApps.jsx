@@ -7,6 +7,10 @@ import Modal from '../components/Modal';
 const ManageApps = () => {
     const [apps, setApps] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 9;
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -14,26 +18,49 @@ const ManageApps = () => {
         fetchApps();
     }, []);
 
-    const fetchApps = async () => {
+    const fetchApps = async (isLoadMore = false) => {
         try {
-            setLoading(true);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setPage(0);
+            }
+
             const { data: { user } } = await supabase.auth.getUser();
 
             if (user) {
+                const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
+                const to = from + ITEMS_PER_PAGE - 1;
+
                 const { data, error } = await supabase
                     .from('app_releases')
                     .select('*')
                     .eq('user_id', user.id)
                     .order('is_pinned', { ascending: false })
-                    .order('created_at', { ascending: false });
+                    .order('created_at', { ascending: false })
+                    .range(from, to);
 
                 if (error) throw error;
-                setApps(data);
+
+                if (data.length < ITEMS_PER_PAGE) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
+                }
+
+                if (isLoadMore) {
+                    setApps(prev => [...prev, ...data]);
+                    setPage(prev => prev + 1);
+                } else {
+                    setApps(data);
+                }
             }
         } catch (error) {
             console.error('Error fetching apps:', error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -190,20 +217,40 @@ const ManageApps = () => {
                         </div>
                     </div>
                 ))}
-
-                {apps.length === 0 && (
-                    <div className="col-span-full text-center py-12 bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-800 hover:border-cyan-500/30 transition-colors">
-                        <Smartphone className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                        <p className="text-gray-500 dark:text-gray-400 mb-4">No applications uploaded yet.</p>
-                        <Link
-                            to="/dashboard/apps/new"
-                            className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 font-bold hover:underline"
-                        >
-                            Upload your first app
-                        </Link>
-                    </div>
-                )}
             </div>
+
+            {/* Load More Button */}
+            {!loading && hasMore && apps.length > 0 && (
+                <div className="flex justify-center mt-8 pb-8">
+                    <button
+                        onClick={() => fetchApps(true)}
+                        disabled={loadingMore}
+                        className="px-8 py-3 bg-gray-800 hover:bg-gray-700 text-cyan-400 border border-cyan-500/30 font-bold text-sm tracking-wider rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.1)] hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                LOADING...
+                            </>
+                        ) : (
+                            'LOAD MORE'
+                        )}
+                    </button>
+                </div>
+            )}
+
+            {apps.length === 0 && !loading && (
+                <div className="col-span-full text-center py-12 bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-800 hover:border-cyan-500/30 transition-colors">
+                    <Smartphone className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">No applications uploaded yet.</p>
+                    <Link
+                        to="/dashboard/apps/new"
+                        className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 font-bold hover:underline"
+                    >
+                        Upload your first app
+                    </Link>
+                </div>
+            )}
 
             <Modal
                 isOpen={isDeleteModalOpen}

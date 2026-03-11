@@ -5,10 +5,15 @@ import { ArrowLeft, Cpu, X, Sun, Moon, Share2, Link as LinkIcon, MessageCircle, 
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
+import { SkeletonActivity } from '../components/Skeleton';
 
 const Activities = () => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 5;
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
     const [selectedImage, setSelectedImage] = useState(null);
     const { t, i18n } = useTranslation();
@@ -17,20 +22,43 @@ const Activities = () => {
         fetchActivities();
     }, []);
 
-    const fetchActivities = async () => {
+    const fetchActivities = async (isLoadMore = false) => {
         try {
-            setLoading(true);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setPage(0);
+            }
+
+            const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
+            const to = from + ITEMS_PER_PAGE - 1;
+
             const { data, error } = await supabase
                 .from('activities')
                 .select('*')
-                .order('date', { ascending: false });
+                .order('date', { ascending: false })
+                .range(from, to);
 
             if (error) throw error;
-            setActivities(data);
+
+            if (data.length < ITEMS_PER_PAGE) {
+                setHasMore(false);
+            } else {
+                setHasMore(true);
+            }
+
+            if (isLoadMore) {
+                setActivities(prev => [...prev, ...data]);
+                setPage(prev => prev + 1);
+            } else {
+                setActivities(data);
+            }
         } catch (error) {
             console.error('Error fetching activities:', error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -136,9 +164,9 @@ const Activities = () => {
                             <div className="w-24 h-1 bg-gradient-to-r from-cyan-400 to-pink-500 mx-auto"></div>
                         </div>
 
-                        {loading ? (
-                            <div className="flex justify-center">
-                                <div className="w-16 h-16 border-4 border-t-cyan-500 border-r-pink-500 border-b-purple-500 border-l-yellow-500 rounded-full animate-spin"></div>
+                        {loading && page === 0 ? (
+                            <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-300 dark:before:via-gray-700 before:to-transparent">
+                                {[...Array(5)].map((_, i) => <SkeletonActivity key={i} />)}
                             </div>
                         ) : (
                             <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-300 dark:before:via-gray-700 before:to-transparent">
@@ -167,6 +195,26 @@ const Activities = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Load More Button */}
+                        {!loading && hasMore && (
+                            <div className="flex justify-center mt-12">
+                                <button
+                                    onClick={() => fetchActivities(true)}
+                                    disabled={loadingMore}
+                                    className="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm tracking-wider rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            LOADING...
+                                        </>
+                                    ) : (
+                                        t('load_more') || 'LOAD MORE'
+                                    )}
+                                </button>
                             </div>
                         )}
                     </div>

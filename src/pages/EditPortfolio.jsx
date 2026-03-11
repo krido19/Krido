@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, ArrowLeft } from 'lucide-react';
+import { optimizeImage } from '../utils/imageOptimizer';
 
 const EditPortfolio = () => {
     const { id } = useParams();
@@ -53,8 +54,11 @@ const EditPortfolio = () => {
                 throw new Error('You must select an image to upload.');
             }
 
-            const file = event.target.files[0];
-            const fileExt = file.name.split('.').pop();
+            const originalFile = event.target.files[0];
+            // Intercept and compress image
+            const file = await optimizeImage(originalFile);
+
+            const fileExt = file.name.split('.').pop() || 'webp';
             const fileName = `${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 

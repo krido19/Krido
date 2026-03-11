@@ -7,6 +7,10 @@ import Modal from '../components/Modal';
 const ManagePortfolio = () => {
     const [portfolio, setPortfolio] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 9;
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const navigate = useNavigate();
@@ -15,20 +19,43 @@ const ManagePortfolio = () => {
         fetchPortfolio();
     }, []);
 
-    const fetchPortfolio = async () => {
+    const fetchPortfolio = async (isLoadMore = false) => {
         try {
-            setLoading(true);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setPage(0);
+            }
+
+            const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
+            const to = from + ITEMS_PER_PAGE - 1;
+
             const { data, error } = await supabase
                 .from('portfolio')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .range(from, to);
 
             if (error) throw error;
-            setPortfolio(data);
+
+            if (data.length < ITEMS_PER_PAGE) {
+                setHasMore(false);
+            } else {
+                setHasMore(true);
+            }
+
+            if (isLoadMore) {
+                setPortfolio(prev => [...prev, ...data]);
+                setPage(prev => prev + 1);
+            } else {
+                setPortfolio(data);
+            }
         } catch (error) {
             alert(error.message);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -113,6 +140,26 @@ const ManagePortfolio = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Load More Button */}
+            {!loading && hasMore && (
+                <div className="flex justify-center mt-8 pb-8">
+                    <button
+                        onClick={() => fetchPortfolio(true)}
+                        disabled={loadingMore}
+                        className="px-8 py-3 bg-gray-800 hover:bg-gray-700 text-cyan-400 border border-cyan-500/30 font-bold text-sm tracking-wider rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.1)] hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                LOADING...
+                            </>
+                        ) : (
+                            'LOAD MORE'
+                        )}
+                    </button>
                 </div>
             )}
 

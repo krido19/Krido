@@ -5,6 +5,7 @@ import { ArrowLeft, Code, ExternalLink, Sun, Moon, Share2, Link as LinkIcon, Mes
 import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
+import { SkeletonCard } from '../components/Skeleton';
 
 const Projects = () => {
     const [portfolio, setPortfolio] = useState([]);
@@ -13,6 +14,10 @@ const Projects = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [categories, setCategories] = useState(['All']);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 6;
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
     const { t, i18n } = useTranslation();
 
@@ -28,26 +33,55 @@ const Projects = () => {
         fetchProjects();
     }, []);
 
-    const fetchProjects = async () => {
+    const fetchProjects = async (isLoadMore = false) => {
         try {
-            setLoading(true);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setPage(0); // Reset page on initial load
+            }
+
+            const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
+            const to = from + ITEMS_PER_PAGE - 1;
+
             const { data, error } = await supabase
                 .from('portfolio')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .range(from, to);
 
             if (error) throw error;
 
-            setPortfolio(data);
+            if (data.length < ITEMS_PER_PAGE) {
+                setHasMore(false); // No more data to fetch
+            } else {
+                setHasMore(true);
+            }
 
-            // Extract unique categories from skills
-            const allSkills = data.flatMap(item => item.skills || []);
-            const uniqueCategories = ['All', ...new Set(allSkills)];
-            setCategories(uniqueCategories);
+            if (isLoadMore) {
+                setPortfolio(prev => [...prev, ...data]);
+                setPage(prev => prev + 1);
+            } else {
+                setPortfolio(data);
+            }
+
+            // Extract unique categories from skills (Only calculate on initial load for all)
+            // Note: In a real large-scale app, categories should come from a separate table or aggregated query
+            if (!isLoadMore) {
+                const { data: allData } = await supabase.from('portfolio').select('skills');
+                if (allData) {
+                    const allSkills = allData.flatMap(item => item.skills || []);
+                    const uniqueCategories = ['All', ...new Set(allSkills)];
+                    setCategories(uniqueCategories);
+                }
+            }
+
         } catch (error) {
             console.error('Error fetching projects:', error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -197,9 +231,9 @@ const Projects = () => {
                             </div>
                         )}
 
-                        {loading ? (
-                            <div className="flex justify-center">
-                                <div className="w-16 h-16 border-4 border-t-cyan-500 border-r-pink-500 border-b-purple-500 border-l-yellow-500 rounded-full animate-spin"></div>
+                        {loading && page === 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -264,6 +298,26 @@ const Projects = () => {
                                             </div>
                                         </div>
                                     ))}
+                            </div>
+                        )}
+
+                        {/* Load More Button */}
+                        {!loading && hasMore && selectedCategory === 'All' && (
+                            <div className="flex justify-center mt-12">
+                                <button
+                                    onClick={() => fetchProjects(true)}
+                                    disabled={loadingMore}
+                                    className="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm tracking-wider rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            LOADING...
+                                        </>
+                                    ) : (
+                                        t('load_more') || 'LOAD MORE'
+                                    )}
+                                </button>
                             </div>
                         )}
                     </div>

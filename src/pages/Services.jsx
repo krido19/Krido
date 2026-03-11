@@ -5,12 +5,14 @@ import Scene from '../components/Scene';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
 import { supabase } from '../supabaseClient';
+import { SkeletonServiceCard } from '../components/Skeleton';
 
 const Services = () => {
     const { t, i18n } = useTranslation();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
     const [profile, setProfile] = useState(null);
     const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchProfile();
@@ -19,6 +21,7 @@ const Services = () => {
 
     const fetchServices = async () => {
         try {
+            setLoading(true);
             const { data, error } = await supabase
                 .from('services')
                 .select('*')
@@ -28,6 +31,8 @@ const Services = () => {
             setServices(data);
         } catch (error) {
             console.error('Error fetching services:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -147,7 +152,9 @@ const Services = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {services.map((service, index) => {
+                            {loading ? (
+                                [...Array(3)].map((_, i) => <SkeletonServiceCard key={i} />)
+                            ) : services.map((service, index) => {
                                 const title = i18n.language === 'id' ? service.title_id : service.title_en;
                                 const time = i18n.language === 'id' ? service.time_id : service.time_en;
                                 const features = i18n.language === 'id' ? service.features_id : service.features_en;

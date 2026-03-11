@@ -6,10 +6,15 @@ import { useTranslation } from 'react-i18next';
 
 import Scene from '../components/Scene';
 import SEO from '../components/SEO';
+import { SkeletonAppCard } from '../components/Skeleton';
 
 const AppDownloads = () => {
     const [apps, setApps] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 6;
     const [notification, setNotification] = useState(null);
     const { t, i18n } = useTranslation();
 
@@ -32,21 +37,44 @@ const AppDownloads = () => {
         fetchApps();
     }, []);
 
-    const fetchApps = async () => {
+    const fetchApps = async (isLoadMore = false) => {
         try {
-            setLoading(true);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setPage(0);
+            }
+
+            const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
+            const to = from + ITEMS_PER_PAGE - 1;
+
             const { data, error } = await supabase
                 .from('app_releases')
                 .select('*')
                 .order('is_pinned', { ascending: false })
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .range(from, to);
 
             if (error) throw error;
-            setApps(data);
+
+            if (data.length < ITEMS_PER_PAGE) {
+                setHasMore(false);
+            } else {
+                setHasMore(true);
+            }
+
+            if (isLoadMore) {
+                setApps(prev => [...prev, ...data]);
+                setPage(prev => prev + 1);
+            } else {
+                setApps(data);
+            }
         } catch (error) {
             console.error('Error fetching apps:', error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -186,9 +214,9 @@ const AppDownloads = () => {
                     </p>
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center">
-                        <div className="w-16 h-16 border-4 border-t-cyan-500 border-r-pink-500 border-b-purple-500 border-l-yellow-500 rounded-full animate-spin"></div>
+                {loading && page === 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {[...Array(6)].map((_, i) => <SkeletonAppCard key={i} />)}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -248,6 +276,26 @@ const AppDownloads = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* Load More Button */}
+                {!loading && hasMore && apps.length > 0 && (
+                    <div className="flex justify-center mt-12 mb-8">
+                        <button
+                            onClick={() => fetchApps(true)}
+                            disabled={loadingMore}
+                            className="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm tracking-wider rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        >
+                            {loadingMore ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    LOADING...
+                                </>
+                            ) : (
+                                t('load_more') || 'LOAD MORE'
+                            )}
+                        </button>
                     </div>
                 )}
 

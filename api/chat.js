@@ -73,6 +73,12 @@ export default async function handler(req, res) {
       }
     });
 
+    // Ensure the first message in history is from 'user'
+    // Gemini API requires the history to start with a user message
+    while(formattedHistory.length > 0 && formattedHistory[0].role !== 'user') {
+        formattedHistory.shift();
+    }
+
     // Extract the latest user message
     const historyWithoutLatest = formattedHistory.slice(0, -1);
     const latestMessage = formattedHistory[formattedHistory.length - 1];
