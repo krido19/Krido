@@ -7,6 +7,10 @@ body {
 }
 
 @layer utilities {
+    .glass-panel {
+        @apply bg-white/30 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-gray-700/40;
+    }
+
     .text-shadow-neon {
         text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 30px #ff00de, 0 0 40px #ff00de, 0 0 55px #ff00de, 0 0 75px #ff00de;
     }

@@ -26,6 +26,8 @@ const InvoicePrint = React.lazy(() => import('./pages/InvoicePrint'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import { ChatProvider } from './contexts/ChatContext';
+import ChatWidget from './components/chat/ChatWidget';
 import './i18n';
 
 function App() {
@@ -48,8 +50,9 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <React.Suspense fallback={<Loading />}>
+    <ChatProvider>
+      <Router>
+        <React.Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
@@ -87,7 +90,9 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </React.Suspense>
+      <ChatWidget />
     </Router>
+    </ChatProvider>
   );
 }
 
