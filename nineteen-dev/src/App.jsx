@@ -5,12 +5,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import { ChatProvider } from './contexts/ChatContext';
 import ChatWidget from './components/chat/ChatWidget';
-
+import ScrollToTop from './components/ScrollToTop';
 // ── Public pages ───────────────────────────────────────────────────────────
 const Home        = React.lazy(() => import('./pages/Home'));
 const Login       = React.lazy(() => import('./pages/Login'));
 const Services    = React.lazy(() => import('./pages/Services'));
 const Projects    = React.lazy(() => import('./pages/Projects'));
+const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
 const Activities  = React.lazy(() => import('./pages/Activities'));
 const AppDownloads = React.lazy(() => import('./pages/AppDownloads'));
 const NotFound    = React.lazy(() => import('./pages/NotFound'));
@@ -35,12 +36,14 @@ function App() {
   return (
     <ChatProvider>
       <Router>
+        <ScrollToTop />
         <React.Suspense fallback={<Loading />}>
           <Routes>
             {/* ── Public ── */}
             <Route path="/"           element={<Home />} />
             <Route path="/services"   element={<Services />} />
             <Route path="/projects"   element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
             <Route path="/activities" element={<Activities />} />
             <Route path="/apps"       element={<AppDownloads />} />
             <Route path="/login"      element={<Login />} />

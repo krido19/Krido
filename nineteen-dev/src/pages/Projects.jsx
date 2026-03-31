@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { ArrowLeft, ExternalLink, Eye, Share2, X, Play, Link as LinkIcon, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const ITEMS_PER_PAGE = 6;
 
 const Projects = () => {
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,23 +21,20 @@ const Projects = () => {
   const [page, setPage] = useState(0);
   const [categories, setCategories] = useState(['All']);
   const [selectedCat, setSelectedCat] = useState('All');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [playing, setPlaying] = useState(false);
 
   useEffect(() => { fetchProjects(); }, []);
 
-  const getYouTubeId = (url) => {
-    if (!url) return null;
-    const m = url.match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
-    return m ? m[1] : null;
-  };
 
   const fetchProjects = async (isLoadMore = false) => {
     try {
       isLoadMore ? setLoadingMore(true) : setLoading(true);
       const from = isLoadMore ? (page + 1) * ITEMS_PER_PAGE : 0;
       const { data, error } = await supabase
-        .from('portfolio').select('*').order('created_at', { ascending: false }).range(from, from + ITEMS_PER_PAGE - 1);
+        .from('portfolio')
+        .select('*')
+        .order('is_pinned', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .range(from, from + ITEMS_PER_PAGE - 1);
       if (error) throw error;
       setHasMore(data.length === ITEMS_PER_PAGE);
       if (isLoadMore) {
@@ -59,19 +57,9 @@ const Projects = () => {
     }
   };
 
-  const incrementView = async (id) => {
-    await supabase.rpc('increment_portfolio_count', { row_id: id, count_type: 'view' }).catch(() => {});
-    setPortfolio(prev => prev.map(p => p.id === id ? { ...p, view_count: (p.view_count || 0) + 1 } : p));
-  };
-
-  const incrementShare = async (id) => {
-    await supabase.rpc('increment_portfolio_count', { row_id: id, count_type: 'share' }).catch(() => {});
-    setPortfolio(prev => prev.map(p => p.id === id ? { ...p, share_count: (p.share_count || 0) + 1 } : p));
-  };
-
   const filtered = portfolio.filter(p => selectedCat === 'All' || (p.skills && p.skills.includes(selectedCat)));
 
-  const ytId = selectedItem ? getYouTubeId(selectedItem.video_url) : null;
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -131,9 +119,7 @@ const Projects = () => {
                   key={item.id}
                   onClick={(e) => {
                     if (e.target.closest('button,a')) return;
-                    setSelectedItem(item);
-                    setPlaying(false);
-                    incrementView(item.id);
+                    navigate('/projects/' + item.id);
                   }}
                   className="group bg-blue-50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02]"
                 >
@@ -196,71 +182,6 @@ const Projects = () => {
       </section>
 
       <Footer />
-
-      {/* ── Lightbox ── */}
-      {selectedItem && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => { setSelectedItem(null); setPlaying(false); }}
-        >
-          <button
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-md flex items-center justify-center text-white transition-all z-50"
-            onClick={() => { setSelectedItem(null); setPlaying(false); }}
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <div className="flex flex-col items-center max-w-3xl w-full gap-4" onClick={e => e.stopPropagation()}>
-            {playing && ytId ? (
-              <div className="w-full aspect-video rounded-lg overflow-hidden">
-                <iframe
-                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
-                  title={selectedItem.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen className="w-full h-full border-0"
-                />
-              </div>
-            ) : (
-              <div className="relative">
-                <img
-                  src={`${SUPABASE_URL}/storage/v1/object/public/portfolio/${selectedItem.image_url}`}
-                  alt={selectedItem.title}
-                  className="max-w-full max-h-[65vh] object-contain rounded-lg"
-                />
-                {ytId && (
-                  <button onClick={() => setPlaying(true)} className="absolute inset-0 flex items-center justify-center group">
-                    <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-all">
-                      <Play className="w-10 h-10 text-white ml-1" fill="white" />
-                    </div>
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="bg-white rounded-lg p-4 w-full flex items-center justify-between gap-4">
-              <span className="font-bold text-foreground truncate">{selectedItem.title}</span>
-              <div className="flex gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    incrementShare(selectedItem.id);
-                    navigator.clipboard.writeText(`Check out "${selectedItem.title}"! — https://nineteen.dev/`);
-                    toast.success('Link copied!');
-                  }}
-                  className="w-9 h-9 bg-muted hover:bg-gray-200 rounded-md flex items-center justify-center hover:scale-110 transition-all"
-                >
-                  <LinkIcon className="w-4 h-4 text-gray-600" />
-                </button>
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Check out "${selectedItem.title}"! — https://nineteen.dev/`)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  onClick={() => incrementShare(selectedItem.id)}
-                  className="w-9 h-9 bg-[#25D366] hover:bg-[#1daa55] rounded-md flex items-center justify-center hover:scale-110 transition-all"
-                >
-                  <MessageCircle className="w-4 h-4 text-white" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -27,7 +27,7 @@ const ManagePortfolio = () => {
       const { data, error } = await supabase
         .from('portfolio')
         .select('*')
-        .order('is_pinned', { ascending: false })
+        .order('is_pinned', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
         .range(from, to);
 
