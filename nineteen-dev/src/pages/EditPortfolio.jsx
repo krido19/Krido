@@ -24,6 +24,9 @@ const EditPortfolio = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [imageUrl, setImageUrl] = useState(null);
   const [skills, setSkills] = useState('');
+  const [content, setContent] = useState('');
+  const [screenshots, setScreenshots] = useState([]);
+  const [uploadingScreen, setUploadingScreen] = useState(false);
 
   useEffect(() => { if (id) fetchPortfolioItem(id); }, [id]);
 
@@ -39,6 +42,16 @@ const EditPortfolio = () => {
         setVideoUrl(data.video_url || '');
         setImageUrl(data.image_url);
         setSkills(data.skills ? data.skills.join(', ') : '');
+        setContent(data.content || '');
+        const parsedScreenshots = (data.screenshots || []).map(str => {
+          try {
+            const parsed = JSON.parse(str);
+            return parsed.image ? parsed : { image: str, caption: '' };
+          } catch {
+            return { image: str, caption: '' };
+          }
+        });
+        setScreenshots(parsedScreenshots);
       }
     } catch (error) { alert(error.message); }
     finally { setLoading(false); }
@@ -57,13 +70,41 @@ const EditPortfolio = () => {
     finally { setUploading(false); }
   };
 
+  const handleScreenshotUpload = async (event) => {
+    try {
+      setUploadingScreen(true);
+      const files = event.target.files;
+      if (!files?.length) return;
+      
+      const newScreenshots = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = await optimizeImage(files[i]);
+        const fileName = `screenshot_${Date.now()}_${Math.random()}.${file.name.split('.').pop() || 'webp'}`;
+        const { error: uploadError } = await supabase.storage.from('portfolio').upload(fileName, file);
+        if (uploadError) throw uploadError;
+        newScreenshots.push({ image: fileName, caption: '' });
+      }
+      setScreenshots(prev => [...prev, ...newScreenshots]);
+    } catch (error) { alert(error.message); }
+    finally { setUploadingScreen(false); }
+  };
+
+  const removeScreenshot = (index) => {
+    setScreenshots(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateScreenshotCaption = (index, value) => {
+    setScreenshots(prev => prev.map((item, i) => i === index ? { ...item, caption: value } : item));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       const skillsArray = skills.split(',').map(s => s.trim()).filter(Boolean);
-      const portfolioData = { user_id: user.id, title, description, project_url: projectUrl, video_url: videoUrl, image_url: imageUrl, skills: skillsArray };
+      const screenshotsToSave = screenshots.map(s => JSON.stringify(s));
+      const portfolioData = { user_id: user.id, title, description, content, project_url: projectUrl, video_url: videoUrl, image_url: imageUrl, screenshots: screenshotsToSave, skills: skillsArray };
       const { error } = id
         ? await supabase.from('portfolio').update(portfolioData).eq('id', id)
         : await supabase.from('portfolio').insert([portfolioData]);
@@ -128,6 +169,56 @@ const EditPortfolio = () => {
 
           <Field label="YouTube Video URL (opsional)" htmlFor="videoUrl" hint="Paste link YouTube untuk tampilkan video di modal proyek">
             <input id="videoUrl" type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="input-flat" />
+          </Field>
+
+          <Field label="Penjelasan Detail / Konten Panjang" htmlFor="content" hint="Jelaskan secara detail tentang proyek ini. Baris baru (enter) akan dibaca.">
+            <textarea id="content" rows={8} value={content} onChange={(e) => setContent(e.target.value)} className="input-flat whitespace-pre-wrap" placeholder="Penjelasan lengkap mengenai proyek..." />
+          </Field>
+
+          <Field label="Galeri Tangkapan Layar (Screenshots)" hint="Bisa pilih lebih dari satu gambar sekaligus">
+            <div className="space-y-4">
+              <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-muted hover:bg-gray-200 text-foreground text-sm font-semibold rounded-md cursor-pointer transition-colors">
+                {uploadingScreen ? (
+                  <><span className="w-4 h-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />Mengupload...</>
+                ) : (
+                  <><Upload className="w-4 h-4" />Tambah Screenshot</>
+                )}
+                <input type="file" className="hidden" accept="image/*" multiple onChange={handleScreenshotUpload} disabled={uploadingScreen} />
+              </label>
+              
+              {screenshots.length > 0 && (
+                <div className="space-y-4 mt-6">
+                  {screenshots.map((item, idx) => (
+                    <div key={idx} className="flex flex-col sm:flex-row gap-4 bg-gray-50 border border-gray-100 p-4 rounded-xl items-start">
+                      <div className="w-full sm:w-1/3 relative group rounded-md overflow-hidden bg-gray-200 aspect-video shrink-0 border border-gray-200">
+                        <img
+                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image}`}
+                          alt={`Screenshot ${idx}`}
+                          className="w-full h-full object-cover mix-blend-multiply"
+                        />
+                      </div>
+                      <div className="flex-1 flex flex-col gap-2 w-full">
+                         <textarea
+                            value={item.caption}
+                            onChange={(e) => updateScreenshotCaption(idx, e.target.value)}
+                            placeholder="Tulis penjelasan mendetail dari fitur di foto ini..."
+                            className="input-flat flex-1 min-h-[100px] resize-none"
+                         />
+                         <div className="flex justify-end mt-1">
+                            <button
+                               type="button"
+                               onClick={() => removeScreenshot(idx)}
+                               className="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1 uppercase tracking-wider"
+                            >
+                               &times; Hapus Foto & Fitur
+                            </button>
+                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </Field>
         </div>
 

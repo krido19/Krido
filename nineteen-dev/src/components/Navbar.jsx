@@ -60,10 +60,14 @@ const Navbar = ({ transparent = false }) => {
           </div>
 
           {/* Right Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-4">
             {/* Language Toggle */}
-            <div className="flex gap-1 bg-muted rounded-md p-1">
-              <button
+            <div className="flex items-center gap-2 group" title="Change Language / Ganti Bahasa">
+              <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors cursor-default hidden lg:block">
+                {t('language')}:
+              </span>
+              <div className="flex gap-1 bg-muted rounded-md p-1 border border-gray-100 shadow-inner">
+                <button
                 onClick={() => changeLanguage('en')}
                 className={`px-2 py-1 text-xs font-bold rounded transition-all duration-200 ${
                   i18n.language === 'en'
@@ -83,6 +87,7 @@ const Navbar = ({ transparent = false }) => {
               >
                 ID
               </button>
+            </div>
             </div>
 
             <Link to="/login" className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-foreground transition-colors">
@@ -129,8 +134,9 @@ const Navbar = ({ transparent = false }) => {
                 {link.label}
               </Link>
             ))}
-            <div className="flex items-center gap-3 pt-2">
-              <div className="flex gap-1 bg-muted rounded-md p-1">
+            <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+              <span className="text-xs font-bold text-gray-400">{t('language')}:</span>
+              <div className="flex gap-1 bg-muted rounded-md p-1 w-max border border-gray-100 shadow-inner">
                 <button
                   onClick={() => changeLanguage('en')}
                   className={`px-3 py-1 text-xs font-bold rounded transition-all ${

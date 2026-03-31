@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ExternalLink, ArrowRight,
   MessageCircle, Code2, Zap, Users, Star, FileText,
@@ -98,6 +98,7 @@ const Lightbox = ({ item, type, onClose }) => {
 
 // ─── Home Page ───────────────────────────────────────────────────────────────
 const Home = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [portfolio, setPortfolio] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -119,7 +120,7 @@ const Home = () => {
 
       if (p) {
         const [{ data: port }, { data: acts }] = await Promise.all([
-          supabase.from('portfolio').select('*').eq('user_id', p.id).order('created_at', { ascending: false }).limit(3),
+          supabase.from('portfolio').select('*').eq('user_id', p.id).order('is_pinned', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).limit(3),
           supabase.from('activities').select('*').eq('user_id', p.id).order('date', { ascending: false }).limit(3),
         ]);
         setPortfolio(port || []);
@@ -315,7 +316,10 @@ const Home = () => {
               {portfolio.map((item) => (
                 <div
                   key={item.id}
-                  onClick={(e) => { if (e.target.closest('button,a')) return; setSelectedItem({ item, type: 'portfolio' }); }}
+                  onClick={(e) => { 
+                    if (e.target.closest('button,a')) return; 
+                    navigate('/projects/' + item.id);
+                  }}
                   className="group card-flat bg-blue-50 overflow-hidden rounded-lg p-0 cursor-pointer"
                 >
                   {item.image_url && (
