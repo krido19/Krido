@@ -118,9 +118,9 @@ const Activities = () => {
             </div>
 
             {/* Content Overlay */}
-            <div className="relative z-10 pointer-events-none">
+            <div className="relative z-10">
                 {/* Navbar */}
-                <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/50 backdrop-blur-md border-b border-gray-200 dark:border-gray-800/50 pointer-events-auto transition-colors duration-300">
+                <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/50 backdrop-blur-md border-b border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <Link to="/" className="flex items-center text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-pink-600 dark:from-cyan-400 dark:to-pink-500 animate-glitch cursor-pointer">
@@ -155,7 +155,7 @@ const Activities = () => {
                 </nav>
 
                 {/* Activities Section */}
-                <section className="pt-32 pb-20 relative z-10 pointer-events-auto min-h-screen">
+                <section className="pt-32 pb-20 relative z-10 min-h-screen">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter">

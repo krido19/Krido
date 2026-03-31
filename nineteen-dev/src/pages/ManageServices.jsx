@@ -1,0 +1,130 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../supabaseClient';
+import { Link } from 'react-router-dom';
+import { Plus, Edit, Trash2, Zap } from 'lucide-react';
+import SEO from '../components/SEO';
+
+const ManageServices = () => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  useEffect(() => { fetchServices(); }, []);
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        setServices(data);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const { error } = await supabase.from('services').delete().eq('id', id);
+      if (error) throw error;
+      setServices(services.filter(s => s.id !== id));
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      alert('Gagal menghapus layanan');
+    }
+  };
+
+  return (
+    <div>
+      <SEO title="Manage Services" />
+
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-extrabold text-foreground">Services</h1>
+          <p className="text-sm text-gray-400 font-medium mt-0.5">Kelola harga & paket layanan kamu</p>
+        </div>
+        <Link to="/dashboard/services/new" className="btn-primary gap-2 text-sm">
+          <Plus className="w-4 h-4" /> Add New
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="inline-block w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : services.length === 0 ? (
+        <div className="bg-white rounded-lg p-16 text-center">
+          <Zap className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="font-semibold text-gray-400 mb-3">Belum ada layanan</p>
+          <Link to="/dashboard/services/new" className="text-primary font-bold text-sm hover:underline">
+            Buat layanan pertama
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {services.map((service) => (
+            <div
+              key={service.id}
+              className={`bg-white rounded-lg p-5 transition-all duration-200 hover:scale-[1.02] ${service.popular ? 'ring-2 ring-primary' : ''}`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-extrabold text-foreground text-base">{service.title_id}</h3>
+                    {service.popular && (
+                      <span className="px-2 py-0.5 bg-primary text-white text-xs font-bold rounded-md">POPULAR</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400">{service.title_en}</p>
+                </div>
+                <div className="flex items-center gap-1 ml-2 shrink-0">
+                  <Link
+                    to={`/dashboard/services/edit/${service.id}`}
+                    className="p-2 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-md transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Link>
+                  <button
+                    onClick={() => setDeleteConfirm(service.id)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-gray-100">
+                <span className="inline-block px-3 py-1 bg-blue-50 text-primary text-sm font-extrabold rounded-md">
+                  {service.price}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-lg font-extrabold text-foreground mb-2">Hapus Layanan?</h3>
+            <p className="text-sm text-gray-500 mb-6">Layanan ini akan dihapus permanen dan tidak dapat dikembalikan.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 btn-secondary text-sm py-2.5">Batal</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-md transition-colors">Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ManageServices;

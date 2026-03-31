@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Icon mark: blue square with "19" -->
+  <rect x="0" y="0" width="48" height="48" rx="8" fill="#3B82F6"/>
+  <text
+    x="24"
+    y="35"
+    font-family="Arial, Helvetica, sans-serif"
+    font-weight="900"
+    font-size="26"
+    fill="white"
+    text-anchor="middle"
+    letter-spacing="-1"
+  >19</text>
+
+  <!-- Wordmark: "nineteen.dev" -->
+  <text
+    x="60"
+    y="28"
+    font-family="Arial, Helvetica, sans-serif"
+    font-weight="800"
+    font-size="20"
+    fill="#111827"
+    letter-spacing="-0.5"
+  >nineteen</text>
+  <text
+    x="155"
+    y="28"
+    font-family="Arial, Helvetica, sans-serif"
+    font-weight="800"
+    font-size="20"
+    fill="#3B82F6"
+    letter-spacing="-0.5"
+  >.dev</text>
+</svg>

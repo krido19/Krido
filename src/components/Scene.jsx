@@ -60,7 +60,7 @@ const DarkScene = () => {
     const wallColor = '#222';
 
     return (
-        <Canvas camera={{ position: [0, 2, 8], fov: 60 }}>
+        <Canvas camera={{ position: [0, 2, 8], fov: 60 }} style={{ pointerEvents: 'none' }}>
             <color attach="background" args={[bgColor]} />
             <fog attach="fog" args={[fogColor, 5, 20]} />
             <ambientLight intensity={0.5} />
@@ -164,7 +164,7 @@ const LightScene = () => {
     const bgColor = '#e0f2fe'; // Sky Blue
 
     return (
-        <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
+        <Canvas camera={{ position: [0, 0, 10], fov: 50 }} style={{ pointerEvents: 'none' }}>
             <color attach="background" args={[bgColor]} />
             <fog attach="fog" args={[bgColor, 10, 30]} />
 
@@ -195,11 +195,44 @@ const LightScene = () => {
     );
 };
 
+// Hook sederhana: cek apakah layar <= 768px (mobile/tablet)
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 768);
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    return isMobile;
+};
+
+// Background sederhana untuk mobile (tanpa Three.js)
+const MobileBackground = ({ theme }) => {
+    const isDark = theme === 'dark';
+    return (
+        <div
+            className="fixed inset-0 z-0 pointer-events-none transition-colors duration-1000"
+            style={{
+                background: isDark
+                    ? 'linear-gradient(135deg, #050505 0%, #0a0a1a 40%, #0d0d0d 100%)'
+                    : 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 40%, #e0f2fe 100%)'
+            }}
+        />
+    );
+};
+
 const Scene = ({ theme = 'dark' }) => {
     const isDark = theme === 'dark';
+    const isMobile = useIsMobile();
 
+    // Di mobile: pakai background CSS biasa, tidak ada Three.js
+    if (isMobile) {
+        return <MobileBackground theme={theme} />;
+    }
+
+    // Di desktop: pakai Three.js scene
     return (
-        <div className="fixed inset-0 z-0 pointer-events-auto transition-colors duration-1000">
+        <div className="fixed inset-0 z-0 pointer-events-none transition-colors duration-1000">
             {isDark ? <DarkScene /> : <LightScene />}
         </div>
     );

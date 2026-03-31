@@ -160,12 +160,12 @@ const Projects = () => {
             />
 
             {/* 3D Background Scene */}
-            <div className="fixed inset-0 z-0">
+            <div className="fixed inset-0 z-0 pointer-events-none">
                 <Scene theme={theme} />
             </div>
 
             {/* Content Overlay */}
-            <div className="relative z-10 pointer-events-none">
+            <div className="relative z-10">
                 {/* Navbar */}
                 <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/50 backdrop-blur-md border-b border-gray-200 dark:border-gray-800/50 pointer-events-auto transition-colors duration-300">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -240,8 +240,8 @@ const Projects = () => {
                                 {portfolio
                                     .filter(item => selectedCategory === 'All' || (item.skills && item.skills.includes(selectedCategory)))
                                     .map((item) => (
-                                        <div key={item.id} onClick={() => { setSelectedImage(item); incrementStat(item.id, 'view'); }} className="group relative bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden backdrop-blur-sm shadow-lg dark:shadow-none rounded-xl cursor-pointer">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent dark:from-black opacity-80 z-10"></div>
+                                        <div key={item.id} onClick={(e) => { if (e.target.closest('button, a')) return; setSelectedImage(item); incrementStat(item.id, 'view'); }} className="group relative bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden backdrop-blur-sm shadow-lg dark:shadow-none rounded-xl cursor-pointer">
+                                            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent dark:from-black opacity-80 z-10 pointer-events-none"></div>
                                             {item.image_url && (
                                                 <img
                                                     src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolio/${item.image_url}`}
@@ -283,16 +283,16 @@ const Projects = () => {
                                                     </div>
 
                                                     {item.project_url && (
-                                                        <a
-                                                            href={item.project_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center px-4 py-2 text-sm font-bold text-black bg-cyan-500 hover:bg-cyan-400 transition-all duration-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:shadow-[0_0_20px_rgba(34,211,238,0.5)] clip-path-polygon"
-                                                            onClick={(e) => e.stopPropagation()}
+                                                        <button
+                                                            className="inline-flex items-center px-4 py-2 text-sm font-bold text-black bg-cyan-500 hover:bg-cyan-400 transition-all duration-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                window.open(item.project_url, '_blank', 'noopener,noreferrer');
+                                                            }}
                                                             style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
                                                         >
-                                                            VIEW <ExternalLink className="w-3 h-3 ml-1" />
-                                                        </a>
+                                                            VIEW PROJECT <ExternalLink className="w-3 h-3 ml-1" />
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>

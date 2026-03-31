@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: #ffffff;
+    color: #111827;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background-color: #3B82F6;
+    color: #ffffff;
+  }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-primary text-white font-semibold rounded-md transition-all duration-200 hover:bg-blue-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-muted text-foreground font-semibold rounded-md transition-all duration-200 hover:bg-gray-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 border-4 border-primary text-primary font-semibold rounded-md bg-transparent transition-all duration-200 hover:bg-primary hover:text-white hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary;
+  }
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center px-6 py-3 border-4 border-white text-white font-semibold rounded-md bg-transparent transition-all duration-200 hover:bg-white hover:text-primary hover:scale-105 focus:outline-none;
+  }
+
+  /* ── Cards ── */
+  .card-flat {
+    @apply bg-white rounded-lg p-6 transition-all duration-200 hover:scale-[1.02] cursor-pointer;
+  }
+  .card-blue {
+    @apply bg-blue-50 rounded-lg p-6 transition-all duration-200 hover:bg-blue-100 hover:scale-[1.02];
+  }
+  .card-green {
+    @apply bg-emerald-50 rounded-lg p-6 transition-all duration-200 hover:bg-emerald-100 hover:scale-[1.02];
+  }
+
+  /* ── Inputs ── */
+  .input-flat {
+    @apply w-full bg-muted text-foreground px-4 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:bg-white focus:border-2 focus:border-primary;
+  }
+  textarea.input-flat {
+    @apply resize-none;
+  }
+
+  /* ── Section backgrounds ── */
+  .section-white {
+    @apply bg-white;
+  }
+  .section-muted {
+    @apply bg-gray-100;
+  }
+  .section-primary {
+    @apply bg-primary;
+  }
+  .section-secondary {
+    @apply bg-secondary;
+  }
+  .section-accent {
+    @apply bg-accent;
+  }
+  .section-dark {
+    @apply bg-foreground;
+  }
+
+  /* ── Container ── */
+  .container-max {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* ── Section heading ── */
+  .section-label {
+    @apply text-xs font-bold uppercase tracking-widest;
+  }
+  .section-title {
+    @apply text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-foreground;
+  }
+  .section-title-white {
+    @apply text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-white;
+  }
+
+  /* ── Tag / Badge ── */
+  .tag {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+  }
+  .tag-blue {
+    @apply tag bg-blue-100 text-primary;
+  }
+  .tag-green {
+    @apply tag bg-emerald-100 text-emerald-700;
+  }
+  .tag-amber {
+    @apply tag bg-amber-100 text-amber-700;
+  }
+
+  /* ── Icon circle ── */
+  .icon-circle {
+    @apply flex items-center justify-center rounded-full bg-white;
+  }
+}
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
