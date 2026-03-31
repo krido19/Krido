@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase } from './supabaseClient';
 import Loading from './components/Loading';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
@@ -15,6 +16,35 @@ const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
 const Activities  = React.lazy(() => import('./pages/Activities'));
 const AppDownloads = React.lazy(() => import('./pages/AppDownloads'));
 const NotFound    = React.lazy(() => import('./pages/NotFound'));
+const ComingSoon  = React.lazy(() => import('./pages/ComingSoon'));
+
+// ── Public Route Wrapper (Membelokkan pengunjung jika Launch Countdown aktif)
+const PublicRoute = ({ children }) => {
+  const [launchMode, setLaunchMode] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const checkLaunchMode = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('launch_countdown_enabled')
+          .limit(1)
+          .single();
+        setLaunchMode(!!data?.launch_countdown_enabled);
+      } catch (err) {
+        setLaunchMode(false); // Fallback ke normal jika gagal
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkLaunchMode();
+  }, []);
+
+  if (loading) return <Loading />;
+  if (launchMode) return <Navigate to="/coming-soon" replace />;
+  return children;
+};
 
 // ── Admin pages ────────────────────────────────────────────────────────────
 const Dashboard         = React.lazy(() => import('./pages/Dashboard'));
@@ -40,12 +70,15 @@ function App() {
         <React.Suspense fallback={<Loading />}>
           <Routes>
             {/* ── Public ── */}
-            <Route path="/"           element={<Home />} />
-            <Route path="/services"   element={<Services />} />
-            <Route path="/projects"   element={<Projects />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/activities" element={<Activities />} />
-            <Route path="/apps"       element={<AppDownloads />} />
+            <Route path="/"           element={<PublicRoute><Home /></PublicRoute>} />
+            <Route path="/services"   element={<PublicRoute><Services /></PublicRoute>} />
+            <Route path="/projects"   element={<PublicRoute><Projects /></PublicRoute>} />
+            <Route path="/projects/:id" element={<PublicRoute><ProjectDetail /></PublicRoute>} />
+            <Route path="/activities" element={<PublicRoute><Activities /></PublicRoute>} />
+            <Route path="/apps"       element={<PublicRoute><AppDownloads /></PublicRoute>} />
+            
+            {/* ── Unprotected Publics (Login & Coming Soon) ── */}
+            <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/login"      element={<Login />} />
 
             {/* ── Admin (Protected + AdminLayout sidebar) ── */}
