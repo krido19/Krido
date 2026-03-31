@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { Download, Smartphone, ArrowLeft, Terminal, Sun, Moon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import Scene from '../components/Scene';
 import SEO from '../components/SEO';
 import { SkeletonAppCard } from '../components/Skeleton';
 
@@ -153,11 +152,6 @@ const AppDownloads = () => {
                     }, null, 2)
                 }}
             />
-            {/* Background Scene */}
-            <div className="fixed inset-0 z-0">
-                <Scene theme={theme} />
-            </div>
-
             {notification && (
                 <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
                     <div className="bg-cyan-500 text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] font-bold flex items-center space-x-2 border-2 border-white dark:border-gray-800">
