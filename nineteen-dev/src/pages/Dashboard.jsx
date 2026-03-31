@@ -33,7 +33,7 @@ const Dashboard = () => {
       supabase.from('portfolio').select('*', { count: 'exact', head: true }),
       supabase.from('activities').select('*', { count: 'exact', head: true }),
       supabase.from('services').select('*', { count: 'exact', head: true }),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+      supabase.from('orders').select('*', { count: 'exact', head: true }),
     ]);
     setStats({ portfolio: pCount || 0, activities: aCount || 0, services: sCount || 0, orders: oCount || 0 });
     setLoading(false);
@@ -105,7 +105,10 @@ const Dashboard = () => {
             try {
               const { error } = await supabase
                 .from('profiles')
-                .update({ launch_countdown_enabled: nextMode })
+                .update({
+                  launch_countdown_enabled: nextMode,
+                  updated_at: new Date().toISOString()
+                })
                 .eq('id', profile.id);
               if (error) throw error;
               setProfile({ ...profile, launch_countdown_enabled: nextMode });
