@@ -181,7 +181,7 @@ export const ChatProvider = ({ children }) => {
         type: 'text'
       });
     }
-  }, [messages, addMessage]);
+  }, [messages, addMessage, isHumanHandoff, sessionId]);
 
   return (
     <ChatContext.Provider value={{

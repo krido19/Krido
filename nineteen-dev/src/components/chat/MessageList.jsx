@@ -3,7 +3,6 @@ import { useChatStore } from '../../contexts/ChatContext';
 import MessageBubble from './MessageBubble';
 import ProjectCard from './ProjectCard';
 import ContactCard from './ContactCard';
-import { Loader2 } from 'lucide-react';
 
 export default function MessageList() {
   const { messages, isTyping } = useChatStore();
@@ -14,7 +13,7 @@ export default function MessageList() {
   }, [messages, isTyping]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-gray-50/30 dark:bg-gray-900/30">
+    <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-1">
       {messages.map((msg) => {
         if (msg.type === 'text') {
           return <MessageBubble key={msg.id} message={msg} />;
@@ -29,17 +28,17 @@ export default function MessageList() {
         }
         return null;
       })}
-      
+
       {isTyping && (
         <div className="flex justify-start mb-4">
-           <div className="px-4 py-3 rounded-2xl bg-white dark:bg-gray-800 rounded-tl-sm border border-gray-100 dark:border-gray-700/50 shadow-sm flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></span>
-           </div>
+          <div className="px-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></span>
+          </div>
         </div>
       )}
-      
+
       <div ref={bottomRef} />
     </div>
   );
