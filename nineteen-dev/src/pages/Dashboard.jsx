@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { supabase } from '../supabaseClient';
 import {
   Briefcase, Activity, Zap, Package,
   MessageSquare, TrendingUp, Users, ChevronRight,
-  ShoppingCart, Star
+  ShoppingCart, Star, Rocket, Power
 } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({ portfolio: 0, activities: 0, services: 0, orders: 0 });
   const [loading, setLoading] = useState(true);
+  const [isTogglingLaunch, setIsTogglingLaunch] = useState(false);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -77,6 +79,53 @@ const Dashboard = () => {
           </h1>
           <p className="text-gray-500 font-medium text-sm">nineteen.dev Admin Dashboard</p>
         </div>
+      </div>
+
+      {/* Mode Launch / Coming Soon Toggle */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${profile?.launch_countdown_enabled ? 'bg-blue-600 text-white animate-pulse' : 'bg-gray-100 text-gray-500'}`}>
+            <Rocket className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-lg text-foreground mb-1">Coming Soon Mode</h3>
+            <p className="text-sm text-gray-500 max-w-md">
+              {profile?.launch_countdown_enabled 
+                ? 'Website is currently hidden behind the 4.4 Launch Countdown screen. Safe to make edits under the hood.' 
+                : 'Website is public and accessible globally. Visitors can see all live content.'}
+            </p>
+          </div>
+        </div>
+        <button
+          disabled={isTogglingLaunch || loading}
+          onClick={async () => {
+            if (!profile) return;
+            setIsTogglingLaunch(true);
+            const nextMode = !profile.launch_countdown_enabled;
+            try {
+              const { error } = await supabase
+                .from('profiles')
+                .update({ launch_countdown_enabled: nextMode })
+                .eq('id', profile.id);
+              if (error) throw error;
+              setProfile({ ...profile, launch_countdown_enabled: nextMode });
+              toast.success(`Sebaran publik diubah: ${nextMode ? 'Coming Soon' : 'Online'}`);
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal mengubah mode peluncuran');
+            } finally {
+              setIsTogglingLaunch(false);
+            }
+          }}
+          className={`shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-sm ${
+            profile?.launch_countdown_enabled 
+              ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+              : 'bg-primary text-white hover:bg-blue-700 hover:scale-105'
+          }`}
+        >
+          <Power className="w-4 h-4" />
+          {isTogglingLaunch ? 'Updating...' : profile?.launch_countdown_enabled ? 'Deactivate Countdown' : 'Activate 4.4 Countdown'}
+        </button>
       </div>
 
       {/* Stats */}
