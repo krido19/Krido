@@ -125,7 +125,7 @@ const AppDownloads = () => {
         <div className="min-h-screen bg-[#e0f2fe] dark:bg-black text-gray-900 dark:text-gray-300 font-mono selection:bg-pink-500 selection:text-white overflow-x-hidden relative transition-colors duration-300">
             <SEO
                 title="App Downloads"
-                description="Download latest Android APKs and applications by Krido Bahtiar."
+                description="Download latest Android APKs and applications by nineteen.dev."
                 url={`${window.location.origin}/apps`}
             />
             {/* Breadcrumb Schema for Sitelinks */}

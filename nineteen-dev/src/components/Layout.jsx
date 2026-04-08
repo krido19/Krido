@@ -72,7 +72,7 @@ const Layout = () => {
             <aside className={`fixed inset-y-0 left-0 z-30 w-64 flex-shrink-0 transition-transform duration-300 transform bg-white/90 dark:bg-black/60 backdrop-blur-md border-r border-gray-200 dark:border-gray-800 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
                 <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
                     <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 animate-pulse">
-                        Krido Bahtiar
+                        nineteen.dev
                     </span>
                     <button onClick={() => setSidebarOpen(false)} className="text-cyan-600 dark:text-cyan-400">
                         <X className="w-6 h-6" />
@@ -147,7 +147,7 @@ const Layout = () => {
                         <Menu className="w-6 h-6" />
                     </button>
                     <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500">
-                        Krido Bahtiar
+                        nineteen.dev
                     </span>
                     <button
                         onClick={toggleTheme}

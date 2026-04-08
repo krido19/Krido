@@ -20,7 +20,7 @@ export default function ChatHeader() {
         </div>
         <div>
           <h3 className="font-semibold text-white text-sm">
-            {isHumanHandoff ? 'Krido Bahtiar' : 'AI Assistant'}
+            {isHumanHandoff ? 'nineteen.dev' : 'AI Assistant'}
           </h3>
           <p className="text-xs text-blue-100 font-medium">
             {isHumanHandoff ? 'Online' : 'Usually replies instantly'}
