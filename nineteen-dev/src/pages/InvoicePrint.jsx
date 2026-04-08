@@ -12,23 +12,42 @@ const InvoicePrint = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [logoData, setLogoData] = useState(null);
+    const [qrData, setQrData] = useState(null);
 
-    // Load logo for PDF
+    // Load assets for PDF
     useEffect(() => {
-        const loadLogo = async () => {
+        const loadAssets = async () => {
             try {
-                const response = await fetch('/logo.png');
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setLogoData(reader.result);
+                // Load SVG Logo and convert to PNG for jsPDF
+                const svgRes = await fetch('/favicon.svg');
+                const svgText = await svgRes.text();
+                const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                const svgUrl = URL.createObjectURL(svgBlob);
+                
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512;
+                    canvas.height = 512;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 512, 512);
+                    setLogoData(canvas.toDataURL('image/png'));
+                    URL.revokeObjectURL(svgUrl);
                 };
-                reader.readAsDataURL(blob);
+                img.src = svgUrl;
+
+                // Load QR Code using QR Server API
+                const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://nineteen-dev.vercel.app/&margin=0';
+                const qrRes = await fetch(qrUrl);
+                const qrBlob = await qrRes.blob();
+                const qrReader = new FileReader();
+                qrReader.onloadend = () => setQrData(qrReader.result);
+                qrReader.readAsDataURL(qrBlob);
             } catch (error) {
-                console.error('Error loading logo:', error);
+                console.error('Error loading PDF assets:', error);
             }
         };
-        loadLogo();
+        loadAssets();
     }, []);
 
     useEffect(() => {
@@ -89,128 +108,188 @@ const InvoicePrint = () => {
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
 
+        // Setup Watermark
+        if (logoData) {
+            try {
+                doc.saveGraphicsState();
+                doc.setGState(new doc.GState({ opacity: 0.05 }));
+                // Center watermark
+                doc.addImage(logoData, 'PNG', 55, 120, 100, 100);
+                doc.restoreGraphicsState();
+            } catch (e) {
+                // Ignore if GState not supported
+            }
+        }
+
         // Add Logo
         if (logoData) {
-            doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
+            doc.addImage(logoData, 'PNG', 15, 10, 20, 20);
         }
 
         // Business Name next to logo
-        doc.setFontSize(16);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text(profile?.full_name || 'KRIDO BAHTIAR', 45, 18);
-        doc.setFont('helvetica', 'normal');
+        doc.text(profile?.full_name || 'nineteen.dev', 42, 22);
         doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
         if (profile?.phone) {
-            doc.text(`Telp: ${profile.phone}`, 45, 25);
+            doc.text(`Telp: ${profile.phone}`, 42, 29);
         }
 
         // INVOICE Title (Right Side)
         doc.setFontSize(28);
         doc.setFont('helvetica', 'bold');
-        doc.text('INVOICE', 190, 20, { align: 'right' });
+        doc.setTextColor(59, 130, 246); // Primary blue
+        doc.text('INVOICE', 195, 22, { align: 'right' });
 
-        // Invoice Number below INVOICE title
+        // Invoice Number
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(order.invoice_number, 190, 28, { align: 'right' });
+        doc.setTextColor(100, 100, 100);
+        doc.text(order.invoice_number, 195, 30, { align: 'right' });
 
-        // Divider
-        doc.setDrawColor(249, 115, 22);
+        // Blue Divider
+        doc.setDrawColor(59, 130, 246);
         doc.setLineWidth(0.8);
         doc.line(15, 40, 195, 40);
 
-        // Invoice Details Row
-        doc.setFontSize(10);
-        doc.text(`Tanggal: ${formatDate(order.created_at)}`, 15, 50);
+        // Reset text color
+        doc.setTextColor(0, 0, 0);
 
-        // Status with color
-        const statusText = order.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS';
-        if (order.status === 'paid') {
-            doc.setTextColor(34, 197, 94); // green
-        } else {
-            doc.setTextColor(234, 179, 8); // yellow
-        }
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Status: ${statusText}`, 195, 50, { align: 'right' });
-        doc.setTextColor(0); // reset to black
-
-        // Customer Info
+        // Left Section: Customer
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('Kepada:', 15, 60);
+        doc.text('Kepada:', 15, 52);
+        
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(order.customer_name, 15, 67);
+        doc.text(order.customer_name, 15, 59);
+        
+        let custY = 66;
         if (order.customer_phone) {
-            doc.text(`Telp: ${order.customer_phone}`, 15, 74);
+            doc.text(`Telp: ${order.customer_phone}`, 15, custY);
+            custY += 7;
         }
         if (order.customer_email) {
-            doc.text(`Email: ${order.customer_email}`, 15, 81);
+            doc.text(`Email: ${order.customer_email}`, 15, custY);
+            custY += 7;
         }
         if (order.customer_address) {
             const addressLines = doc.splitTextToSize(order.customer_address, 80);
-            doc.text(addressLines, 15, 88);
+            doc.text(addressLines, 15, custY);
         }
+
+        // Right Section: Dates and Status
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Tanggal:', 195, 52, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatDate(order.created_at), 195, 59, { align: 'right' });
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Status:', 195, 69, { align: 'right' });
+        
+        // Badge Rendering
+        const statusText = order.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS';
+        if (order.status === 'paid') {
+            doc.setFillColor(220, 252, 231); // green-100
+            doc.setTextColor(22, 163, 74); // green-600
+        } else {
+            doc.setFillColor(254, 240, 138); // yellow-200
+            doc.setTextColor(202, 138, 4); // yellow-600
+        }
+        const badgeWidth = order.status === 'paid' ? 25 : 35;
+        doc.roundedRect(195 - badgeWidth, 72, badgeWidth, 7, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(statusText, 195 - (badgeWidth / 2), 77, { align: 'center' });
 
         // Table Header
         const tableTop = 100;
-        doc.setFillColor(249, 115, 22);
+        doc.setFillColor(59, 130, 246);
         doc.rect(15, tableTop, 180, 10, 'F');
-        doc.setTextColor(255);
+        doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
         doc.text('Deskripsi', 25, tableTop + 7);
-        doc.text('Qty', 110, tableTop + 7);
-        doc.text('Harga', 130, tableTop + 7);
-        doc.text('Total', 165, tableTop + 7);
+        doc.text('Qty', 120, tableTop + 7, { align: 'center' });
+        doc.text('Harga', 160, tableTop + 7, { align: 'right' });
+        doc.text('Total', 190, tableTop + 7, { align: 'right' });
 
-        // Table Row
-        doc.setTextColor(0);
+        // Table Row (Dynamic length could be added loops later, but treating as single row for now)
+        doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
         const rowY = tableTop + 17;
         doc.text(order.service_name, 25, rowY);
-        doc.text(String(order.quantity), 110, rowY);
-        doc.text(formatCurrency(order.service_price), 130, rowY);
-        doc.text(formatCurrency(order.service_price * order.quantity), 165, rowY);
+        doc.text(String(order.quantity), 120, rowY, { align: 'center' });
+        doc.text(formatCurrency(order.service_price), 160, rowY, { align: 'right' });
+        doc.text(formatCurrency(order.service_price * order.quantity), 190, rowY, { align: 'right' });
 
-        // Summary
+        // Reset divider color for summaries
+        doc.setDrawColor(229, 231, 235); // gray-200
+        doc.setLineWidth(0.5);
+
+        // Summary Calculations Area
         const summaryTop = rowY + 20;
-        doc.line(120, summaryTop - 5, 190, summaryTop - 5);
+        doc.line(125, summaryTop - 5, 195, summaryTop - 5);
 
-        doc.text('Subtotal:', 130, summaryTop + 5);
+        doc.text('Subtotal:', 160, summaryTop + 5, { align: 'right' });
         doc.text(formatCurrency(order.service_price * order.quantity), 190, summaryTop + 5, { align: 'right' });
 
+        let currentYOffset = 12;
         if (order.discount > 0) {
-            doc.text('Diskon:', 130, summaryTop + 12);
-            doc.text(`- ${formatCurrency(order.discount)}`, 190, summaryTop + 12, { align: 'right' });
+            doc.text('Diskon:', 160, summaryTop + currentYOffset, { align: 'right' });
+            doc.setTextColor(239, 68, 68); // red text for discount
+            doc.text(`- ${formatCurrency(order.discount)}`, 190, summaryTop + currentYOffset, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+            currentYOffset += 7;
         }
 
         if (order.tax_percent > 0) {
             const taxAmount = ((order.service_price * order.quantity - order.discount) * order.tax_percent) / 100;
-            doc.text(`Pajak (${order.tax_percent}%):`, 130, summaryTop + 19);
-            doc.text(formatCurrency(taxAmount), 190, summaryTop + 19, { align: 'right' });
+            doc.text(`Pajak (${order.tax_percent}%):`, 160, summaryTop + currentYOffset, { align: 'right' });
+            doc.text(formatCurrency(taxAmount), 190, summaryTop + currentYOffset, { align: 'right' });
+            currentYOffset += 7;
         }
 
-        // Total
+        // Grand Total Line
+        doc.line(125, summaryTop + currentYOffset - 2, 195, summaryTop + currentYOffset - 2);
+        
+        const totalY = summaryTop + currentYOffset + 5;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
-        const totalY = summaryTop + (order.discount > 0 ? 30 : 20) + (order.tax_percent > 0 ? 7 : 0);
-        doc.line(120, totalY - 3, 190, totalY - 3);
-        doc.text('TOTAL:', 130, totalY + 5);
-        doc.text(formatCurrency(order.total_amount), 190, totalY + 5, { align: 'right' });
+        doc.text('TOTAL:', 160, totalY, { align: 'right' });
+        doc.setTextColor(59, 130, 246); // blue theme for final total numbers
+        doc.text(formatCurrency(order.total_amount), 190, totalY, { align: 'right' });
 
-        // Notes
+        // Area Catatan
         if (order.notes) {
+            doc.setTextColor(0, 0, 0);
+            doc.setFillColor(249, 250, 251); // Sangat tipis gray-50
+            doc.setDrawColor(243, 244, 246); // Border tipis abu
+            doc.roundedRect(15, totalY + 15, 180, 25, 2, 2, 'FD'); // Fill & Draw Boundary
+            
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text('Catatan:', 20, totalY + 25);
+            doc.text('Catatan:', 20, totalY + 22);
             doc.setFont('helvetica', 'normal');
             const noteLines = doc.splitTextToSize(order.notes, 170);
-            doc.text(noteLines, 20, totalY + 32);
+            doc.text(noteLines, 20, totalY + 29);
         }
 
-        // Footer
+        // Add QR Code
+        if (qrData) {
+            doc.addImage(qrData, 'PNG', 170, 245, 25, 25);
+            doc.setFontSize(7);
+            doc.setTextColor(128, 128, 128);
+            doc.text('Scan Website', 182.5, 274, { align: 'center' });
+        }
+
+        // Footer Text
         doc.setFontSize(9);
-        doc.setTextColor(128);
-        doc.text('Terima kasih atas kepercayaan Anda!', 105, 280, { align: 'center' });
+        doc.setTextColor(128, 128, 128);
+        doc.text('Invoice ini digenerate secara otomatis oleh nineteen.dev', 105, 280, { align: 'center' });
 
         // Save
         doc.save(`${order.invoice_number}.pdf`);
