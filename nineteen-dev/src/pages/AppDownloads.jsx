@@ -1,36 +1,124 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Link } from 'react-router-dom';
-import { Download, Smartphone, ArrowLeft, Terminal, Sun, Moon } from 'lucide-react';
+import { Download, Smartphone, Package, Star, CheckCircle, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
 import SEO from '../components/SEO';
-import { SkeletonAppCard } from '../components/Skeleton';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import toast, { Toaster } from 'react-hot-toast';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const ITEMS_PER_PAGE = 6;
+
+// ─── Skeleton Card ─────────────────────────────────────────────────────────────
+const SkeletonCard = () => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+        <div className="h-48 bg-gray-100" />
+        <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-gray-200 rounded-md" />
+                <div className="h-5 bg-gray-200 rounded w-32" />
+            </div>
+            <div className="h-4 bg-gray-100 rounded w-full mb-2" />
+            <div className="h-4 bg-gray-100 rounded w-3/4 mb-6" />
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="h-4 bg-gray-100 rounded w-20" />
+                <div className="h-9 bg-gray-200 rounded-lg w-32" />
+            </div>
+        </div>
+    </div>
+);
+
+// ─── App Card ──────────────────────────────────────────────────────────────────
+const AppCard = ({ app, onDownload, downloading }) => {
+    const imageUrl = app.image_url
+        ? `${SUPABASE_URL}/storage/v1/object/public/apks/${app.image_url}`
+        : null;
+
+    return (
+        <div className={`group bg-white rounded-xl shadow-sm border overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-1 flex flex-col
+            ${app.is_pinned ? 'border-primary/30 ring-1 ring-primary/20' : 'border-gray-100'}`}>
+
+            {/* Image */}
+            <div className="relative h-48 bg-blue-50 overflow-hidden shrink-0">
+                {imageUrl ? (
+                    <img
+                        src={imageUrl}
+                        alt={app.app_name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Smartphone className="w-16 h-16 text-primary/30" />
+                    </div>
+                )}
+                {/* Badges */}
+                <div className="absolute top-3 right-3 flex gap-2">
+                    {app.is_pinned && (
+                        <span className="flex items-center gap-1 px-2 py-1 text-xs font-bold bg-amber-400 text-amber-900 rounded-full shadow">
+                            <Star className="w-3 h-3 fill-amber-900" />
+                            Pinned
+                        </span>
+                    )}
+                    <span className="px-2 py-1 text-xs font-bold bg-primary text-white rounded-full shadow">
+                        v{app.version}
+                    </span>
+                </div>
+                {/* Gradient overlay at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/60 to-transparent" />
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex flex-col flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                        <Package className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                        {app.app_name}
+                    </h3>
+                </div>
+
+                <p className="text-sm text-gray-500 line-clamp-3 mb-6 flex-1 leading-relaxed">
+                    {app.description || 'Tidak ada deskripsi.'}
+                </p>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div>
+                        <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-0.5">Unduhan</p>
+                        <p className="text-sm font-bold text-foreground">
+                            {(app.download_count || 0).toLocaleString('id-ID')}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => onDownload(app)}
+                        disabled={downloading === app.id}
+                        className="inline-flex items-center gap-2 px-5 py-2 bg-primary hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all duration-200 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 shadow-sm hover:shadow-md"
+                    >
+                        {downloading === app.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Download className="w-4 h-4" />
+                        )}
+                        Unduh APK
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ─── AppDownloads Page ─────────────────────────────────────────────────────────
 const AppDownloads = () => {
     const [apps, setApps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
-    const ITEMS_PER_PAGE = 6;
-    const [notification, setNotification] = useState(null);
-    const { t, i18n } = useTranslation();
-
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-
-    useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
-
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-    };
+    const [downloading, setDownloading] = useState(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         fetchApps();
@@ -57,11 +145,7 @@ const AppDownloads = () => {
 
             if (error) throw error;
 
-            if (data.length < ITEMS_PER_PAGE) {
-                setHasMore(false);
-            } else {
-                setHasMore(true);
-            }
+            setHasMore(data.length === ITEMS_PER_PAGE);
 
             if (isLoadMore) {
                 setApps(prev => [...prev, ...data]);
@@ -71,6 +155,7 @@ const AppDownloads = () => {
             }
         } catch (error) {
             console.error('Error fetching apps:', error);
+            toast.error('Gagal memuat daftar aplikasi.');
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -78,25 +163,22 @@ const AppDownloads = () => {
     };
 
     const handleDownload = async (app) => {
+        setDownloading(app.id);
         try {
-            setNotification('Aplikasi sedang di download, tunggu sebentar...');
-            setTimeout(() => setNotification(null), 3000);
-
-            // Increment download count
             await supabase.rpc('increment_download_count', { app_id: app.id });
 
             const fileName = `${app.app_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-v${app.version}.apk`;
 
-            // Creates a temporary signed URL that forces the browser to download the file 
-            // with the specified filename via Content-Disposition header.
-            // This is much more efficient than using Blobs as it doesn't load the whole file into RAM.
             const { data, error } = await supabase.storage
                 .from('apks')
-                .createSignedUrl(app.apk_url, 60, {
-                    download: fileName
-                });
+                .createSignedUrl(app.apk_url, 60, { download: fileName });
 
             if (error) throw error;
+
+            toast.success(`Mengunduh ${app.app_name}...`, {
+                icon: '📥',
+                duration: 3000,
+            });
 
             const a = document.createElement('a');
             a.href = data.signedUrl;
@@ -105,202 +187,132 @@ const AppDownloads = () => {
             a.click();
             document.body.removeChild(a);
 
-            // Refresh list to update count
             fetchApps();
         } catch (error) {
-            console.error('Error downloading app:', error);
-            // Fallback to direct open if fetch fails (e.g. CORS)
-            const { data } = supabase.storage
-                .from('apks')
-                .getPublicUrl(app.apk_url);
+            console.error('Download error:', error);
+            toast.error('Gagal mengunduh. Mencoba metode alternatif...');
+            const { data } = supabase.storage.from('apks').getPublicUrl(app.apk_url);
             window.open(data.publicUrl, '_blank');
+        } finally {
+            setDownloading(null);
         }
     };
 
-    const changeLanguage = (lng) => {
-        i18n.changeLanguage(lng);
-    };
-
     return (
-        <div className="min-h-screen bg-[#e0f2fe] dark:bg-black text-gray-900 dark:text-gray-300 font-mono selection:bg-pink-500 selection:text-white overflow-x-hidden relative transition-colors duration-300">
+        <div className="min-h-screen bg-white">
             <SEO
-                title="App Downloads"
-                description="Download latest Android APKs and applications by nineteen.dev."
+                title="App Downloads — nineteen.dev"
+                description="Download aplikasi Android terbaru karya nineteen.dev. Akses APK versi terbaru secara aman dan gratis."
                 url={`${window.location.origin}/apps`}
             />
-            {/* Breadcrumb Schema for Sitelinks */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "BreadcrumbList",
-                        "itemListElement": [
-                            {
-                                "@type": "ListItem",
-                                "position": 1,
-                                "name": "Home",
-                                "item": window.location.origin
-                            },
-                            {
-                                "@type": "ListItem",
-                                "position": 2,
-                                "name": "App Downloads",
-                                "item": window.location.href
-                            }
-                        ]
-                    }, null, 2)
-                }}
-            />
-            {notification && (
-                <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-                    <div className="bg-cyan-500 text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.5)] font-bold flex items-center space-x-2 border-2 border-white dark:border-gray-800">
-                        <Download className="w-5 h-5 animate-pulse" />
-                        <span>{notification}</span>
-                    </div>
-                </div>
-            )}
+            <Toaster position="top-right" toastOptions={{ style: { fontFamily: 'Outfit, sans-serif', fontWeight: 600 } }} />
+            <Navbar />
 
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <Link to="/" className="flex items-center text-cyan-600 dark:text-cyan-400 hover:text-black dark:hover:text-white transition-colors">
-                            <ArrowLeft className="w-5 h-5 mr-2" />
-                            {t('back_to_home')}
-                        </Link>
-                        <div className="flex items-center space-x-4">
-                            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 animate-glitch hidden md:block">
-                                {t('app_repository')}
-                            </span>
-                            <div className="flex space-x-2 items-center">
-                                <button
-                                    onClick={() => changeLanguage('en')}
-                                    className={`px-2 py-1 text-xs font-bold rounded transition-colors ${i18n.language === 'en' ? 'bg-cyan-500 text-black' : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:text-black dark:hover:text-white'}`}
-                                >
-                                    EN
-                                </button>
-                                <button
-                                    onClick={() => changeLanguage('id')}
-                                    className={`px-2 py-1 text-xs font-bold rounded transition-colors ${i18n.language === 'id' ? 'bg-cyan-500 text-black' : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:text-black dark:hover:text-white'}`}
-                                >
-                                    ID
-                                </button>
-                                <button
-                                    onClick={toggleTheme}
-                                    className="p-2 ml-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
-                                    title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                                >
-                                    {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            {/* ── HERO ── */}
+            <section className="section-primary pt-32 pb-20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 -translate-y-1/3" />
+                <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full translate-y-1/2" />
+                <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-white/10 rounded-lg rotate-12 -translate-y-1/2" />
 
-            <div className="relative z-10 pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                <div className="text-center mb-16">
-                    <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter drop-shadow-sm dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                        {t('available_downloads')}
+                <div className="container-max relative text-center">
+                    <div className="inline-flex items-center gap-2 bg-white/15 text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-6">
+                        <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
+                        Unduhan Tersedia
+                    </div>
+                    <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight mb-4">
+                        Aplikasi Android
                     </h1>
-                    <p className="text-xl text-cyan-600 dark:text-cyan-500/80 max-w-2xl mx-auto">
-                        {t('access_latest_builds')}
+                    <p className="text-xl text-blue-100 font-medium max-w-2xl mx-auto">
+                        Download APK terbaru karya <span className="font-bold text-white">nineteen.dev</span> — gratis, aman, dan selalu diperbarui.
                     </p>
-                </div>
 
-                {loading && page === 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[...Array(6)].map((_, i) => <SkeletonAppCard key={i} />)}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {apps.map((app) => (
-                            <div key={app.id} className={`group relative bg-white/80 dark:bg-gray-900/80 border ${app.is_pinned ? 'border-cyan-500 shadow-[0_0_20px_rgba(34,211,238,0.2)]' : 'border-gray-200 dark:border-gray-800'} hover:border-pink-500 transition-all duration-300 overflow-hidden backdrop-blur-sm rounded-xl shadow-lg dark:shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-xl dark:hover:shadow-[0_0_25px_rgba(236,72,153,0.3)]`}>
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
-
-                                <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-800 overflow-hidden group-hover:bg-gray-300 dark:group-hover:bg-gray-700 transition-colors">
-                                    {app.image_url ? (
-                                        <img
-                                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/apks/${app.image_url}`}
-                                            alt={app.app_name}
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            <Smartphone className="w-16 h-16 text-gray-400 dark:text-cyan-400/50" />
-                                        </div>
-                                    )}
-                                    <div className="absolute top-4 right-4 flex space-x-2">
-                                        {app.is_pinned && (
-                                            <span className="px-2 py-1 text-xs font-bold text-black bg-yellow-400 rounded-full shadow-lg flex items-center">
-                                                PINNED
-                                            </span>
-                                        )}
-                                        <span className="px-3 py-1 text-xs font-bold text-black bg-cyan-400 rounded-full shadow-lg">
-                                            {t('version')}{app.version}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="p-8">
-
-                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-pink-600 dark:group-hover:text-pink-500 transition-colors">
-                                        {app.app_name}
-                                    </h3>
-
-                                    <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-3 h-20">
-                                        {app.description}
-                                    </p>
-
-                                    <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
-                                        <div className="text-sm text-gray-500">
-                                            <span className="block text-xs uppercase tracking-wider mb-1">{t('downloads_count')}</span>
-                                            <span className="text-gray-900 dark:text-white font-mono">{app.download_count}</span>
-                                        </div>
-
-                                        <button
-                                            onClick={() => handleDownload(app)}
-                                            className="flex items-center px-6 py-2 bg-gray-800 hover:bg-pink-500 text-white font-bold rounded transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(236,72,153,0.5)] clip-path-polygon"
-                                            style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
-                                        >
-                                            <Download className="w-4 h-4 mr-2" />
-                                            {t('get_apk')}
-                                        </button>
-                                    </div>
-                                </div>
+                    {/* Trust indicators */}
+                    <div className="flex flex-wrap items-center justify-center gap-6 mt-10">
+                        {[
+                            { icon: <CheckCircle className="w-4 h-4" />, text: 'Bebas Malware' },
+                            { icon: <CheckCircle className="w-4 h-4" />, text: 'Selalu Diperbarui' },
+                            { icon: <CheckCircle className="w-4 h-4" />, text: 'Unduhan Langsung' },
+                        ].map(({ icon, text }) => (
+                            <div key={text} className="flex items-center gap-2 text-blue-100 text-sm font-semibold">
+                                <span className="text-secondary">{icon}</span>
+                                {text}
                             </div>
                         ))}
                     </div>
-                )}
+                </div>
+            </section>
 
-                {/* Load More Button */}
-                {!loading && hasMore && apps.length > 0 && (
-                    <div className="flex justify-center mt-12 mb-8">
-                        <button
-                            onClick={() => fetchApps(true)}
-                            disabled={loadingMore}
-                            className="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm tracking-wider rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                        >
-                            {loadingMore ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div>
-                                    LOADING...
-                                </>
-                            ) : (
-                                t('load_more') || 'LOAD MORE'
-                            )}
-                        </button>
-                    </div>
-                )}
+            {/* ── APP LIST ── */}
+            <section className="section-muted py-20">
+                <div className="container-max">
 
-                {!loading && apps.length === 0 && (
-                    <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm">
-                        <Terminal className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                        <h2 className="text-2xl font-bold text-gray-500">{t('no_data_found')}</h2>
-                        <p className="text-gray-500 dark:text-gray-600">{t('repository_empty')}</p>
+                    {/* Section header */}
+                    <div className="flex items-end justify-between mb-10">
+                        <div>
+                            <p className="section-label text-primary mb-2">Koleksi Aplikasi</p>
+                            <h2 className="section-title">
+                                {loading ? 'Memuat...' : `${apps.length} Aplikasi Tersedia`}
+                            </h2>
+                        </div>
+                        {!loading && apps.length > 0 && (
+                            <p className="text-sm text-gray-400 font-medium hidden md:block">
+                                Diurutkan berdasarkan terbaru
+                            </p>
+                        )}
                     </div>
-                )}
-            </div>
+
+                    {/* App Grid */}
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+                        </div>
+                    ) : apps.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {apps.map((app) => (
+                                <AppCard
+                                    key={app.id}
+                                    app={app}
+                                    onDownload={handleDownload}
+                                    downloading={downloading}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-24 bg-white rounded-xl border border-dashed border-gray-200">
+                            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Package className="w-8 h-8 text-primary" />
+                            </div>
+                            <h3 className="text-xl font-bold text-foreground mb-2">Belum Ada Aplikasi</h3>
+                            <p className="text-gray-400 text-sm">Aplikasi akan segera tersedia. Pantau terus!</p>
+                        </div>
+                    )}
+
+                    {/* Load More */}
+                    {!loading && hasMore && apps.length > 0 && (
+                        <div className="flex justify-center mt-12">
+                            <button
+                                onClick={() => fetchApps(true)}
+                                disabled={loadingMore}
+                                className="inline-flex items-center gap-2 px-8 py-3 bg-white border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                            >
+                                {loadingMore ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Memuat...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="w-4 h-4" />
+                                        Muat Lebih Banyak
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            <Footer />
         </div>
     );
 };
