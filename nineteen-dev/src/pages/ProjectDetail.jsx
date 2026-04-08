@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ExternalLink, Calendar, Eye, Share2, MessageCircle, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Calendar, Eye, Share2, MessageCircle, Link as LinkIcon, Download, Loader2, FileArchive } from 'lucide-react';
 import SEO from '../components/SEO';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -15,6 +15,7 @@ const ProjectDetail = () => {
   const { t } = useTranslation();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     fetchProjectDetail();
@@ -57,6 +58,35 @@ const ProjectDetail = () => {
     if (!url) return null;
     const m = url.match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
     return m ? m[1] : null;
+  };
+
+  const handleDownload = async () => {
+    if (!project?.download_url) return;
+    setDownloading(true);
+    try {
+      // Ambil ekstensi dari nama file asli, lalu buat nama baru dari judul project
+      const originalName = project.download_file_name || project.download_url.split('/').pop();
+      const ext = originalName.split('.').pop();
+      const safeTitle = project.title.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+      const friendlyName = `${safeTitle}.${ext}`;
+
+      const { data, error } = await supabase.storage
+        .from('downloads')
+        .createSignedUrl(project.download_url, 120, { download: friendlyName });
+      if (error) throw error;
+      const a = document.createElement('a');
+      a.href = data.signedUrl;
+      a.download = friendlyName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success(`Mengunduh ${friendlyName}...`, { icon: '📥' });
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal mengunduh file.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const parseScreenshot = (str) => {
@@ -169,6 +199,20 @@ const ProjectDetail = () => {
                     >
                       Kunjungi Proyek <ExternalLink className="w-4 h-4" />
                     </a>
+                  )}
+
+                  {project.download_url && (
+                    <button
+                      onClick={handleDownload}
+                      disabled={downloading}
+                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:scale-100 shadow-sm hover:shadow-emerald-500/30 hover:shadow-md"
+                    >
+                      {downloading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Mengunduh...</>
+                      ) : (
+                        <><Download className="w-4 h-4" />Unduh {project.download_file_name ? project.download_file_name.split('.').pop().toUpperCase() : 'File'}</>
+                      )}
+                    </button>
                   )}
                   
                   <button

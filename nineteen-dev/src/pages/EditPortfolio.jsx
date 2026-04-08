@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, ArrowLeft, Save } from 'lucide-react';
+import { Upload, ArrowLeft, Save, FileDown, X, FileArchive } from 'lucide-react';
 import { optimizeImage } from '../utils/imageOptimizer';
 import SEO from '../components/SEO';
 
@@ -27,6 +27,9 @@ const EditPortfolio = () => {
   const [content, setContent] = useState('');
   const [screenshots, setScreenshots] = useState([]);
   const [uploadingScreen, setUploadingScreen] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState(null);
+  const [downloadFileName, setDownloadFileName] = useState('');
+  const [uploadingDownload, setUploadingDownload] = useState(false);
 
   useEffect(() => { if (id) fetchPortfolioItem(id); }, [id]);
 
@@ -43,6 +46,8 @@ const EditPortfolio = () => {
         setImageUrl(data.image_url);
         setSkills(data.skills ? data.skills.join(', ') : '');
         setContent(data.content || '');
+        setDownloadUrl(data.download_url || null);
+        setDownloadFileName(data.download_file_name || '');
         const parsedScreenshots = (data.screenshots || []).map(str => {
           try {
             const parsed = JSON.parse(str);
@@ -97,6 +102,26 @@ const EditPortfolio = () => {
     setScreenshots(prev => prev.map((item, i) => i === index ? { ...item, caption: value } : item));
   };
 
+  const handleDownloadFileUpload = async (event) => {
+    try {
+      setUploadingDownload(true);
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop();
+      const fileName = `download_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('downloads').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      setDownloadUrl(fileName);
+      setDownloadFileName(file.name);
+    } catch (error) { alert(error.message); }
+    finally { setUploadingDownload(false); }
+  };
+
+  const handleRemoveDownload = () => {
+    setDownloadUrl(null);
+    setDownloadFileName('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -104,7 +129,7 @@ const EditPortfolio = () => {
       const { data: { user } } = await supabase.auth.getUser();
       const skillsArray = skills.split(',').map(s => s.trim()).filter(Boolean);
       const screenshotsToSave = screenshots.map(s => JSON.stringify(s));
-      const portfolioData = { user_id: user.id, title, description, content, project_url: projectUrl, video_url: videoUrl, image_url: imageUrl, screenshots: screenshotsToSave, skills: skillsArray };
+      const portfolioData = { user_id: user.id, title, description, content, project_url: projectUrl, video_url: videoUrl, image_url: imageUrl, screenshots: screenshotsToSave, skills: skillsArray, download_url: downloadUrl || null, download_file_name: downloadFileName || null };
       const { error } = id
         ? await supabase.from('portfolio').update(portfolioData).eq('id', id)
         : await supabase.from('portfolio').insert([portfolioData]);
@@ -169,6 +194,33 @@ const EditPortfolio = () => {
 
           <Field label="YouTube Video URL (opsional)" htmlFor="videoUrl" hint="Paste link YouTube untuk tampilkan video di modal proyek">
             <input id="videoUrl" type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="input-flat" />
+          </Field>
+
+          {/* Download File */}
+          <Field label="File Unduhan (APK / ZIP / PDF / dll)" hint="Upload file yang bisa diunduh pengunjung dari halaman proyek">
+            <div className="space-y-3">
+              {downloadUrl ? (
+                <div className="flex items-center gap-3 p-3 bg-blue-50 border border-primary/20 rounded-lg">
+                  <FileArchive className="w-5 h-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">{downloadFileName || downloadUrl}</p>
+                    <p className="text-xs text-gray-400">File sudah diupload</p>
+                  </div>
+                  <button type="button" onClick={handleRemoveDownload} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Hapus file">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-muted hover:bg-gray-200 text-foreground text-sm font-semibold rounded-md cursor-pointer transition-colors">
+                  {uploadingDownload ? (
+                    <><span className="w-4 h-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />Mengupload...</>
+                  ) : (
+                    <><FileDown className="w-4 h-4" />Upload File Unduhan</>
+                  )}
+                  <input type="file" className="hidden" accept="*/*" onChange={handleDownloadFileUpload} disabled={uploadingDownload} />
+                </label>
+              )}
+            </div>
           </Field>
 
           <Field label="Penjelasan Detail / Konten Panjang" htmlFor="content" hint="Jelaskan secara detail tentang proyek ini. Baris baru (enter) akan dibaca.">
