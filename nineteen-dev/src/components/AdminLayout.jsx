@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 import {
   LayoutDashboard, User, Briefcase, Activity,
   Package, Zap, ShoppingCart, MessageSquare,
-  LogOut, ExternalLink, Menu, X, ChevronRight
+  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard
 } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -17,6 +17,7 @@ const navItems = [
   { to: '/dashboard/apps', icon: Package, label: 'Apps' },
   { to: '/dashboard/services', icon: Zap, label: 'Services' },
   { to: '/dashboard/orders', icon: ShoppingCart, label: 'Orders' },
+  { to: '/dashboard/payments', icon: CreditCard, label: 'Payments' },
   { to: '/dashboard/chats', icon: MessageSquare, label: 'Chats' },
 ];
 
@@ -68,11 +69,10 @@ const SidebarContent = ({ profile, isActive, setSidebarOpen, handleLogout }) => 
             key={to}
             to={to}
             onClick={() => setSidebarOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-md mb-1 text-sm font-semibold transition-all duration-200 group ${
-              active
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md mb-1 text-sm font-semibold transition-all duration-200 group ${active
                 ? 'bg-primary text-white'
                 : 'text-gray-600 hover:bg-muted hover:text-foreground'
-            }`}
+              }`}
           >
             <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-gray-400 group-hover:text-primary'}`} />
             {label}

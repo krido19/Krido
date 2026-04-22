@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/bayargg/:path*",
+      "destination": "https://www.bayar.gg/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -9,7 +9,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+      },
+      '/bayargg': {
+        target: 'https://www.bayar.gg',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/bayargg/, '/api'),
       }
     }
   }
 })
+
