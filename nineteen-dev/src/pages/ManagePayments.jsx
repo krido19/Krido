@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink } from 'lucide-react';
+import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink, Trash2 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { listPayments, checkPayment } from '../utils/bayargg';
+import { checkTransaction } from '../utils/pakasir';
 
 const STATUS_CONFIG = {
     pending: { label: 'Menunggu', cls: 'bg-amber-50 text-amber-700' },
     paid: { label: 'Lunas', cls: 'bg-emerald-50 text-emerald-700' },
+    completed: { label: 'Lunas', cls: 'bg-emerald-50 text-emerald-700' },
     expired: { label: 'Kadaluarsa', cls: 'bg-gray-100 text-gray-500' },
     cancelled: { label: 'Dibatalkan', cls: 'bg-red-50 text-red-600' },
 };
@@ -16,6 +18,13 @@ const METHOD_LABEL = {
     gopay_qris: 'GoPay QRIS',
     qris_user: 'BRI QRIS',
     ovo: 'OVO',
+    // Pakasir
+    bni_va: 'BNI VA',
+    bri_va: 'BRI VA',
+    cimb_niaga_va: 'CIMB Niaga VA',
+    permata_va: 'Permata VA',
+    maybank_va: 'Maybank VA',
+    atm_bersama_va: 'ATM Bersama',
 };
 
 const formatCurrency = (amount) =>
@@ -34,6 +43,24 @@ const ManagePayments = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [copiedId, setCopiedId] = useState(null);
     const [checkingId, setCheckingId] = useState(null);
+
+    const [hiddenPayments, setHiddenPayments] = useState(() => {
+        try {
+            const saved = localStorage.getItem('bayargg_hidden_payments');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    const [pakasirPayments, setPakasirPayments] = useState(() => {
+        try {
+            const saved = localStorage.getItem('pakasir_history');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
 
     const fetchPayments = useCallback(async (page = 1) => {
         try {
@@ -58,17 +85,30 @@ const ManagePayments = () => {
         return () => clearTimeout(timer);
     }, [fetchPayments]);
 
-    const handleCheckStatus = async (invoiceId) => {
+    const handleCheckStatus = async (invoiceId, provider, amount) => {
         try {
             setCheckingId(invoiceId);
-            const res = await checkPayment(invoiceId);
-            setPayments((prev) =>
-                prev.map((p) =>
-                    p.invoice_id === invoiceId ? { ...p, status: res.status, paid_at: res.paid_at } : p
-                )
-            );
+            if (provider === 'pakasir') {
+                console.log(`[pakasir] Checking status for ${invoiceId} amount ${amount}...`);
+                const res = await checkTransaction(invoiceId, amount);
+                console.log(`[pakasir] Cek Status response:`, JSON.stringify(res, null, 2));
+                const status = res.transaction.status;
+                const paidAt = res.transaction.completed_at;
+                const updated = pakasirPayments.map((p) =>
+                    p.invoice_id === invoiceId ? { ...p, status, paid_at: paidAt } : p
+                );
+                setPakasirPayments(updated);
+                localStorage.setItem('pakasir_history', JSON.stringify(updated));
+            } else {
+                const res = await checkPayment(invoiceId);
+                setPayments((prev) =>
+                    prev.map((p) =>
+                        p.invoice_id === invoiceId ? { ...p, status: res.status, paid_at: res.paid_at } : p
+                    )
+                );
+            }
         } catch (err) {
-            console.error('Error checking payment:', err);
+            console.error('[check_status_error] Error checking payment:', err);
         } finally {
             setCheckingId(null);
         }
@@ -80,6 +120,28 @@ const ManagePayments = () => {
             setTimeout(() => setCopiedId(null), 2000);
         });
     };
+
+    const handleHide = (invoiceId) => {
+        if (!window.confirm('Apakah Anda yakin ingin menyembunyikan pembayaran ini dari daftar? (Hanya disembunyikan di perangkat ini)')) return;
+        const newHidden = [...hiddenPayments, invoiceId];
+        setHiddenPayments(newHidden);
+        localStorage.setItem('bayargg_hidden_payments', JSON.stringify(newHidden));
+    };
+
+    const localPakasirFiltered = pakasirPayments.filter((p) => {
+        if (statusFilter && p.status !== statusFilter) {
+            // Pakasir returns 'completed' for 'paid'
+            if (!(statusFilter === 'paid' && p.status === 'completed')) return false;
+        }
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            return p.invoice_id?.toLowerCase().includes(term) || p.customer_name?.toLowerCase().includes(term) || p.customer_email?.toLowerCase().includes(term);
+        }
+        return true;
+    });
+
+    const allPayments = [...localPakasirFiltered, ...payments];
+    const displayPayments = allPayments.filter((p) => !hiddenPayments.includes(p.invoice_id));
 
     return (
         <div>
@@ -146,7 +208,7 @@ const ManagePayments = () => {
                     <div className="inline-block w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
                     <p className="text-sm text-gray-400 font-medium">Memuat data...</p>
                 </div>
-            ) : payments.length === 0 ? (
+            ) : displayPayments.length === 0 ? (
                 <div className="bg-white rounded-lg p-16 text-center">
                     <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                     <p className="font-semibold text-gray-400">Belum ada data pembayaran</p>
@@ -169,7 +231,7 @@ const ManagePayments = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {payments.map((p) => {
+                                {displayPayments.map((p) => {
                                     const { label, cls } = STATUS_CONFIG[p.status] || { label: p.status, cls: 'bg-gray-100 text-gray-600' };
                                     return (
                                         <tr key={p.invoice_id} className="border-b border-gray-50 hover:bg-muted/50 transition-colors">
@@ -211,7 +273,7 @@ const ManagePayments = () => {
                                                     {/* Cek Status */}
                                                     {p.status === 'pending' && (
                                                         <button
-                                                            onClick={() => handleCheckStatus(p.invoice_id)}
+                                                            onClick={() => handleCheckStatus(p.invoice_id, p._provider, p.amount)}
                                                             disabled={checkingId === p.invoice_id}
                                                             className="p-2 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50"
                                                             title="Cek Status"
@@ -244,6 +306,14 @@ const ManagePayments = () => {
                                                             <ExternalLink className="w-3.5 h-3.5" />
                                                         </a>
                                                     )}
+                                                    {/* Hide */}
+                                                    <button
+                                                        onClick={() => handleHide(p.invoice_id)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                        title="Sembunyikan Pembayaran"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>

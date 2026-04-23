@@ -4,6 +4,7 @@ import { ArrowLeft, Send, Copy, Check, ExternalLink, AlertCircle, Loader2 } from
 import { QRCodeSVG } from 'qrcode.react';
 import SEO from '../components/SEO';
 import { createPayment, getPaymentMethods } from '../utils/bayargg';
+import { createTransaction } from '../utils/pakasir';
 
 const Field = ({ label, required, hint, children }) => (
     <div>
@@ -15,11 +16,21 @@ const Field = ({ label, required, hint, children }) => (
     </div>
 );
 
-const METHODS = [
+const BAYARGG_METHODS = [
     { id: 'qris', label: 'QRIS (default)', limit: 'Maks Rp 500.000' },
     { id: 'gopay_qris', label: 'GoPay Merchant QRIS', limit: 'Tanpa limit', recommended: true },
     { id: 'qris_user', label: 'BRI Merchant QRIS', limit: 'Tanpa limit' },
     { id: 'ovo', label: 'OVO', limit: 'Butuh akun OVO terhubung' },
+];
+
+const PAKASIR_METHODS = [
+    { id: 'qris', label: 'QRIS', limit: 'Otomatis' },
+    { id: 'bni_va', label: 'BNI Virtual Account', limit: 'Manual VA' },
+    { id: 'bri_va', label: 'BRI Virtual Account', limit: 'Manual VA' },
+    { id: 'cimb_niaga_va', label: 'CIMB Niaga VA', limit: 'Manual VA' },
+    { id: 'permata_va', label: 'Permata VA', limit: 'Manual VA' },
+    { id: 'maybank_va', label: 'Maybank VA', limit: 'Manual VA' },
+    { id: 'atm_bersama_va', label: 'ATM Bersama', limit: 'Manual VA' },
 ];
 
 const formatCurrency = (amount) =>
@@ -36,6 +47,7 @@ const CreatePayment = () => {
         customer_phone: '',
         payment_method: 'qris',
     });
+    const [provider, setProvider] = useState('bayargg'); // 'bayargg' | 'pakasir'
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [availableMethods, setAvailableMethods] = useState([]);
@@ -50,8 +62,8 @@ const CreatePayment = () => {
                 setHasSubscription(res.user_status?.has_active_subscription ?? true);
             })
             .catch(() => {
-                // Fallback: tampilkan semua metode
-                setAvailableMethods(METHODS.map((m) => m.id));
+                // Fallback: tampilkan semua metode bayargg
+                setAvailableMethods(BAYARGG_METHODS.map((m) => m.id));
             });
     }, []);
 
@@ -66,24 +78,64 @@ const CreatePayment = () => {
             setError('Nominal minimal Rp 1.000');
             return;
         }
-        if (form.payment_method === 'qris' && amount > 500000) {
+        if (provider === 'bayargg' && form.payment_method === 'qris' && amount > 500000) {
             setError('Metode QRIS maksimal Rp 500.000. Gunakan GoPay atau BRI QRIS untuk nominal lebih besar.');
             return;
         }
 
         try {
             setSaving(true);
-            const payload = {
-                amount,
-                payment_method: form.payment_method,
-                ...(form.description && { description: form.description }),
-                ...(form.customer_name && { customer_name: form.customer_name }),
-                ...(form.customer_email && { customer_email: form.customer_email }),
-                ...(form.customer_phone && { customer_phone: form.customer_phone }),
-            };
-            const res = await createPayment(payload);
-            console.log('[bayargg] createPayment response:', JSON.stringify(res, null, 2));
-            setResult(res);
+            if (provider === 'bayargg') {
+                const payload = {
+                    amount,
+                    payment_method: form.payment_method,
+                    ...(form.description && { description: form.description }),
+                    ...(form.customer_name && { customer_name: form.customer_name }),
+                    ...(form.customer_email && { customer_email: form.customer_email }),
+                    ...(form.customer_phone && { customer_phone: form.customer_phone }),
+                };
+                const res = await createPayment(payload);
+                setResult({ ...res, _provider: 'bayargg' });
+            } else {
+                // Pakasir: URL-based (API POST transactioncreate diblokir Cloudflare dari proxy)
+                const orderId = `INV${Date.now()}`;
+                const slug = import.meta.env.VITE_PAKASIR_PROJECT_SLUG || 'nineteen-dev';
+                const pakasirUrl = `https://app.pakasir.com/pay/${slug}/${Math.round(amount)}?order_id=${orderId}`;
+
+                const localData = {
+                    invoice_id: orderId,
+                    amount: amount,
+                    final_amount: amount, // akan terupdate saat di-cek status
+                    payment_method: form.payment_method || 'qris',
+                    customer_name: form.customer_name || null,
+                    customer_email: form.customer_email || null,
+                    description: form.description || null,
+                    status: 'pending',
+                    created_at: new Date().toISOString(),
+                    payment_url: pakasirUrl,
+                    _provider: 'pakasir',
+                };
+
+                const savedStr = localStorage.getItem('pakasir_history');
+                const saved = savedStr ? JSON.parse(savedStr) : [];
+                localStorage.setItem('pakasir_history', JSON.stringify([localData, ...saved]));
+
+                // Buka halaman Pakasir langsung saat itu juga
+                window.open(pakasirUrl, '_blank', 'noopener,noreferrer');
+
+                setResult({
+                    _provider: 'pakasir',
+                    payment_url: pakasirUrl,
+                    order_id: orderId,
+                    amount,
+                    final_amount: amount,
+                    qris_string: null,
+                    va_number: null,
+                    payment_method: form.payment_method,
+                });
+                setSaving(false);
+                return;
+            }
         } catch (err) {
             setError(err.message || 'Gagal membuat pembayaran. Coba lagi.');
         } finally {
@@ -102,7 +154,8 @@ const CreatePayment = () => {
 
     const handleDone = () => navigate('/dashboard/payments');
 
-    const selectedMethod = METHODS.find((m) => m.id === form.payment_method);
+    const currentMethods = provider === 'bayargg' ? BAYARGG_METHODS : PAKASIR_METHODS;
+    const selectedMethod = currentMethods.find((m) => m.id === form.payment_method);
 
     return (
         <div>
@@ -130,6 +183,35 @@ const CreatePayment = () => {
                         <p>{error}</p>
                     </div>
                 )}
+
+                {/* Gateway Provider */}
+                <div className="bg-white rounded-lg p-6 space-y-5">
+                    <h2 className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">
+                        Provider Pembayaran
+                    </h2>
+                    <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setProvider('bayargg');
+                                set('payment_method', 'qris');
+                            }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold border-2 transition-all ${provider === 'bayargg' ? 'border-primary bg-blue-50 text-primary' : 'border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                        >
+                            Bayar.gg
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setProvider('pakasir');
+                                set('payment_method', 'qris');
+                            }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold border-2 transition-all ${provider === 'pakasir' ? 'border-primary bg-blue-50 text-primary' : 'border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                        >
+                            Pakasir
+                        </button>
+                    </div>
+                </div>
 
                 {/* Nominal & Metode */}
                 <div className="bg-white rounded-lg p-6 space-y-5">
@@ -159,9 +241,9 @@ const CreatePayment = () => {
 
                     <Field label="Metode Pembayaran">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {METHODS.map((m) => {
-                                const isAvail = availableMethods.length === 0 || availableMethods.includes(m.id);
-                                const isPremium = m.id !== 'qris' && !hasSubscription;
+                            {currentMethods.map((m) => {
+                                const isAvail = provider === 'pakasir' || availableMethods.length === 0 || availableMethods.includes(m.id);
+                                const isPremium = provider === 'bayargg' && m.id !== 'qris' && !hasSubscription;
                                 const disabled = !isAvail || isPremium;
                                 return (
                                     <label
@@ -272,7 +354,106 @@ const CreatePayment = () => {
 
             {/* Success Modal */}
             {result && (() => {
-                // Normalisasi response — bayar.gg pakai result.data
+                const isPakasir = result._provider === 'pakasir';
+
+                // Pakasir URL-based approach
+                if (isPakasir) {
+                    const pakasirUrl = result.payment_url;
+                    return (
+                        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                                <div className="text-center mb-5">
+                                    <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Check className="w-7 h-7 text-emerald-600" />
+                                    </div>
+                                    <h3 className="text-lg font-extrabold text-foreground">Link Pakasir Dibuat!</h3>
+                                    <p className="text-sm text-gray-400 mt-1">Invoice <span className="font-mono font-bold text-primary">{result.order_id}</span></p>
+                                </div>
+
+                                <div className="bg-muted rounded-xl p-4 space-y-2 mb-5 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Nominal</span>
+                                        <span className="font-bold text-foreground">{formatCurrency(result.amount)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Provider</span>
+                                        <span className="font-semibold text-blue-600">Pakasir</span>
+                                    </div>
+                                </div>
+
+                                {/* QR Code QRIS asli dari API, atau VA Number */}
+                                {result.va_number ? (
+                                    <div className="mb-5 bg-blue-50 border border-blue-100 text-center py-4 rounded-xl">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">Nomor Virtual Account</p>
+                                        <p className="text-xl font-mono font-extrabold text-blue-700 tracking-wider">{result.va_number}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(result.va_number);
+                                                setCopied(true);
+                                                setTimeout(() => setCopied(false), 2000);
+                                            }}
+                                            className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-800"
+                                        >
+                                            {copied ? 'Berhasil disalin!' : 'Salin Nomor VA'}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center mb-5">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Scan QR untuk Bayar</p>
+                                        <div className="p-3 bg-white border-2 border-gray-100 rounded-xl shadow-sm">
+                                            <QRCodeSVG
+                                                value={result.qris_string || pakasirUrl}
+                                                size={200}
+                                                bgColor="#ffffff"
+                                                fgColor="#111827"
+                                                level="M"
+                                                includeMargin={false}
+                                            />
+                                        </div>
+                                        <p className="text-[11px] text-gray-400 mt-2 text-center">
+                                            {result.qris_string ? 'Scan dengan aplikasi mobile banking / e-wallet' : 'Atau gunakan link di bawah'}
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="mb-5">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Link Pembayaran</p>
+                                    <div className="bg-blue-50 rounded-lg p-3 mb-2">
+                                        <p className="text-xs text-primary font-mono truncate">{pakasirUrl}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(pakasirUrl);
+                                                setCopied(true);
+                                                setTimeout(() => setCopied(false), 2000);
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:bg-muted transition-colors"
+                                        >
+                                            {copied ? <><Check className="w-4 h-4 text-emerald-600" /> Disalin!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
+                                        </button>
+                                        <a
+                                            href={pakasirUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            Buka Halaman
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <button onClick={handleDone} className="w-full btn-secondary text-sm">
+                                    Lihat Semua Pembayaran
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
                 const pay = result.data || result.payment || result;
                 const paymentUrl = pay.payment_url || result.payment_url;
                 const invoiceId = pay.invoice_id;
@@ -280,9 +461,8 @@ const CreatePayment = () => {
                 const uniqueCode = pay.unique_code;
                 const paymentMethod = pay.payment_method;
                 const expiresAt = pay.expires_at;
-                // QR: prioritas qris_static_image_url > qr_code/qr_url > encode qris_string/payment_url
-                const qrImageUrl = pay.qris_static_image_url || pay.qr_code || pay.qr_url || result.qr_code || null;
                 const qrString = pay.qris_string || pay.qr_string || pay.qris_static_string || null;
+                const vaNumber = null;
 
                 return (
                     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -297,11 +477,10 @@ const CreatePayment = () => {
                             </div>
 
                             {/* QR Code */}
-                            {(qrString || paymentUrl) && (
+                            {(qrString || paymentUrl) && !vaNumber && (
                                 <div className="flex flex-col items-center mb-5">
                                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Scan QR untuk Bayar</p>
                                     <div className="p-3 bg-white border-2 border-gray-100 rounded-xl shadow-sm">
-                                        {/* Encode lokal pakai qris_string — tidak ada CORS issue */}
                                         <QRCodeSVG
                                             value={qrString || paymentUrl}
                                             size={200}
@@ -311,7 +490,28 @@ const CreatePayment = () => {
                                             includeMargin={false}
                                         />
                                     </div>
-                                    <p className="text-[11px] text-gray-400 mt-2 text-center">Atau gunakan link di bawah</p>
+                                    {paymentUrl && <p className="text-[11px] text-gray-400 mt-2 text-center">Atau gunakan link di bawah</p>}
+                                </div>
+                            )}
+
+                            {/* VA Number (Pakasir) */}
+                            {vaNumber && (
+                                <div className="mb-5 bg-blue-50 border border-blue-100 text-center py-4 rounded-xl">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">Nomor Virtual Account</p>
+                                    <p className="text-xl font-mono font-extrabold text-blue-700 tracking-wider">
+                                        {vaNumber}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(vaNumber);
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }}
+                                        className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-800"
+                                    >
+                                        {copied ? 'Berhasil disalin!' : 'Salin Nomor VA'}
+                                    </button>
                                 </div>
                             )}
 
@@ -336,7 +536,7 @@ const CreatePayment = () => {
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Metode</span>
                                     <span className="font-semibold text-foreground">
-                                        {METHODS.find((m) => m.id === paymentMethod)?.label || paymentMethod || '—'}
+                                        {(isPakasir ? PAKASIR_METHODS : BAYARGG_METHODS).find((m) => m.id === paymentMethod)?.label || paymentMethod || '—'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -346,7 +546,7 @@ const CreatePayment = () => {
                             </div>
 
                             {/* Link Bayar */}
-                            {paymentUrl && (
+                            {paymentUrl && !isPakasir && (
                                 <div className="mb-5">
                                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Link Pembayaran</p>
                                     <div className="flex items-center gap-2 bg-blue-50 rounded-lg p-3">
