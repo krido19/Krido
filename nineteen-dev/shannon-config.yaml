@@ -1,0 +1,121 @@
+# Shannon AI Pentester - Config untuk nineteen-dev
+# Jalankan: npx @keygraph/shannon start -u http://localhost:5173 -r "d:\Antigravity\KRIDO\Krido\nineteen-dev" -c ./shannon-config.yaml -w "nineteen-dev-audit"
+
+description: >
+  React + Vite SPA untuk platform SMK HAFIDZ / Krido.
+  Menggunakan Supabase sebagai backend (auth, database, storage).
+  Terdapat 2 area utama: Public (landing page, portofolio, services, activities, apps)
+  dan Admin (dashboard terproteksi dengan Supabase Auth, manajemen konten, orders,
+  payments via bayar.gg QRIS, dan chat management).
+  File .env berisi credentials lokal—bukan production.
+
+authentication:
+  login_type: form
+  login_url: "http://localhost:5173/login"
+  credentials:
+    username: "kidtoiba39@gmail.com"    # ← Ganti ini
+    password: "kidtoiba39@gmail.com" # ← Ganti ini
+  login_flow:
+    - "Type $username into the email input field"
+    - "Type $password into the password input field"
+    - "Click the login button"
+  success_condition:
+    type: url_contains
+    value: "/dashboard"
+
+rules:
+  avoid:
+    # Hindari logout agar sesi tetap aktif selama scan
+    - description: "Jangan akses halaman logout"
+      type: path
+      url_path: "/logout"
+    # Hindari coming-soon (bisa redirect seluruh app)
+    - description: "Jangan akses coming-soon mode"
+      type: path
+      url_path: "/coming-soon"
+
+  focus:
+    # ── Public Pages ──────────────────────────────────
+    - description: "Uji halaman publik utama"
+      type: path
+      url_path: "/"
+    - description: "Uji halaman services"
+      type: path
+      url_path: "/services"
+    - description: "Uji halaman projects dan project detail"
+      type: path
+      url_path: "/projects"
+    - description: "Uji halaman activities"
+      type: path
+      url_path: "/activities"
+    - description: "Uji halaman app downloads"
+      type: path
+      url_path: "/apps"
+
+    # ── Admin Dashboard ───────────────────────────────
+    - description: "Uji dashboard utama admin"
+      type: path
+      url_path: "/dashboard"
+    - description: "Uji edit profile admin"
+      type: path
+      url_path: "/profile"
+
+    # ── Manajemen Portfolio ───────────────────────────
+    - description: "Uji halaman manage portfolio (listing, tambah, edit)"
+      type: path
+      url_path: "/portfolio"
+    - description: "Uji form tambah portfolio baru"
+      type: path
+      url_path: "/portfolio/new"
+
+    # ── Manajemen Activities ──────────────────────────
+    - description: "Uji manajemen activities (listing, tambah, edit)"
+      type: path
+      url_path: "/dashboard/activities"
+    - description: "Uji form tambah activity baru"
+      type: path
+      url_path: "/dashboard/activities/new"
+
+    # ── Manajemen Apps ────────────────────────────────
+    - description: "Uji manajemen app downloads"
+      type: path
+      url_path: "/dashboard/apps"
+    - description: "Uji form tambah app baru"
+      type: path
+      url_path: "/dashboard/apps/new"
+
+    # ── Manajemen Services ────────────────────────────
+    - description: "Uji manajemen services"
+      type: path
+      url_path: "/dashboard/services"
+    - description: "Uji form tambah service baru"
+      type: path
+      url_path: "/dashboard/services/new"
+
+    # ── Manajemen Orders ──────────────────────────────
+    - description: "Uji manajemen orders (listing, tambah, edit, invoice)"
+      type: path
+      url_path: "/dashboard/orders"
+    - description: "Uji form tambah order baru"
+      type: path
+      url_path: "/dashboard/orders/new"
+
+    # ── Manajemen Chats ───────────────────────────────
+    - description: "Uji manajemen chat (listing pesan masuk)"
+      type: path
+      url_path: "/dashboard/chats"
+
+    # ── Manajemen Payments (bayar.gg) ─────────────────
+    - description: "Uji halaman manage payments (QRIS, GoPay, OVO, BRI)"
+      type: path
+      url_path: "/dashboard/payments"
+    - description: "Uji form create payment baru"
+      type: path
+      url_path: "/dashboard/payments/new"
+
+pipeline:
+  # Gunakan 'subscription' jika pakai Anthropic subscription plan (bukan pay-as-you-go)
+  # Hapus baris ini jika menggunakan pay-as-you-go / API key berbayar penuh
+  retry_preset: subscription
+  # Kurangi ke 2 jika sering kena rate limit, naikkan ke 5 untuk scan lebih cepat
+  max_concurrent_pipelines: 3
