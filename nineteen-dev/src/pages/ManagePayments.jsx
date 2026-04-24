@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink, Trash2, X, Eye } from 'lucide-react';
+import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink, Trash2, X, Eye, Download, CheckCircle, Clock, BarChart, MessageCircle } from 'lucide-react';
 import SEO from '../components/SEO';
 import { listPayments, checkPayment } from '../utils/bayargg';
 import { checkTransaction } from '../utils/pakasir';
@@ -86,6 +86,35 @@ const ManagePayments = () => {
         return () => clearTimeout(timer);
     }, [fetchPayments]);
 
+    // Background Polling for Pending Transactions
+    useEffect(() => {
+        const pollInterval = setInterval(() => {
+            const currentAllPayments = [...pakasirPayments, ...payments];
+            const pendingInvoices = currentAllPayments.filter(p => p.status === 'pending' && !hiddenPayments.includes(p.invoice_id));
+
+            if (pendingInvoices.length > 0 && !loading) {
+                // Silently poll the first pending invoice to check if paid
+                const invoice = pendingInvoices[0];
+                if (invoice._provider === 'pakasir') {
+                    checkTransaction(invoice.invoice_id, invoice.amount).then(res => {
+                        if (res.transaction && res.transaction.status !== 'pending') {
+                            const updated = pakasirPayments.map(p => p.invoice_id === invoice.invoice_id ? { ...p, status: res.transaction.status, paid_at: res.transaction.completed_at } : p);
+                            setPakasirPayments(updated);
+                            localStorage.setItem('pakasir_history', JSON.stringify(updated));
+                        }
+                    }).catch(() => { });
+                } else {
+                    checkPayment(invoice.invoice_id).then(res => {
+                        if (res.status !== 'pending') {
+                            setPayments(prev => prev.map(p => p.invoice_id === invoice.invoice_id ? { ...p, status: res.status, paid_at: res.paid_at } : p));
+                        }
+                    }).catch(() => { });
+                }
+            }
+        }, 30000); // 30 seconds
+        return () => clearInterval(pollInterval);
+    }, [payments, pakasirPayments, loading, hiddenPayments]);
+
     const handleCheckStatus = async (invoiceId, provider, amount) => {
         try {
             setCheckingId(invoiceId);
@@ -144,28 +173,122 @@ const ManagePayments = () => {
     const allPayments = [...localPakasirFiltered, ...payments];
     const displayPayments = allPayments.filter((p) => !hiddenPayments.includes(p.invoice_id));
 
+    // Stats Calculations (Bulan Ini)
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const isThisMonth = (dateStr) => {
+        if (!dateStr) return false;
+        const d = new Date(dateStr);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    };
+
+    const stats = displayPayments.reduce((acc, p) => {
+        if (p.status === 'paid' || p.status === 'completed') {
+            acc.totalLunas += (p.final_amount ?? p.amount);
+            if (isThisMonth(p.paid_at || p.created_at)) acc.lunasBulanIni += (p.final_amount ?? p.amount);
+        } else if (p.status === 'pending') {
+            acc.totalPending += (p.final_amount ?? p.amount);
+        }
+        acc.totalTransaksi++;
+        return acc;
+    }, { totalLunas: 0, lunasBulanIni: 0, totalPending: 0, totalTransaksi: 0 });
+
+    const exportCSV = () => {
+        const headers = ["Invoice ID", "Provider", "Customer Name", "Customer Email", "Metode", "Status", "Nominal", "Tanggal Dibuat", "Tanggal Lunas"];
+        const rows = displayPayments.map(p => [
+            p.invoice_id,
+            p._provider || 'bayar.gg',
+            p.customer_name || '-',
+            p.customer_email || '-',
+            METHOD_LABEL[p.payment_method] || p.payment_method,
+            p.status,
+            p.final_amount ?? p.amount,
+            p.created_at ? new Date(p.created_at).toLocaleString('id-ID') : '-',
+            p.paid_at ? new Date(p.paid_at).toLocaleString('id-ID') : '-'
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.map(cell => `"${cell}"`).join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Data_Pembayaran_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div>
             <SEO title="Manage Payments" />
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-extrabold text-foreground">Payments</h1>
                     <p className="text-sm text-gray-400 font-medium mt-0.5">
-                        Kelola pembayaran QRIS via bayar.gg
-                        {pagination.total > 0 && (
-                            <span className="ml-2 text-primary font-bold">{pagination.total} transaksi</span>
-                        )}
+                        Kelola data pembayaran (bayar.gg & Pakasir)
                     </p>
                 </div>
-                <button
-                    onClick={() => navigate('/dashboard/payments/new')}
-                    className="btn-primary gap-2 text-sm"
-                >
-                    <Plus className="w-4 h-4" />
-                    Buat Pembayaran
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={exportCSV}
+                        disabled={displayPayments.length === 0}
+                        className="btn-secondary gap-2 text-sm disabled:opacity-50"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={() => navigate('/dashboard/payments/new')}
+                        className="btn-primary gap-2 text-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Buat Pembayaran
+                    </button>
+                </div>
+            </div>
+
+            {/* Dashboard Stat Widgets */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center shrink-0">
+                        <CheckCircle className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Lunas Bulan Ini</p>
+                        <h3 className="text-xl font-extrabold text-gray-900">{formatCurrency(stats.lunasBulanIni)}</h3>
+                    </div>
+                </div>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0">
+                        <BarChart className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Total Pencairan</p>
+                        <h3 className="text-xl font-extrabold text-gray-900">{formatCurrency(stats.totalLunas)}</h3>
+                    </div>
+                </div>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+                    <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center shrink-0">
+                        <Clock className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Total Tertunda</p>
+                        <h3 className="text-xl font-extrabold text-gray-900">{formatCurrency(stats.totalPending)}</h3>
+                    </div>
+                </div>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+                    <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center shrink-0">
+                        <CreditCard className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Total Invoice</p>
+                        <h3 className="text-xl font-extrabold text-gray-900">{stats.totalTransaksi} Transaksi</h3>
+                    </div>
+                </div>
             </div>
 
             {/* Filters */}
@@ -286,6 +409,18 @@ const ManagePayments = () => {
                                                         >
                                                             <RefreshCw className={`w-3.5 h-3.5 ${checkingId === p.invoice_id ? 'animate-spin' : ''}`} />
                                                         </button>
+                                                    )}
+                                                    {/* WhatsApp Reminder */}
+                                                    {p.status === 'pending' && (
+                                                        <a
+                                                            href={`https://api.whatsapp.com/send?phone=${p.customer_phone ? p.customer_phone.replace(/^0/, '62') : ''}&text=${encodeURIComponent(`Halo ${p.customer_name || 'Kak'},\n\nIni pengingat tagihan Anda sebesar *${formatCurrency(p.final_amount ?? p.amount)}* dengan Invoice *${p.invoice_id}*.\n\nSilakan selesaikan pembayaran di: ${window.location.origin}/invoice/${p.invoice_id}\n\nTerima kasih!`)}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                                                            title="Kirim Pesan WhatsApp"
+                                                        >
+                                                            <MessageCircle className="w-3.5 h-3.5" />
+                                                        </a>
                                                     )}
                                                     {/* Copy Link */}
                                                     {p.payment_url && (

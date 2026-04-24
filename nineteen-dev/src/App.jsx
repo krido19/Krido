@@ -17,6 +17,7 @@ const Activities = React.lazy(() => import('./pages/Activities'));
 const AppDownloads = React.lazy(() => import('./pages/AppDownloads'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const ComingSoon = React.lazy(() => import('./pages/ComingSoon'));
+const InvoiceLanding = React.lazy(() => import('./pages/InvoiceLanding'));
 
 // ── Public Route Wrapper (Membelokkan pengunjung jika Launch Countdown aktif)
 const PublicRoute = ({ children }) => {
@@ -79,9 +80,10 @@ function App() {
             <Route path="/activities" element={<PublicRoute><Activities /></PublicRoute>} />
             <Route path="/apps" element={<PublicRoute><AppDownloads /></PublicRoute>} />
 
-            {/* ── Unprotected Publics (Login & Coming Soon) ── */}
+            {/* ── Unprotected Publics (Login, Invoice, Coming Soon) ── */}
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/invoice/:id" element={<InvoiceLanding />} />
 
             {/* ── Admin (Protected + AdminLayout sidebar) ── */}
             <Route element={
