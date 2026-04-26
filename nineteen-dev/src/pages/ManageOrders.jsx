@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, FileText, Search, Filter, ShoppingCart } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileText, Search, Filter, ShoppingCart, Wallet } from 'lucide-react';
 import SEO from '../components/SEO';
 
 const ManageOrders = () => {
@@ -189,6 +189,18 @@ const ManageOrders = () => {
                           >
                             <FileText className="w-4 h-4" />
                           </button>
+                          {order.status !== 'paid' && (
+                            <button
+                              onClick={() => {
+                                const desc = `Pembayaran untuk Order ${order.invoice_number} - ${order.service_name}`;
+                                navigate(`/dashboard/payments/new?order_id=${order.id}&amount=${order.total_amount}&name=${encodeURIComponent(order.customer_name)}&email=${encodeURIComponent(order.customer_email || '')}&phone=${encodeURIComponent(order.customer_phone || '')}&desc=${encodeURIComponent(desc)}`);
+                              }}
+                              className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                              title="Buat Link Pembayaran"
+                            >
+                              <Wallet className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => navigate(`/dashboard/orders/edit/${order.id}`)}
                             className="p-2 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-md transition-colors"

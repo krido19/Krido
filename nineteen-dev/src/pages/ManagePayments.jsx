@@ -4,6 +4,8 @@ import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink,
 import SEO from '../components/SEO';
 import { listPayments, checkPayment } from '../utils/bayargg';
 import { checkTransaction } from '../utils/pakasir';
+import { supabase } from '../supabaseClient';
+import toast from 'react-hot-toast';
 
 const STATUS_CONFIG = {
     pending: { label: 'Menunggu', cls: 'bg-amber-50 text-amber-700' },
@@ -54,14 +56,7 @@ const ManagePayments = () => {
         }
     });
 
-    const [pakasirPayments, setPakasirPayments] = useState(() => {
-        try {
-            const saved = localStorage.getItem('pakasir_history');
-            return saved ? JSON.parse(saved) : [];
-        } catch {
-            return [];
-        }
-    });
+    const [pakasirPayments, setPakasirPayments] = useState([]);
 
     const fetchPayments = useCallback(async (page = 1) => {
         try {
@@ -81,32 +76,77 @@ const ManagePayments = () => {
         }
     }, [statusFilter, searchTerm]);
 
+    const fetchPakasirPayments = useCallback(async () => {
+        try {
+            let query = supabase
+                .from('payment_logs')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (statusFilter) {
+                // Pakasir 'paid' bisa tersimpan sebagai 'completed'
+                if (statusFilter === 'paid') {
+                    query = query.in('status', ['paid', 'completed']);
+                } else {
+                    query = query.eq('status', statusFilter);
+                }
+            }
+            if (searchTerm) {
+                query = query.or(`invoice_id.ilike.%${searchTerm}%,customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%`);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            // Tambah _provider agar cocok dengan format gabungan
+            setPakasirPayments((data || []).map(p => ({ ...p, _provider: 'pakasir' })));
+        } catch (err) {
+            console.error('Error fetching pakasir payments:', err);
+        }
+    }, [statusFilter, searchTerm]);
+
     useEffect(() => {
-        const timer = setTimeout(() => fetchPayments(1), 300);
+        const timer = setTimeout(() => {
+            fetchPayments(1);
+            fetchPakasirPayments();
+        }, 300);
         return () => clearTimeout(timer);
-    }, [fetchPayments]);
+    }, [fetchPayments, fetchPakasirPayments]);
 
     // Background Polling for Pending Transactions
     useEffect(() => {
-        const pollInterval = setInterval(() => {
+        const pollInterval = setInterval(async () => {
             const currentAllPayments = [...pakasirPayments, ...payments];
             const pendingInvoices = currentAllPayments.filter(p => p.status === 'pending' && !hiddenPayments.includes(p.invoice_id));
 
             if (pendingInvoices.length > 0 && !loading) {
-                // Silently poll the first pending invoice to check if paid
                 const invoice = pendingInvoices[0];
                 if (invoice._provider === 'pakasir') {
-                    checkTransaction(invoice.invoice_id, invoice.amount).then(res => {
+                    checkTransaction(invoice.invoice_id, invoice.amount).then(async res => {
                         if (res.transaction && res.transaction.status !== 'pending') {
-                            const updated = pakasirPayments.map(p => p.invoice_id === invoice.invoice_id ? { ...p, status: res.transaction.status, paid_at: res.transaction.completed_at } : p);
-                            setPakasirPayments(updated);
-                            localStorage.setItem('pakasir_history', JSON.stringify(updated));
+                            const newStatus = res.transaction.status;
+                            const paidAt = res.transaction.completed_at;
+                            // Update Supabase
+                            await supabase.from('payment_logs')
+                                .update({ status: newStatus, paid_at: paidAt })
+                                .eq('invoice_id', invoice.invoice_id);
+                            // Update state lokal
+                            setPakasirPayments(prev => prev.map(p =>
+                                p.invoice_id === invoice.invoice_id ? { ...p, status: newStatus, paid_at: paidAt } : p
+                            ));
+                            // Sync ke Orders
+                            supabase.from('orders').update({ status: 'paid', paid_at: paidAt }).eq('invoice_number', invoice.invoice_id).then(() => { });
+                            // Toast notification
+                            toast.success(`✅ Tagihan ${invoice.invoice_id} telah dilunasi!`, { duration: 7000 });
                         }
                     }).catch(() => { });
                 } else {
                     checkPayment(invoice.invoice_id).then(res => {
-                        if (res.status !== 'pending') {
+                        if (res.status !== 'pending' && (res.status === 'paid' || res.status === 'completed')) {
                             setPayments(prev => prev.map(p => p.invoice_id === invoice.invoice_id ? { ...p, status: res.status, paid_at: res.paid_at } : p));
+                            // Sync ke Orders
+                            supabase.from('orders').update({ status: 'paid', paid_at: res.paid_at }).eq('invoice_number', invoice.invoice_id).then(() => { });
+                            // Toast notification
+                            toast.success(`✅ Tagihan ${invoice.invoice_id} telah dilunasi!`, { duration: 7000 });
                         }
                     }).catch(() => { });
                 }
@@ -124,21 +164,34 @@ const ManagePayments = () => {
                 console.log(`[pakasir] Cek Status response:`, JSON.stringify(res, null, 2));
                 const status = res.transaction.status;
                 const paidAt = res.transaction.completed_at;
-                const updated = pakasirPayments.map((p) =>
-                    p.invoice_id === invoiceId ? { ...p, status, paid_at: paidAt } : p
+                // Update Supabase
+                await supabase.from('payment_logs')
+                    .update({ status, paid_at: paidAt })
+                    .eq('invoice_id', invoiceId);
+                // Update state lokal
+                setPakasirPayments(prev =>
+                    prev.map(p => p.invoice_id === invoiceId ? { ...p, status, paid_at: paidAt } : p)
                 );
-                setPakasirPayments(updated);
-                localStorage.setItem('pakasir_history', JSON.stringify(updated));
+                if (status === 'completed' || status === 'paid') {
+                    await supabase.from('orders').update({ status: 'paid', paid_at: paidAt }).eq('invoice_number', invoiceId);
+                    toast.success(`✅ Tagihan ${invoiceId} telah dilunasi!`);
+                }
             } else {
                 const res = await checkPayment(invoiceId);
+                const isPaid = res.status === 'paid' || res.status === 'completed';
                 setPayments((prev) =>
                     prev.map((p) =>
                         p.invoice_id === invoiceId ? { ...p, status: res.status, paid_at: res.paid_at } : p
                     )
                 );
+                if (isPaid) {
+                    await supabase.from('orders').update({ status: 'paid', paid_at: res.paid_at }).eq('invoice_number', invoiceId);
+                    toast.success(`✅ Tagihan ${invoiceId} telah dilunasi!`);
+                }
             }
         } catch (err) {
             console.error('[check_status_error] Error checking payment:', err);
+            toast.error('Gagal mengecek status pembayaran.');
         } finally {
             setCheckingId(null);
         }
@@ -160,7 +213,6 @@ const ManagePayments = () => {
 
     const localPakasirFiltered = pakasirPayments.filter((p) => {
         if (statusFilter && p.status !== statusFilter) {
-            // Pakasir returns 'completed' for 'paid'
             if (!(statusFilter === 'paid' && p.status === 'completed')) return false;
         }
         if (searchTerm) {

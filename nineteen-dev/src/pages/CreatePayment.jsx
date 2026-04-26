@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, Copy, Check, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import SEO from '../components/SEO';
 import { createPayment, getPaymentMethods } from '../utils/bayargg';
 import { createTransaction } from '../utils/pakasir';
+import { supabase } from '../supabaseClient';
 
 const Field = ({ label, required, hint, children }) => (
     <div>
@@ -38,13 +39,15 @@ const formatCurrency = (amount) =>
 
 const CreatePayment = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const urlOrderId = searchParams.get('order_id');
 
     const [form, setForm] = useState({
-        amount: '',
-        description: '',
-        customer_name: '',
-        customer_email: '',
-        customer_phone: '',
+        amount: searchParams.get('amount') || '',
+        description: searchParams.get('desc') || '',
+        customer_name: searchParams.get('name') || '',
+        customer_email: searchParams.get('email') || '',
+        customer_phone: searchParams.get('phone') || '',
         payment_method: 'qris',
     });
     const [provider, setProvider] = useState('bayargg'); // 'bayargg' | 'pakasir'
@@ -102,23 +105,21 @@ const CreatePayment = () => {
                 const slug = import.meta.env.VITE_PAKASIR_PROJECT_SLUG || 'nineteen-dev';
                 const pakasirUrl = `https://app.pakasir.com/pay/${slug}/${Math.round(amount)}?order_id=${orderId}`;
 
-                const localData = {
+                // Simpan ke Supabase payment_logs (sinkron antar-admin)
+                const { error: insertError } = await supabase.from('payment_logs').insert({
                     invoice_id: orderId,
+                    provider: 'pakasir',
                     amount: amount,
-                    final_amount: amount, // akan terupdate saat di-cek status
+                    final_amount: amount,
                     payment_method: form.payment_method || 'qris',
                     customer_name: form.customer_name || null,
                     customer_email: form.customer_email || null,
                     description: form.description || null,
                     status: 'pending',
-                    created_at: new Date().toISOString(),
                     payment_url: pakasirUrl,
-                    _provider: 'pakasir',
-                };
-
-                const savedStr = localStorage.getItem('pakasir_history');
-                const saved = savedStr ? JSON.parse(savedStr) : [];
-                localStorage.setItem('pakasir_history', JSON.stringify([localData, ...saved]));
+                    order_id: urlOrderId || null,
+                });
+                if (insertError) throw new Error('Gagal menyimpan log pembayaran: ' + insertError.message);
 
                 // Buka halaman Pakasir langsung saat itu juga
                 window.open(pakasirUrl, '_blank', 'noopener,noreferrer');
@@ -133,9 +134,16 @@ const CreatePayment = () => {
                     va_number: null,
                     payment_method: form.payment_method,
                 });
-                setSaving(false);
-                return;
             }
+
+            // Link payment ke order jika ada
+            const createdInvoiceId = provider === 'bayargg' ? result?.data?.invoice_id : result?.order_id;
+
+            // Jika payment dibuat dari Order, link invoice_number ke tabel orders
+            if (urlOrderId && createdInvoiceId) {
+                await supabase.from('orders').update({ invoice_number: createdInvoiceId }).eq('id', urlOrderId);
+            }
+
         } catch (err) {
             setError(err.message || 'Gagal membuat pembayaran. Coba lagi.');
         } finally {
@@ -229,6 +237,7 @@ const CreatePayment = () => {
                                 onChange={(e) => set('amount', e.target.value)}
                                 className="input-flat pl-10"
                                 placeholder="50000"
+                                disabled={!!urlOrderId}
                                 required
                             />
                         </div>
