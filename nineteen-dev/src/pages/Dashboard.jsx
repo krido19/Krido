@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import {
   Briefcase, Activity, Zap, Package,
   MessageSquare, TrendingUp, Users, ChevronRight,
-  ShoppingCart, Star, Rocket, Power
+  ShoppingCart, Star, Rocket, Power, Database
 } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -16,6 +16,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ portfolio: 0, activities: 0, services: 0, orders: 0 });
   const [loading, setLoading] = useState(true);
   const [isTogglingLaunch, setIsTogglingLaunch] = useState(false);
+  const [keepAlive, setKeepAlive] = useState(null);
+  const [isPinging, setIsPinging] = useState(false);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -23,6 +25,11 @@ const Dashboard = () => {
     setLoading(true);
     const { data: profileData } = await supabase.from('profiles').select('*').limit(1).single();
     setProfile(profileData);
+
+    const { data: keepAliveData, error: keepAliveError } = await supabase.from('keep_alives').select('*').order('check_time', { ascending: false }).limit(1).maybeSingle();
+    if (!keepAliveError) {
+      setKeepAlive(keepAliveData);
+    }
 
     const [
       { count: pCount },
@@ -82,7 +89,7 @@ const Dashboard = () => {
       </div>
 
       {/* Mode Launch / Coming Soon Toggle */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${profile?.launch_countdown_enabled ? 'bg-blue-600 text-white animate-pulse' : 'bg-gray-100 text-gray-500'}`}>
             <Rocket className="w-6 h-6" />
@@ -90,8 +97,8 @@ const Dashboard = () => {
           <div>
             <h3 className="font-extrabold text-lg text-foreground mb-1">Coming Soon Mode</h3>
             <p className="text-sm text-gray-500 max-w-md">
-              {profile?.launch_countdown_enabled 
-                ? 'Website is currently hidden behind the 4.4 Launch Countdown screen. Safe to make edits under the hood.' 
+              {profile?.launch_countdown_enabled
+                ? 'Website is currently hidden behind the 4.4 Launch Countdown screen. Safe to make edits under the hood.'
                 : 'Website is public and accessible globally. Visitors can see all live content.'}
             </p>
           </div>
@@ -120,14 +127,56 @@ const Dashboard = () => {
               setIsTogglingLaunch(false);
             }
           }}
-          className={`shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-sm ${
-            profile?.launch_countdown_enabled 
-              ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+          className={`shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-sm ${profile?.launch_countdown_enabled
+              ? 'bg-red-50 text-red-600 hover:bg-red-100'
               : 'bg-primary text-white hover:bg-blue-700 hover:scale-105'
-          }`}
+            }`}
         >
           <Power className="w-4 h-4" />
           {isTogglingLaunch ? 'Updating...' : profile?.launch_countdown_enabled ? 'Deactivate Countdown' : 'Activate 4.4 Countdown'}
+        </button>
+      </div>
+
+      {/* Database Keep Alive */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-green-50 text-green-600">
+            <Database className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-lg text-foreground mb-1">Database Keep Alive</h3>
+            <p className="text-sm text-gray-500 max-w-md">
+              Mencegah Supabase dari status paused.
+              {keepAlive ? (
+                <span className="block mt-1 font-medium text-gray-700">
+                  Terakhir jalan: {new Date(keepAlive.check_time).toLocaleString()} ({keepAlive.method})
+                </span>
+              ) : (
+                <span className="block mt-1 text-red-500 font-medium">Belum ada log aktif.</span>
+              )}
+            </p>
+          </div>
+        </div>
+        <button
+          disabled={isPinging || loading}
+          onClick={async () => {
+            setIsPinging(true);
+            try {
+              const { error } = await supabase.from('keep_alives').insert({ method: 'manual' });
+              if (error) throw error;
+              toast.success('Database di-ping secara manual!');
+              fetchData();
+            } catch (err) {
+              console.error(err);
+              toast.error('Gagal ping database. Pastikan tabel keep_alives ada.');
+            } finally {
+              setIsPinging(false);
+            }
+          }}
+          className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-sm bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
+        >
+          <Activity className="w-4 h-4" />
+          {isPinging ? 'Pinging...' : 'Ping Now'}
         </button>
       </div>
 
