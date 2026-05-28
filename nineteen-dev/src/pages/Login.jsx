@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { LogIn, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import SEO from '../components/SEO';
 
 const Login = () => {
@@ -10,11 +11,18 @@ const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!turnstileToken) {
+      setError('Please complete the Captcha verification.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -68,7 +76,7 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          <form key={error ? 'error' : 'normal'} onSubmit={handleLogin} className={`flex flex-col gap-5 ${error ? 'animate-shake' : ''}`}>
             <div>
               <label htmlFor="login-email" className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
                 Email Address
@@ -80,7 +88,7 @@ const Login = () => {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="input-flat border-2 border-transparent"
+                className={`input-flat border-2 transition-all duration-200 outline-none ${error ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' : 'border-transparent focus:border-primary/50 focus:ring-2 focus:ring-primary/20'}`}
               />
             </div>
             <div>
@@ -95,7 +103,7 @@ const Login = () => {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="input-flat border-2 border-transparent pr-12"
+                  className={`input-flat border-2 pr-12 transition-all duration-200 outline-none ${error ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' : 'border-transparent focus:border-primary/50 focus:ring-2 focus:ring-primary/20'}`}
                 />
                 <button
                   type="button"
@@ -106,12 +114,25 @@ const Login = () => {
                 </button>
               </div>
             </div>
+
+            <div className="mb-2 flex justify-center scale-90 sm:scale-100 origin-center transition-transform">
+              <Turnstile
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+                onSuccess={(token) => { setTurnstileToken(token); setError(""); }}
+                onError={() => setError("Captcha error, silakan coba lagi.")}
+                onExpire={() => setTurnstileToken("")}
+                options={{
+                  theme: "light"
+                }}
+              />
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
-              className="btn-primary w-full justify-center gap-2 mt-2 py-4 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={loading || !turnstileToken}
+              className="btn-primary w-full justify-center gap-2 mt-2 py-4 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
             >
-              <LogIn className="w-4 h-4" />
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
