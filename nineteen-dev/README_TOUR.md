@@ -109,7 +109,7 @@ ID menu dibuat otomatis di `navItems` menggunakan pola `menu-{label.toLowerCase(
 
 ## Cara Menambahkan Tour di Halaman Lain
 
-Untuk menambahkan panduan di halaman spesifik (misal `ManagePortfolio.jsx`), ikuti langkah berikut:
+Mulai Juni 2026, kita telah melakukan **refactoring** untuk memusatkan logika Joyride. Anda **TIDAK PERLU LAGI** mengulangi konfigurasi rumit di setiap halaman. Cukup gunakan Custom Hook `useTour` dan komponen wrapper `AppJoyride`.
 
 ### 1. Tambahkan ID pada Elemen Target
 
@@ -124,94 +124,47 @@ Untuk menambahkan panduan di halaman spesifik (misal `ManagePortfolio.jsx`), iku
 </div>
 ```
 
-### 2. Buat State & Steps Lokal di Halaman Tersebut
+### 2. Gunakan Custom Hook & Wrapper di Komponen Anda
 
 ```javascript
-import React, { useState, useEffect, useRef } from 'react';
-import { Joyride, STATUS } from 'react-joyride'; // ✅ named import!
+import React, { useState, useEffect } from 'react';
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 
-// ✅ WAJIB: Beacon transparan yang auto-klik dirinya sendiri
-// Tanpa ini, tombol hitam (beacon) akan muncul dan user harus klik manual — jelek!
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-  const localRef = useRef(null);
-  const combinedRef = ref || localRef;
-  useEffect(() => {
-    if (combinedRef?.current) combinedRef.current.click();
-  }, [combinedRef]);
-  const { continuous, index, isLastStep, size, step, ...domProps } = props;
-  return <span ref={combinedRef} {...domProps} style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }} />;
-});
+const ManagePortfolio = () => {
+  const [loading, setLoading] = useState(true);
 
-// stepIndex dikontrol manual untuk menghindari bug StrictMode double-invocation
-const [runTour, setRunTour] = useState(false);
-const [stepIndex, setStepIndex] = useState(0);
+  // PENTING: Gunakan useTour('nama_modul', !loading)
+  // Argumen 1: 'portfolio' (prefix untuk nama key di localStorage/sessionStorage)
+  // Argumen 2: isReady (boolean) — memastikan tour otomatis TIDAK JALAN sebelum loading selesai!
+  const { runTour, startTour, handleJoyrideCallback } = useTour('portfolio', !loading);
 
-const steps = [
-  {
-    target: '#add-portfolio-btn',
-    title: '➕ Tambah Portfolio',
-    content: 'Klik tombol ini untuk menambahkan portofolio baru.',
-    disableBeacon: true,
-    placement: 'bottom',
-  },
-  {
-    target: '#portfolio-table',
-    title: '📋 Daftar Portfolio',
-    content: 'Di sini Anda bisa melihat & mengelola semua portofolio.',
-    disableBeacon: true,
-    placement: 'top',
-  },
-];
+  const portfolioSteps = [
+    { target: '#add-portfolio-btn', title: '➕ Tambah', content: 'Klik di sini.', disableBeacon: true, placement: 'bottom' },
+    { target: '#portfolio-table', title: '📋 Daftar', content: 'Lihat daftar portofolio.', disableBeacon: true, placement: 'top' },
+  ];
 
-// Trigger otomatis dengan localStorage (1x selamanya untuk halaman ini)
-useEffect(() => {
-  if (!localStorage.getItem('tourPortfolioSeen')) {
-    setTimeout(() => { setStepIndex(0); setRunTour(true); }, 500);
-    localStorage.setItem('tourPortfolioSeen', 'true');
-  }
-}, []);
+  // (Contoh untuk halaman Form / Edit yang dipicu manual via tombol, Anda bisa menggunakan `startTour`)
+  // <button onClick={startTour}>Panduan Form</button>
 
-const handleCallback = (data) => {
-  const { status, type, action, index } = data;
-  if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-    setRunTour(false);
-    setStepIndex(0);
-  } else if (type === 'step:after') {
-    // ✅ Gunakan indeks absolut, BUKAN updater (prev => prev + 1) — StrictMode bug!
-    if (action === 'next') setStepIndex(index + 1);
-    if (action === 'prev') setStepIndex(index - 1);
-  }
+  return (
+    <>
+      <AppJoyride
+        steps={portfolioSteps}
+        run={runTour}
+        callback={handleJoyrideCallback}
+      />
+      {/* ...sisa JSX halaman... */}
+    </>
+  );
 };
 ```
 
-### 3. Render Komponen Joyride
-
-```jsx
-return (
-  <>
-    <Joyride
-      steps={steps}
-      run={runTour}
-      stepIndex={stepIndex}
-      continuous={true}
-      showSkipButton={true}
-      showProgress={true}
-      scrollToFirstStep={true}
-      disableScrolling={false}
-      disableScrollParentFix={false}
-      scrollDuration={600}
-      spotlightClicks={false}
-      beaconComponent={AutoClickBeacon}  {/* ✅ WAJIB — hilangkan tombol hitam */}
-      callback={handleCallback}
-      locale={{ back: 'Kembali', last: 'Selesai', next: 'Lanjut', skip: 'Lewati' }}
-      styles={{
-        options: { primaryColor: '#06b6d4', zIndex: 10000 },
-      }}
-    />
-    {/* ...sisa JSX halaman */}
-  </>
-);
-```
+**Keuntungan pendekatan baru ini:**
+- Anda tidak perlu menulis fungsi callback `STATUS.FINISHED` secara berulang.
+- Anda tidak perlu menulis komponen `AutoClickBeacon` atau konfigurasi CSS/Tooltip di setiap halaman.
+- Semua konfigurasi `react-joyride` terpusat di `AppJoyride.jsx`.
+- Penyimpanan state ke `sessionStorage` (untuk autostart) dan `localStorage` (agar tidak terus diulang) dikelola rapi di `useTour.js`.
 
 ---
 

@@ -4,33 +4,8 @@ import Avatar from '../components/Avatar';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Phone, Globe, Link2, AtSign, ExternalLink } from 'lucide-react';
 import SEO from '../components/SEO';
-import { Joyride, STATUS } from 'react-joyride';
-import TourTooltip from '../components/TourTooltip';
-// react-joyride v2 — named import wajib (tidak ada default export)
-
-// Beacon transparan yang mengklik dirinya sendiri otomatis — titik hitam Joyride tidak akan pernah muncul
-// Pola yang sama dengan AdminLayout.jsx (lihat README_TOUR.md)
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-  const localRef = useRef(null);
-  const combinedRef = ref || localRef;
-
-  useEffect(() => {
-    if (combinedRef && combinedRef.current) {
-      combinedRef.current.click();
-    }
-  }, [combinedRef]);
-
-  // Ekstrak props bawaan Joyride agar tidak bocor ke DOM dan memicu warning React
-  const { continuous, index, isLastStep, size, step, ...domProps } = props;
-
-  return (
-    <span
-      ref={combinedRef}
-      {...domProps}
-      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-    />
-  );
-});
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 
 const Field = ({ label, htmlFor, children, colSpan }) => (
   <div className={colSpan ? 'md:col-span-2' : ''}>
@@ -74,10 +49,8 @@ const EditProfile = () => {
   const [session, setSession] = useState(null);
   const navigate = useNavigate();
 
-  // Tour lokal untuk halaman Profile — menggunakan mode UNCONTROLLED (tanpa prop stepIndex)
-  const [runProfileTour, setRunProfileTour] = useState(false);
+  const { runTour, handleJoyrideCallback } = useTour('profile', !loading);
 
-  // ── PERCOBAAN #7: Kembalikan step asli, avatar sebagai step 0
   const profileSteps = [
     {
       target: '#tour-profile-avatar',
@@ -140,34 +113,12 @@ const EditProfile = () => {
     },
   ];
 
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) getProfile(session);
     });
   }, []);
-
-  // ✅ Trigger tour otomatis jika ada flag dari AdminLayout Hub
-  useEffect(() => {
-    if (!loading && sessionStorage.getItem('profileTourPending') === 'true') {
-      sessionStorage.removeItem('profileTourPending');
-      
-      const checkAndStart = () => {
-        const avatarEl = document.querySelector('#tour-profile-avatar');
-        const basicEl = document.querySelector('#tour-profile-basic');
-        if (avatarEl && basicEl) {
-          setRunProfileTour(true);
-        } else {
-          setTimeout(checkAndStart, 300);
-        }
-      };
-      
-      const timer = setTimeout(checkAndStart, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
-
 
   const getProfile = async (session) => {
     try {
@@ -257,37 +208,14 @@ const EditProfile = () => {
     <div>
       <SEO title="Edit Profile" />
 
-      {/* Tour Joyride lokal — LEBIH HANDAL karena hidup di page yang sama */}
-      <Joyride
+      <AppJoyride
         steps={profileSteps}
-        run={runProfileTour}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        disableScrolling={false}
-        disableScrollParentFix={true} // WAJIB: Paksa Joyride scroll window, jangan cari parent flex-1
-        scrollDuration={500}
-        spotlightClicks={false}
-        beaconComponent={AutoClickBeacon}
-        tooltipComponent={TourTooltip}
+        run={runTour}
         callback={(data) => {
-          const { status, type } = data;
-          if (type === 'error') {
-            console.error('[Joyride Profile Error]:', JSON.stringify(data));
-          }
-          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-            localStorage.setItem('profileTourCompleted', 'true');
-            setRunProfileTour(false);
+          handleJoyrideCallback(data);
+          if (['finished', 'skipped'].includes(data.status)) {
             navigate('/dashboard');
           }
-        }}
-        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
-        styles={{
-          options: { primaryColor: '#06b6d4', zIndex: 10000 },
-          tooltip: { borderRadius: 14, padding: 20 },
-          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-          tooltipContent: { fontSize: 13, padding: '8px 0' },
         }}
       />
 

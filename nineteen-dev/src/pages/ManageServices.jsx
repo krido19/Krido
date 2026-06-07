@@ -3,30 +3,9 @@ import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Zap } from 'lucide-react';
 import SEO from '../components/SEO';
-import { Joyride, STATUS } from 'react-joyride';
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 import { useNavigate } from 'react-router-dom';
-import TourTooltip from '../components/TourTooltip';
-
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-  const localRef = React.useRef(null);
-  const combinedRef = ref || localRef;
-
-  useEffect(() => {
-    if (combinedRef && combinedRef.current) {
-      combinedRef.current.click();
-    }
-  }, [combinedRef]);
-
-  const { continuous, index, isLastStep, size, step, ...domProps } = props;
-
-  return (
-    <span
-      ref={combinedRef}
-      {...domProps}
-      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-    />
-  );
-});
 
 const ManageServices = () => {
   const [services, setServices] = useState([]);
@@ -34,52 +13,8 @@ const ManageServices = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const navigate = useNavigate();
 
-  const [runServicesTour, setRunServicesTour] = useState(false);
+  const { runTour, handleJoyrideCallback } = useTour('services', !loading);
 
-  const servicesSteps = [
-    {
-      target: '#services-page-title',
-      title: '⚡ Etalase Layanan',
-      content: 'Di sini Anda dapat menjual jasa atau paket layanan profesional Anda.',
-      placement: 'bottom',
-      disableBeacon: true,
-    },
-    {
-      target: '#add-service-btn',
-      title: '➕ Tambah Layanan Baru',
-      content: 'Klik di sini untuk membuat paket layanan baru beserta detail harga dan estimasi pengerjaannya.',
-      placement: 'left',
-      disableBeacon: true,
-    },
-    {
-      target: '#services-list',
-      title: '📋 Daftar Layanan',
-      content: 'Kelola semua paket jasa Anda: edit detailnya, atau hapus jika sudah tidak berlaku.',
-      placement: 'top',
-      disableBeacon: true,
-    }
-  ];
-
-  useEffect(() => {
-    if (!loading && sessionStorage.getItem('servicesTourPending') === 'true') {
-      sessionStorage.removeItem('servicesTourPending');
-      
-      const checkAndStart = () => {
-        const titleEl = document.querySelector('#services-page-title');
-        const btnEl = document.querySelector('#add-service-btn');
-        const listEl = document.querySelector('#services-list');
-        
-        if (titleEl && btnEl && listEl) {
-          setRunServicesTour(true);
-        } else {
-          setTimeout(checkAndStart, 300);
-        }
-      };
-      
-      const timer = setTimeout(checkAndStart, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
 
   useEffect(() => { fetchServices(); }, []);
 
@@ -119,37 +54,14 @@ const ManageServices = () => {
     <div>
       <SEO title="Manage Services" />
 
-      <Joyride
-        steps={servicesSteps}
-        run={runServicesTour}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        disableScrolling={false}
-        disableScrollParentFix={true}
-        scrollDuration={500}
-        spotlightClicks={false}
-        beaconComponent={AutoClickBeacon}
-        tooltipComponent={TourTooltip}
-        callback={(data) => {
-          const { status, type } = data;
-          if (type === 'error') {
-            console.error('[Joyride ManageServices Error]:', JSON.stringify(data));
-          }
-          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-            localStorage.setItem('servicesTourCompleted', 'true');
-            setRunServicesTour(false);
-            navigate('/dashboard');
-          }
-        }}
-        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
-        styles={{
-          options: { primaryColor: '#06b6d4', zIndex: 10000 },
-          tooltip: { borderRadius: 14, padding: 20 },
-          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-          tooltipContent: { fontSize: 13, padding: '8px 0' },
-        }}
+      <AppJoyride
+        steps={[
+          { target: '#services-page-title', title: '⚡ Etalase Layanan', content: 'Di sini Anda dapat menjual jasa atau paket layanan profesional Anda.', placement: 'bottom', disableBeacon: true },
+          { target: '#add-service-btn', title: '➕ Tambah Layanan Baru', content: 'Klik di sini untuk membuat paket layanan baru beserta detail harga dan estimasi pengerjaannya.', placement: 'left', disableBeacon: true },
+          { target: '#services-list', title: '📋 Daftar Layanan', content: 'Kelola semua paket jasa Anda: edit detailnya, atau hapus jika sudah tidak berlaku.', placement: 'top', disableBeacon: true },
+        ]}
+        run={runTour}
+        callback={(data) => { handleJoyrideCallback(data); if (['finished','skipped'].includes(data.status)) navigate('/dashboard'); }}
       />
 
       <div className="flex items-center justify-between mb-8">

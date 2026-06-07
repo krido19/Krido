@@ -3,30 +3,9 @@ import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Smartphone, Download, Pin } from 'lucide-react';
 import SEO from '../components/SEO';
-import { Joyride, STATUS } from 'react-joyride';
-import TourTooltip from '../components/TourTooltip';
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 import { useNavigate } from 'react-router-dom';
-
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-  const localRef = React.useRef(null);
-  const combinedRef = ref || localRef;
-
-  useEffect(() => {
-    if (combinedRef && combinedRef.current) {
-      combinedRef.current.click();
-    }
-  }, [combinedRef]);
-
-  const { continuous, index, isLastStep, size, step, ...domProps } = props;
-
-  return (
-    <span
-      ref={combinedRef}
-      {...domProps}
-      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-    />
-  );
-});
 
 const ManageApps = () => {
   const [apps, setApps] = useState([]);
@@ -38,52 +17,7 @@ const ManageApps = () => {
   const ITEMS_PER_PAGE = 9;
   const navigate = useNavigate();
 
-  const [runAppsTour, setRunAppsTour] = useState(false);
-
-  const appsSteps = [
-    {
-      target: '#apps-page-title',
-      title: '📦 Etalase Aplikasi',
-      content: 'Di sinilah semua produk digital atau aplikasi yang Anda rilis akan ditampilkan.',
-      placement: 'bottom',
-      disableBeacon: true,
-    },
-    {
-      target: '#add-app-btn',
-      title: '➕ Tambah Aplikasi',
-      content: 'Klik tombol ini untuk mengunggah file APK dan merilis aplikasi baru.',
-      placement: 'left',
-      disableBeacon: true,
-    },
-    {
-      target: '#apps-list',
-      title: '📱 Daftar Rilis',
-      content: 'Kelola aplikasi Anda: pantau jumlah unduhan, edit detail, pin ke atas, atau hapus rilis yang sudah usang.',
-      placement: 'top',
-      disableBeacon: true,
-    }
-  ];
-
-  useEffect(() => {
-    if (!loading && sessionStorage.getItem('appsTourPending') === 'true') {
-      sessionStorage.removeItem('appsTourPending');
-      
-      const checkAndStart = () => {
-        const titleEl = document.querySelector('#apps-page-title');
-        const btnEl = document.querySelector('#add-app-btn');
-        const listEl = document.querySelector('#apps-list');
-        
-        if (titleEl && btnEl && listEl) {
-          setRunAppsTour(true);
-        } else {
-          setTimeout(checkAndStart, 300);
-        }
-      };
-      
-      const timer = setTimeout(checkAndStart, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
+  const { runTour, handleJoyrideCallback } = useTour('apps', !loading);
 
   useEffect(() => { fetchApps(); }, []);
 
@@ -160,37 +94,14 @@ const ManageApps = () => {
     <div>
       <SEO title="Manage Apps" />
 
-      <Joyride
-        steps={appsSteps}
-        run={runAppsTour}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        disableScrolling={false}
-        disableScrollParentFix={true}
-        scrollDuration={500}
-        spotlightClicks={false}
-        beaconComponent={AutoClickBeacon}
-        tooltipComponent={TourTooltip}
-        callback={(data) => {
-          const { status, type } = data;
-          if (type === 'error') {
-            console.error('[Joyride ManageApps Error]:', JSON.stringify(data));
-          }
-          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-            localStorage.setItem('appsTourCompleted', 'true');
-            setRunAppsTour(false);
-            navigate('/dashboard');
-          }
-        }}
-        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
-        styles={{
-          options: { primaryColor: '#06b6d4', zIndex: 10000 },
-          tooltip: { borderRadius: 14, padding: 20 },
-          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-          tooltipContent: { fontSize: 13, padding: '8px 0' },
-        }}
+      <AppJoyride
+        steps={[
+          { target: '#apps-page-title', title: '📦 Etalase Aplikasi', content: 'Di sinilah semua produk digital atau aplikasi yang Anda rilis akan ditampilkan.', placement: 'bottom', disableBeacon: true },
+          { target: '#add-app-btn', title: '➕ Tambah Aplikasi', content: 'Klik tombol ini untuk mengunggah file APK dan merilis aplikasi baru.', placement: 'left', disableBeacon: true },
+          { target: '#apps-list', title: '📱 Daftar Rilis', content: 'Kelola aplikasi Anda: pantau jumlah unduhan, edit detail, pin ke atas, atau hapus rilis yang sudah usang.', placement: 'top', disableBeacon: true }
+        ]}
+        run={runTour}
+        callback={(data) => { handleJoyrideCallback(data); if (['finished','skipped'].includes(data.status)) navigate('/dashboard'); }}
       />
 
       <div className="flex items-center justify-between mb-8">

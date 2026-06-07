@@ -3,29 +3,8 @@ import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, FileText, Search, Filter, ShoppingCart, Wallet } from 'lucide-react';
 import SEO from '../components/SEO';
-import { Joyride, STATUS } from 'react-joyride';
-import TourTooltip from '../components/TourTooltip';
-
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-  const localRef = React.useRef(null);
-  const combinedRef = ref || localRef;
-
-  useEffect(() => {
-    if (combinedRef && combinedRef.current) {
-      combinedRef.current.click();
-    }
-  }, [combinedRef]);
-
-  const { continuous, index, isLastStep, size, step, ...domProps } = props;
-
-  return (
-    <span
-      ref={combinedRef}
-      {...domProps}
-      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-    />
-  );
-});
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 
 const ManageOrders = () => {
   const navigate = useNavigate();
@@ -39,60 +18,8 @@ const ManageOrders = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const [runOrdersTour, setRunOrdersTour] = useState(false);
+  const { runTour, handleJoyrideCallback } = useTour('orders', !loading);
 
-  const ordersSteps = [
-    {
-      target: '#orders-page-title',
-      title: '🛒 Manajemen Pesanan',
-      content: 'Pantau semua pesanan jasa dari klien di halaman ini.',
-      placement: 'bottom',
-      disableBeacon: true,
-    },
-    {
-      target: '#add-order-btn',
-      title: '➕ Tambah Order',
-      content: 'Klik di sini jika Anda ingin memasukkan pesanan klien secara manual.',
-      placement: 'left',
-      disableBeacon: true,
-    },
-    {
-      target: '#orders-filters',
-      title: '🔍 Pencarian & Filter',
-      content: 'Gunakan fitur ini untuk mencari invoice spesifik atau memfilter pesanan berdasarkan status (misal: Lunas/Pending).',
-      placement: 'bottom',
-      disableBeacon: true,
-    },
-    {
-      target: '#orders-list',
-      title: '📝 Daftar Pesanan',
-      content: 'Di tabel ini Anda dapat memantau status pesanan, mencetak invoice, serta membuat link pembayaran.',
-      placement: 'top',
-      disableBeacon: true,
-    }
-  ];
-
-  useEffect(() => {
-    if (!loading && sessionStorage.getItem('ordersTourPending') === 'true') {
-      sessionStorage.removeItem('ordersTourPending');
-      
-      const checkAndStart = () => {
-        const titleEl = document.querySelector('#orders-page-title');
-        const btnEl = document.querySelector('#add-order-btn');
-        const filterEl = document.querySelector('#orders-filters');
-        const listEl = document.querySelector('#orders-list');
-        
-        if (titleEl && btnEl && filterEl && listEl) {
-          setRunOrdersTour(true);
-        } else {
-          setTimeout(checkAndStart, 300);
-        }
-      };
-      
-      const timer = setTimeout(checkAndStart, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
 
   useEffect(() => { fetchOrders(); }, []);
 
@@ -168,37 +95,15 @@ const ManageOrders = () => {
     <div>
       <SEO title="Manage Orders" />
 
-      <Joyride
-        steps={ordersSteps}
-        run={runOrdersTour}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        disableScrolling={false}
-        disableScrollParentFix={true}
-        scrollDuration={500}
-        spotlightClicks={false}
-        beaconComponent={AutoClickBeacon}
-        tooltipComponent={TourTooltip}
-        callback={(data) => {
-          const { status, type } = data;
-          if (type === 'error') {
-            console.error('[Joyride ManageOrders Error]:', JSON.stringify(data));
-          }
-          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-            localStorage.setItem('ordersTourCompleted', 'true');
-            setRunOrdersTour(false);
-            navigate('/dashboard');
-          }
-        }}
-        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
-        styles={{
-          options: { primaryColor: '#06b6d4', zIndex: 10000 },
-          tooltip: { borderRadius: 14, padding: 20 },
-          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-          tooltipContent: { fontSize: 13, padding: '8px 0' },
-        }}
+      <AppJoyride
+        steps={[
+          { target: '#orders-page-title', title: '🛒 Manajemen Pesanan', content: 'Pantau semua pesanan jasa dari klien di halaman ini.', placement: 'bottom', disableBeacon: true },
+          { target: '#add-order-btn', title: '➕ Tambah Order', content: 'Klik di sini jika Anda ingin memasukkan pesanan klien secara manual.', placement: 'left', disableBeacon: true },
+          { target: '#orders-filters', title: '🔍 Pencarian & Filter', content: 'Gunakan fitur ini untuk mencari invoice spesifik atau memfilter pesanan berdasarkan status.', placement: 'bottom', disableBeacon: true },
+          { target: '#orders-list', title: '📝 Daftar Pesanan', content: 'Di tabel ini Anda dapat memantau status pesanan, mencetak invoice, serta membuat link pembayaran.', placement: 'top', disableBeacon: true },
+        ]}
+        run={runTour}
+        callback={(data) => { handleJoyrideCallback(data); if (['finished','skipped'].includes(data.status)) navigate('/dashboard'); }}
       />
 
       {/* Header */}

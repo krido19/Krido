@@ -4,30 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, ArrowLeft, Save, FileDown, X, FileArchive } from 'lucide-react';
 import { optimizeImage } from '../utils/imageOptimizer';
 import SEO from '../components/SEO';
-import { Joyride, STATUS } from 'react-joyride';
-import TourTooltip from '../components/TourTooltip';
-import { HelpCircle } from 'lucide-react';
-
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-  const localRef = React.useRef(null);
-  const combinedRef = ref || localRef;
-
-  useEffect(() => {
-    if (combinedRef && combinedRef.current) {
-      combinedRef.current.click();
-    }
-  }, [combinedRef]);
-
-  const { continuous, index, isLastStep, size, step, ...domProps } = props;
-
-  return (
-    <span
-      ref={combinedRef}
-      {...domProps}
-      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-    />
-  );
-});
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 
 const Field = ({ label, htmlFor, hint, children, id }) => (
   <div id={id}>
@@ -55,44 +33,14 @@ const EditPortfolio = () => {
   const [downloadFileName, setDownloadFileName] = useState('');
   const [uploadingDownload, setUploadingDownload] = useState(false);
 
-  const [runEditTour, setRunEditTour] = useState(false);
+  const { runTour, startTour, handleJoyrideCallback } = useTour();
 
   const editSteps = [
-    {
-      target: '#edit-header',
-      title: '📝 Form Proyek',
-      content: 'Di halaman ini, Anda dapat mengisi detail karya atau studi kasus Anda.',
-      placement: 'bottom',
-      disableBeacon: true,
-    },
-    {
-      target: '#edit-image-field',
-      title: '🖼️ Gambar Utama',
-      content: 'Unggah gambar resolusi tinggi untuk memikat pengunjung pada pandangan pertama.',
-      placement: 'right',
-      disableBeacon: true,
-    },
-    {
-      target: '#edit-basic-info',
-      title: '📋 Informasi Dasar',
-      content: 'Isi judul, deskripsi singkat, dan teknologi yang Anda gunakan dalam proyek ini.',
-      placement: 'right',
-      disableBeacon: true,
-    },
-    {
-      target: '#edit-download-field',
-      title: '📦 File Unduhan',
-      content: 'Punya produk digital (APK/ZIP)? Unggah di sini agar pengunjung dapat langsung mengunduhnya!',
-      placement: 'left',
-      disableBeacon: true,
-    },
-    {
-      target: '#edit-screenshots-field',
-      title: '📸 Galeri Fitur (Detail)',
-      content: 'Tambahkan beberapa screenshot dan jelaskan fitur secara mendalam untuk membuat studi kasus yang profesional.',
-      placement: 'top',
-      disableBeacon: true,
-    }
+    { target: '#edit-header', title: '📝 Form Proyek', content: 'Di halaman ini, Anda dapat mengisi detail karya atau studi kasus Anda.', placement: 'bottom', disableBeacon: true },
+    { target: '#edit-image-field', title: '🖼️ Gambar Utama', content: 'Unggah gambar resolusi tinggi untuk memikat pengunjung pada pandangan pertama.', placement: 'right', disableBeacon: true },
+    { target: '#edit-basic-info', title: '📋 Informasi Dasar', content: 'Isi judul, deskripsi singkat, dan teknologi yang Anda gunakan dalam proyek ini.', placement: 'right', disableBeacon: true },
+    { target: '#edit-download-field', title: '📦 File Unduhan', content: 'Punya produk digital (APK/ZIP)? Unggah di sini agar pengunjung dapat langsung mengunduhnya!', placement: 'left', disableBeacon: true },
+    { target: '#edit-screenshots-field', title: '📸 Galeri Fitur (Detail)', content: 'Tambahkan beberapa screenshot dan jelaskan fitur secara mendalam untuk membuat studi kasus yang profesional.', placement: 'top', disableBeacon: true },
   ];
 
   useEffect(() => { if (id) fetchPortfolioItem(id); }, [id]);
@@ -210,36 +158,7 @@ const EditPortfolio = () => {
     <div>
       <SEO title={id ? 'Edit Project' : 'Add Project'} />
 
-      <Joyride
-        steps={editSteps}
-        run={runEditTour}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        disableScrolling={false}
-        disableScrollParentFix={true}
-        scrollDuration={500}
-        spotlightClicks={false}
-        beaconComponent={AutoClickBeacon}
-        tooltipComponent={TourTooltip}
-        callback={(data) => {
-          const { status, type } = data;
-          if (type === 'error') {
-            console.error('[Joyride EditPortfolio Error]:', JSON.stringify(data));
-          }
-          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-            setRunEditTour(false);
-          }
-        }}
-        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
-        styles={{
-          options: { primaryColor: '#06b6d4', zIndex: 10000 },
-          tooltip: { borderRadius: 14, padding: 20 },
-          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-          tooltipContent: { fontSize: 13, padding: '8px 0' },
-        }}
-      />
+      <AppJoyride steps={editSteps} run={runTour} callback={handleJoyrideCallback} />
 
       <div id="edit-header" className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -251,7 +170,7 @@ const EditPortfolio = () => {
             <p className="text-sm text-gray-400 font-medium mt-0.5">Isi detail proyek portfolio</p>
             </div>
         </div>
-        <button type="button" onClick={() => setRunEditTour(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">
+        <button type="button" onClick={startTour} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">
             <HelpCircle className="w-4 h-4" />
             <span className="hidden sm:inline">Panduan Form</span>
         </button>

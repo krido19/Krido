@@ -2,30 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink, Trash2, X, Eye, Download, CheckCircle, Clock, BarChart, MessageCircle } from 'lucide-react';
 import SEO from '../components/SEO';
-import { Joyride, STATUS } from 'react-joyride';
-import TourTooltip from '../components/TourTooltip';
-import { listPayments, checkPayment } from '../utils/bayargg';
-
-const AutoClickBeacon = React.forwardRef((props, ref) => {
-    const localRef = React.useRef(null);
-    const combinedRef = ref || localRef;
-
-    useEffect(() => {
-        if (combinedRef && combinedRef.current) {
-            combinedRef.current.click();
-        }
-    }, [combinedRef]);
-
-    const { continuous, index, isLastStep, size, step, ...domProps } = props;
-
-    return (
-        <span
-            ref={combinedRef}
-            {...domProps}
-            style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-        />
-    );
-});
+import AppJoyride from '../components/AppJoyride';
+import { useTour } from '../hooks/useTour';
 import { checkTransaction } from '../utils/pakasir';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
@@ -81,60 +59,14 @@ const ManagePayments = () => {
 
     const [pakasirPayments, setPakasirPayments] = useState([]);
 
-    const [runPaymentsTour, setRunPaymentsTour] = useState(false);
+    const { runTour, handleJoyrideCallback } = useTour('payments', !loading);
 
     const paymentsSteps = [
-        {
-            target: '#payments-page-title',
-            title: '💳 Pusat Pembayaran',
-            content: 'Di sini Anda memantau semua tagihan masuk melalui provider pembayaran (bayar.gg & Pakasir).',
-            placement: 'bottom',
-            disableBeacon: true,
-        },
-        {
-            target: '#payments-widgets',
-            title: '📊 Ringkasan Keuangan',
-            content: 'Lihat ringkasan total pemasukan lunas bulan ini, total tertunda, dan seluruh transaksi.',
-            placement: 'bottom',
-            disableBeacon: true,
-        },
-        {
-            target: '#add-payment-btn',
-            title: '➕ Buat Tagihan Baru',
-            content: 'Klik di sini untuk membuat link pembayaran (QRIS, E-Wallet, VA) secara manual untuk klien Anda.',
-            placement: 'left',
-            disableBeacon: true,
-        },
-        {
-            target: '#payments-list',
-            title: '📝 Daftar Transaksi',
-            content: 'Kelola transaksi: cek status terbaru, copy link, kirim pengingat WhatsApp, atau sembunyikan tagihan.',
-            placement: 'top',
-            disableBeacon: true,
-        }
+        { target: '#payments-page-title', title: '💳 Pusat Pembayaran', content: 'Di sini Anda memantau semua tagihan masuk melalui provider pembayaran (bayar.gg & Pakasir).', placement: 'bottom', disableBeacon: true },
+        { target: '#payments-widgets', title: '📊 Ringkasan Keuangan', content: 'Lihat ringkasan total pemasukan lunas bulan ini, total tertunda, dan seluruh transaksi.', placement: 'bottom', disableBeacon: true },
+        { target: '#add-payment-btn', title: '➕ Buat Tagihan Baru', content: 'Klik di sini untuk membuat link pembayaran (QRIS, E-Wallet, VA) secara manual untuk klien Anda.', placement: 'left', disableBeacon: true },
+        { target: '#payments-list', title: '📝 Daftar Transaksi', content: 'Kelola transaksi: cek status terbaru, copy link, kirim pengingat WhatsApp, atau sembunyikan tagihan.', placement: 'top', disableBeacon: true },
     ];
-
-    useEffect(() => {
-        if (!loading && sessionStorage.getItem('paymentsTourPending') === 'true') {
-            sessionStorage.removeItem('paymentsTourPending');
-            
-            const checkAndStart = () => {
-                const titleEl = document.querySelector('#payments-page-title');
-                const widgetEl = document.querySelector('#payments-widgets');
-                const btnEl = document.querySelector('#add-payment-btn');
-                const listEl = document.querySelector('#payments-list');
-                
-                if (titleEl && widgetEl && btnEl && listEl) {
-                    setRunPaymentsTour(true);
-                } else {
-                    setTimeout(checkAndStart, 300);
-                }
-            };
-            
-            const timer = setTimeout(checkAndStart, 500);
-            return () => clearTimeout(timer);
-        }
-    }, [loading]);
 
     const fetchPayments = useCallback(async (page = 1) => {
         try {
@@ -354,36 +286,14 @@ const ManagePayments = () => {
         <div>
             <SEO title="Manage Payments" />
 
-            <Joyride
+            <AppJoyride
                 steps={paymentsSteps}
-                run={runPaymentsTour}
-                continuous={true}
-                showSkipButton={true}
-                showProgress={true}
-                scrollToFirstStep={true}
-                disableScrolling={false}
-                disableScrollParentFix={true}
-                scrollDuration={500}
-                spotlightClicks={false}
-                beaconComponent={AutoClickBeacon}
-                tooltipComponent={TourTooltip}
+                run={runTour}
                 callback={(data) => {
-                    const { status, type } = data;
-                    if (type === 'error') {
-                        console.error('[Joyride ManagePayments Error]:', JSON.stringify(data));
-                    }
-                    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-                        localStorage.setItem('paymentsTourCompleted', 'true');
-                        setRunPaymentsTour(false);
+                    handleJoyrideCallback(data);
+                    if (['finished', 'skipped'].includes(data.status)) {
                         navigate('/dashboard');
                     }
-                }}
-                locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
-                styles={{
-                    options: { primaryColor: '#06b6d4', zIndex: 10000 },
-                    tooltip: { borderRadius: 14, padding: 20 },
-                    tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-                    tooltipContent: { fontSize: 13, padding: '8px 0' },
                 }}
             />
 
