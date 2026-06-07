@@ -1,8 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, Plus, Trash2, HelpCircle } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = React.useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
 
 const colorOptions = [
   { label: 'Biru (Default)', value: 'from-cyan-400 to-blue-500' },
@@ -54,6 +77,39 @@ const EditService = () => {
     features_en: [''], features_id: [''],
     color: 'from-cyan-400 to-blue-500', popular: false
   });
+
+  const [runEditServiceTour, setRunEditServiceTour] = useState(false);
+
+  const editServiceSteps = [
+    {
+      target: '#edit-service-header',
+      title: '📝 Form Layanan',
+      content: 'Isi detail paket layanan yang akan ditampilkan di halaman depan.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-service-en',
+      title: '🇬🇧 Konten Bahasa Inggris',
+      content: 'Isi judul, estimasi waktu, dan daftar fitur menggunakan Bahasa Inggris. Pengunjung internasional akan melihat ini.',
+      placement: 'right',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-service-id',
+      title: '🇮🇩 Konten Bahasa Indonesia',
+      content: 'Isi versi terjemahan Bahasa Indonesia. Website Anda otomatis mendukung dua bahasa (bilingual).',
+      placement: 'left',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-service-common',
+      title: '⚙️ Detail Umum',
+      content: 'Tentukan harga, pilih gradasi warna tema card, dan tandai jika paket ini adalah opsi "Paling Laris" (Popular).',
+      placement: 'top',
+      disableBeacon: true,
+    }
+  ];
 
   useEffect(() => { if (id) fetchService(); }, [id]);
 
@@ -119,20 +175,58 @@ const EditService = () => {
   return (
     <div>
       <SEO title={id ? 'Edit Service' : 'Add Service'} />
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={() => navigate('/dashboard/services')} className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground">{id ? 'Edit Service' : 'Tambah Service Baru'}</h1>
-          <p className="text-sm text-gray-400 font-medium mt-0.5">Isi detail paket layanan</p>
+
+      <Joyride
+        steps={editServiceSteps}
+        run={runEditServiceTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true}
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride EditService Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            setRunEditServiceTour(false);
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
+      <div id="edit-service-header" className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/dashboard/services')} className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+            <h1 className="text-2xl font-extrabold text-foreground">{id ? 'Edit Service' : 'Tambah Service Baru'}</h1>
+            <p className="text-sm text-gray-400 font-medium mt-0.5">Isi detail paket layanan</p>
+            </div>
         </div>
+        <button type="button" onClick={() => setRunEditServiceTour(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">
+            <HelpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Panduan Form</span>
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-4xl space-y-5">
         {/* EN + ID columns */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-white rounded-lg p-6 space-y-4">
+          <div id="edit-service-en" className="bg-white rounded-lg p-6 space-y-4">
             <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">🇬🇧 English</p>
             <Field label="Title (EN)">
               <input type="text" name="title_en" value={formData.title_en} onChange={handleChange} className="input-flat" required />
@@ -143,7 +237,7 @@ const EditService = () => {
             <FeatureList lang="en" label="Features (EN)" features={formData.features_en} onFeatureChange={handleFeatureChange} onAddFeature={addFeature} onRemoveFeature={removeFeature} />
           </div>
 
-          <div className="bg-white rounded-lg p-6 space-y-4">
+          <div id="edit-service-id" className="bg-white rounded-lg p-6 space-y-4">
             <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">🇮🇩 Indonesia</p>
             <Field label="Judul (ID)">
               <input type="text" name="title_id" value={formData.title_id} onChange={handleChange} className="input-flat" required />
@@ -156,7 +250,7 @@ const EditService = () => {
         </div>
 
         {/* Common */}
-        <div className="bg-white rounded-lg p-6 space-y-4">
+        <div id="edit-service-common" className="bg-white rounded-lg p-6 space-y-4">
           <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">Detail Umum</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Harga">

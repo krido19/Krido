@@ -1,8 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Copy, Check, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Check, ExternalLink, AlertCircle, Loader2, HelpCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = React.useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
 import { createPayment, getPaymentMethods } from '../utils/bayargg';
 import { createTransaction } from '../utils/pakasir';
 import { supabase } from '../supabaseClient';
@@ -57,6 +80,39 @@ const CreatePayment = () => {
     const [hasSubscription, setHasSubscription] = useState(true);
     const [result, setResult] = useState(null); // payment result modal
     const [copied, setCopied] = useState(false);
+
+    const [runPaymentTour, setRunPaymentTour] = useState(false);
+
+    const paymentSteps = [
+        {
+            target: '#create-payment-header',
+            title: '💳 Form Pembayaran',
+            content: 'Buat invoice / link pembayaran secara manual untuk klien Anda di sini.',
+            placement: 'bottom',
+            disableBeacon: true,
+        },
+        {
+            target: '#create-payment-provider',
+            title: '🏢 Provider Payment Gateway',
+            content: 'Pilih gerbang pembayaran (bayar.gg atau Pakasir). Masing-masing memiliki kelebihan dan kekurangan.',
+            placement: 'bottom',
+            disableBeacon: true,
+        },
+        {
+            target: '#create-payment-detail',
+            title: '💰 Detail Nominal',
+            content: 'Masukkan jumlah yang harus dibayar dan pilih metode (QRIS, VA, E-Wallet).',
+            placement: 'top',
+            disableBeacon: true,
+        },
+        {
+            target: '#create-payment-customer',
+            title: '👤 Data Klien',
+            content: 'Isi nama atau email klien (Opsional). Jika diisi, beberapa metode bisa mengirim email konfirmasi otomatis.',
+            placement: 'top',
+            disableBeacon: true,
+        }
+    ];
 
     useEffect(() => {
         getPaymentMethods()
@@ -169,18 +225,55 @@ const CreatePayment = () => {
         <div>
             <SEO title="Buat Pembayaran QRIS" />
 
+            <Joyride
+                steps={paymentSteps}
+                run={runPaymentTour}
+                continuous={true}
+                showSkipButton={true}
+                showProgress={true}
+                scrollToFirstStep={true}
+                disableScrolling={false}
+                disableScrollParentFix={true}
+                scrollDuration={500}
+                spotlightClicks={false}
+                beaconComponent={AutoClickBeacon}
+                tooltipComponent={TourTooltip}
+                callback={(data) => {
+                    const { status, type } = data;
+                    if (type === 'error') {
+                        console.error('[Joyride CreatePayment Error]:', JSON.stringify(data));
+                    }
+                    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+                        setRunPaymentTour(false);
+                    }
+                }}
+                locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+                styles={{
+                    options: { primaryColor: '#06b6d4', zIndex: 10000 },
+                    tooltip: { borderRadius: 14, padding: 20 },
+                    tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+                    tooltipContent: { fontSize: 13, padding: '8px 0' },
+                }}
+            />
+
             {/* Header */}
-            <div className="flex items-center gap-3 mb-8">
-                <button
-                    onClick={() => navigate('/dashboard/payments')}
-                    className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                    <h1 className="text-2xl font-extrabold text-foreground">Buat Pembayaran</h1>
-                    <p className="text-sm text-gray-400 font-medium mt-0.5">Generate link pembayaran QRIS via bayar.gg</p>
+            <div id="create-payment-header" className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate('/dashboard/payments')}
+                        className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <h1 className="text-2xl font-extrabold text-foreground">Buat Pembayaran</h1>
+                        <p className="text-sm text-gray-400 font-medium mt-0.5">Generate link pembayaran QRIS via bayar.gg</p>
+                    </div>
                 </div>
+                <button type="button" onClick={() => setRunPaymentTour(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">
+                    <HelpCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">Panduan Form</span>
+                </button>
             </div>
 
             <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
@@ -193,7 +286,7 @@ const CreatePayment = () => {
                 )}
 
                 {/* Gateway Provider */}
-                <div className="bg-white rounded-lg p-6 space-y-5">
+                <div id="create-payment-provider" className="bg-white rounded-lg p-6 space-y-5">
                     <h2 className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">
                         Provider Pembayaran
                     </h2>
@@ -222,7 +315,7 @@ const CreatePayment = () => {
                 </div>
 
                 {/* Nominal & Metode */}
-                <div className="bg-white rounded-lg p-6 space-y-5">
+                <div id="create-payment-detail" className="bg-white rounded-lg p-6 space-y-5">
                     <h2 className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">
                         Detail Pembayaran
                     </h2>
@@ -303,7 +396,7 @@ const CreatePayment = () => {
                 </div>
 
                 {/* Customer */}
-                <div className="bg-white rounded-lg p-6 space-y-4">
+                <div id="create-payment-customer" className="bg-white rounded-lg p-6 space-y-4">
                     <h2 className="text-xs font-extrabold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100">
                         Informasi Customer (Opsional)
                     </h2>

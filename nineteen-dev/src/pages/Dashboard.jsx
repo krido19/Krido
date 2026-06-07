@@ -18,8 +18,25 @@ const Dashboard = () => {
   const [isTogglingLaunch, setIsTogglingLaunch] = useState(false);
   const [keepAlive, setKeepAlive] = useState(null);
   const [isPinging, setIsPinging] = useState(false);
+  const [onboardingProgress, setOnboardingProgress] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+    const keys = [
+      'profileTourCompleted',
+      'portfolioTourCompleted',
+      'appsTourCompleted',
+      'servicesTourCompleted',
+      'ordersTourCompleted',
+      'paymentsTourCompleted'
+    ];
+    const completedCount = keys.filter(key => localStorage.getItem(key) === 'true').length;
+    setOnboardingProgress(completedCount);
+    if (completedCount < 6 && localStorage.getItem('hideOnboardingBanner') !== 'true') {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -87,6 +104,53 @@ const Dashboard = () => {
           <p className="text-gray-500 font-medium text-sm">nineteen.dev Admin Dashboard</p>
         </div>
       </div>
+
+      {/* Onboarding Banner */}
+      {showOnboarding && (
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white mb-8 shadow-md relative overflow-hidden">
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="font-extrabold text-xl mb-1">Pengenalan Dasbor {onboardingProgress}/6 Selesai</h3>
+              <p className="text-blue-100 text-sm max-w-xl">
+                Jelajahi semua fitur Nineteen Dev untuk memaksimalkan produktivitas Anda. Anda telah menyelesaikan {onboardingProgress} dari 6 modul.
+              </p>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-blue-900/40 rounded-full h-2.5 mt-4 max-w-md overflow-hidden">
+                <div 
+                  className="bg-white h-full rounded-full transition-all duration-1000 ease-out relative" 
+                  style={{ width: `${(onboardingProgress / 6) * 100}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/50 animate-pulse" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 shrink-0">
+              <button 
+                onClick={() => {
+                  localStorage.setItem('hideOnboardingBanner', 'true');
+                  setShowOnboarding(false);
+                }}
+                className="px-4 py-2 text-sm font-semibold text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Sembunyikan
+              </button>
+              <button 
+                onClick={() => {
+                  const event = new CustomEvent('open-help-hub');
+                  window.dispatchEvent(event);
+                }}
+                className="px-5 py-2 text-sm font-bold bg-white text-blue-600 hover:bg-gray-50 rounded-lg shadow-sm transition-colors"
+              >
+                Lanjutkan Pengenalan
+              </button>
+            </div>
+          </div>
+          
+          <Star className="absolute -right-6 -top-6 w-32 h-32 text-white/5 rotate-12" />
+        </div>
+      )}
 
       {/* Mode Launch / Coming Soon Toggle */}
       <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -4,9 +4,33 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, ArrowLeft, Save, FileDown, X, FileArchive } from 'lucide-react';
 import { optimizeImage } from '../utils/imageOptimizer';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+import { HelpCircle } from 'lucide-react';
 
-const Field = ({ label, htmlFor, hint, children }) => (
-  <div>
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = React.useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
+
+const Field = ({ label, htmlFor, hint, children, id }) => (
+  <div id={id}>
     <label htmlFor={htmlFor} className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">{label}</label>
     {children}
     {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
@@ -31,7 +55,49 @@ const EditPortfolio = () => {
   const [downloadFileName, setDownloadFileName] = useState('');
   const [uploadingDownload, setUploadingDownload] = useState(false);
 
+  const [runEditTour, setRunEditTour] = useState(false);
+
+  const editSteps = [
+    {
+      target: '#edit-header',
+      title: '📝 Form Proyek',
+      content: 'Di halaman ini, Anda dapat mengisi detail karya atau studi kasus Anda.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-image-field',
+      title: '🖼️ Gambar Utama',
+      content: 'Unggah gambar resolusi tinggi untuk memikat pengunjung pada pandangan pertama.',
+      placement: 'right',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-basic-info',
+      title: '📋 Informasi Dasar',
+      content: 'Isi judul, deskripsi singkat, dan teknologi yang Anda gunakan dalam proyek ini.',
+      placement: 'right',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-download-field',
+      title: '📦 File Unduhan',
+      content: 'Punya produk digital (APK/ZIP)? Unggah di sini agar pengunjung dapat langsung mengunduhnya!',
+      placement: 'left',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-screenshots-field',
+      title: '📸 Galeri Fitur (Detail)',
+      content: 'Tambahkan beberapa screenshot dan jelaskan fitur secara mendalam untuk membuat studi kasus yang profesional.',
+      placement: 'top',
+      disableBeacon: true,
+    }
+  ];
+
   useEffect(() => { if (id) fetchPortfolioItem(id); }, [id]);
+
+
 
   const fetchPortfolioItem = async (itemId) => {
     try {
@@ -143,20 +209,58 @@ const EditPortfolio = () => {
   return (
     <div>
       <SEO title={id ? 'Edit Project' : 'Add Project'} />
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={() => navigate('/portfolio')} className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground">{id ? 'Edit Project' : 'Add New Project'}</h1>
-          <p className="text-sm text-gray-400 font-medium mt-0.5">Isi detail proyek portfolio</p>
+
+      <Joyride
+        steps={editSteps}
+        run={runEditTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true}
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride EditPortfolio Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            setRunEditTour(false);
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
+      <div id="edit-header" className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/portfolio')} className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+            <h1 className="text-2xl font-extrabold text-foreground">{id ? 'Edit Project' : 'Add New Project'}</h1>
+            <p className="text-sm text-gray-400 font-medium mt-0.5">Isi detail proyek portfolio</p>
+            </div>
         </div>
+        <button type="button" onClick={() => setRunEditTour(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">
+            <HelpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Panduan Form</span>
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
         <div className="bg-white rounded-lg p-6 space-y-5">
           {/* Image */}
-          <Field label="Gambar Proyek">
+          <Field id="edit-image-field" label="Gambar Proyek">
             <div className="flex items-center gap-4 flex-wrap">
               {imageUrl && (
                 <img
@@ -176,7 +280,8 @@ const EditPortfolio = () => {
             </div>
           </Field>
 
-          <Field label="Judul" htmlFor="title">
+          <div id="edit-basic-info" className="space-y-5">
+            <Field label="Judul" htmlFor="title">
             <input id="title" type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="input-flat" />
           </Field>
 
@@ -192,12 +297,13 @@ const EditPortfolio = () => {
             <input id="projectUrl" type="url" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} placeholder="https://..." className="input-flat" />
           </Field>
 
-          <Field label="YouTube Video URL (opsional)" htmlFor="videoUrl" hint="Paste link YouTube untuk tampilkan video di modal proyek">
-            <input id="videoUrl" type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="input-flat" />
-          </Field>
+            <Field label="YouTube Video URL (opsional)" htmlFor="videoUrl" hint="Paste link YouTube untuk tampilkan video di modal proyek">
+              <input id="videoUrl" type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="input-flat" />
+            </Field>
+          </div>
 
           {/* Download File */}
-          <Field label="File Unduhan (APK / ZIP / PDF / dll)" hint="Upload file yang bisa diunduh pengunjung dari halaman proyek">
+          <Field id="edit-download-field" label="File Unduhan (APK / ZIP / PDF / dll)" hint="Upload file yang bisa diunduh pengunjung dari halaman proyek">
             <div className="space-y-3">
               {downloadUrl ? (
                 <div className="flex items-center gap-3 p-3 bg-blue-50 border border-primary/20 rounded-lg">
@@ -227,7 +333,7 @@ const EditPortfolio = () => {
             <textarea id="content" rows={8} value={content} onChange={(e) => setContent(e.target.value)} className="input-flat whitespace-pre-wrap" placeholder="Penjelasan lengkap mengenai proyek..." />
           </Field>
 
-          <Field label="Galeri Tangkapan Layar (Screenshots)" hint="Bisa pilih lebih dari satu gambar sekaligus">
+          <Field id="edit-screenshots-field" label="Galeri Tangkapan Layar (Screenshots)" hint="Bisa pilih lebih dari satu gambar sekaligus">
             <div className="space-y-4">
               <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-muted hover:bg-gray-200 text-foreground text-sm font-semibold rounded-md cursor-pointer transition-colors">
                 {uploadingScreen ? (

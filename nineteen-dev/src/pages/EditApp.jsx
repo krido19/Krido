@@ -3,9 +3,33 @@ import { supabase } from '../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Upload, Smartphone, CheckCircle2 } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+import { HelpCircle } from 'lucide-react';
 
-const Field = ({ label, htmlFor, hint, children }) => (
-  <div>
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = React.useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
+
+const Field = ({ label, htmlFor, hint, children, id }) => (
+  <div id={id}>
     <label htmlFor={htmlFor} className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">{label}</label>
     {children}
     {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
@@ -20,7 +44,42 @@ const EditApp = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState({ app_name: '', version: '', description: '', apk_url: '', image_url: '' });
 
+  const [runEditAppTour, setRunEditAppTour] = useState(false);
+
+  const editAppSteps = [
+    {
+      target: '#edit-app-header',
+      title: '📝 Form Aplikasi',
+      content: 'Isi detail rilis aplikasi Anda di halaman ini.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-app-basic',
+      title: '📋 Informasi Dasar',
+      content: 'Tentukan nama aplikasi, nomor versi rilis (misal: 1.0.0), dan deskripsi singkat.',
+      placement: 'right',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-app-icon',
+      title: '🖼️ Ikon Aplikasi',
+      content: 'Unggah gambar kotak (square) yang merepresentasikan logo aplikasi ini.',
+      placement: 'top',
+      disableBeacon: true,
+    },
+    {
+      target: '#edit-app-apk',
+      title: '📦 File APK',
+      content: 'Unggah file berformat .apk yang bisa diinstal oleh klien di perangkat Android mereka.',
+      placement: 'top',
+      disableBeacon: true,
+    }
+  ];
+
   useEffect(() => { if (id) fetchApp(); }, [id]);
+
+
 
   const fetchApp = async () => {
     try {
@@ -88,33 +147,73 @@ const EditApp = () => {
   return (
     <div>
       <SEO title={id ? 'Edit App' : 'Add App'} />
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={() => navigate('/dashboard/apps')} className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground">{id ? 'Edit Application' : 'Add New Application'}</h1>
-          <p className="text-sm text-gray-400 font-medium mt-0.5">Kelola rilis APK aplikasi</p>
+
+      <Joyride
+        steps={editAppSteps}
+        run={runEditAppTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true}
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride EditApp Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            setRunEditAppTour(false);
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
+      <div id="edit-app-header" className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/dashboard/apps')} className="p-2 text-gray-400 hover:text-foreground hover:bg-white rounded-md transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+            <h1 className="text-2xl font-extrabold text-foreground">{id ? 'Edit Application' : 'Add New Application'}</h1>
+            <p className="text-sm text-gray-400 font-medium mt-0.5">Kelola rilis APK aplikasi</p>
+            </div>
         </div>
+        <button type="button" onClick={() => setRunEditAppTour(true)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">
+            <HelpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Panduan Form</span>
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
         <div className="bg-white rounded-lg p-6 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <Field label="Nama Aplikasi" htmlFor="app_name">
-              <input id="app_name" type="text" name="app_name" value={formData.app_name} onChange={handleChange} className="input-flat" required />
-            </Field>
-            <Field label="Versi" htmlFor="version">
-              <input id="version" type="text" name="version" value={formData.version} onChange={handleChange} placeholder="e.g. 1.0.0" className="input-flat" required />
+          <div id="edit-app-basic" className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <Field label="Nama Aplikasi" htmlFor="app_name">
+                <input id="app_name" type="text" name="app_name" value={formData.app_name} onChange={handleChange} className="input-flat" required />
+              </Field>
+              <Field label="Versi" htmlFor="version">
+                <input id="version" type="text" name="version" value={formData.version} onChange={handleChange} placeholder="e.g. 1.0.0" className="input-flat" required />
+              </Field>
+            </div>
+
+            <Field label="Deskripsi" htmlFor="description">
+              <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} className="input-flat" />
             </Field>
           </div>
 
-          <Field label="Deskripsi" htmlFor="description">
-            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} className="input-flat" />
-          </Field>
-
           {/* App Icon */}
-          <Field label="App Icon / Screenshot">
+          <Field id="edit-app-icon" label="App Icon / Screenshot">
             <div className="flex items-center gap-4 flex-wrap">
               {formData.image_url ? (
                 <img
@@ -139,7 +238,7 @@ const EditApp = () => {
           </Field>
 
           {/* APK File */}
-          <Field label="File APK" hint="Hanya file .apk yang diizinkan">
+          <Field id="edit-app-apk" label="File APK" hint="Hanya file .apk yang diizinkan">
             <div className="flex items-center gap-4 flex-wrap">
               <label className="flex items-center gap-2 px-4 py-2.5 bg-muted hover:bg-gray-200 text-foreground text-sm font-semibold rounded-md cursor-pointer transition-colors">
                 {uploading ? (

@@ -1,8 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, ExternalLink, Briefcase, Pin } from 'lucide-react';
+import { Plus, Edit, Trash2, ExternalLink, Briefcase, Pin, HelpCircle } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
 
 const ManagePortfolio = () => {
   const [portfolio, setPortfolio] = useState([]);
@@ -14,7 +37,56 @@ const ManagePortfolio = () => {
   const ITEMS_PER_PAGE = 9;
   const navigate = useNavigate();
 
-  useEffect(() => { fetchPortfolio(); }, []);
+  const [runPortfolioTour, setRunPortfolioTour] = useState(false);
+
+  const portfolioSteps = [
+    {
+      target: '#page-title',
+      title: '🎨 Etalase Portfolio',
+      content: 'Ini adalah halaman utama untuk memamerkan karya dan studi kasus Anda.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#add-portfolio-btn',
+      title: '➕ Tambah Proyek Baru',
+      content: 'Klik tombol ini untuk mengunggah proyek baru Anda kapan saja.',
+      placement: 'left',
+      disableBeacon: true,
+    },
+    {
+      target: '#portfolio-list',
+      title: '📋 Daftar Etalase',
+      content: 'Semua proyek Anda akan tampil di area ini. Anda bisa mengedit, menghapus, atau mem-pin proyek terbaik ke atas.',
+      placement: 'top',
+      disableBeacon: true,
+    }
+  ];
+
+  useEffect(() => {
+    if (!loading && sessionStorage.getItem('portfolioTourPending') === 'true') {
+      sessionStorage.removeItem('portfolioTourPending');
+      
+      const checkAndStart = () => {
+        const titleEl = document.querySelector('#page-title');
+        const btnEl = document.querySelector('#add-portfolio-btn');
+        const listEl = document.querySelector('#portfolio-list');
+        
+        if (titleEl && btnEl && listEl) {
+          setRunPortfolioTour(true);
+        } else {
+          setTimeout(checkAndStart, 300);
+        }
+      };
+      
+      const timer = setTimeout(checkAndStart, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  useEffect(() => { 
+    fetchPortfolio(); 
+  }, []);
 
   const fetchPortfolio = async (isLoadMore = false) => {
     try {
@@ -82,12 +154,45 @@ const ManagePortfolio = () => {
     <div>
       <SEO title="Manage Portfolio" />
 
+      <Joyride
+        steps={portfolioSteps}
+        run={runPortfolioTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true}
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride ManagePortfolio Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            localStorage.setItem('portfolioTourCompleted', 'true');
+            setRunPortfolioTour(false);
+            navigate('/dashboard');
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
       <div className="flex items-center justify-between mb-8">
-        <div>
+        <div id="page-title">
           <h1 className="text-2xl font-extrabold text-foreground">Portfolio</h1>
           <p className="text-sm text-gray-400 font-medium mt-0.5">Kelola proyek-proyek kamu</p>
         </div>
-        <Link to="/portfolio/new" className="btn-primary gap-2 text-sm">
+        <Link id="add-portfolio-btn" to="/portfolio/new" className="btn-primary gap-2 text-sm relative z-10">
           <Plus className="w-4 h-4" /> Add New
         </Link>
       </div>
@@ -97,7 +202,7 @@ const ManagePortfolio = () => {
           <div className="inline-block w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : portfolio.length === 0 ? (
-        <div className="bg-white rounded-lg p-16 text-center">
+        <div id="portfolio-list" className="bg-white rounded-lg p-16 text-center">
           <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="font-semibold text-gray-400 mb-3">Belum ada proyek</p>
           <Link to="/portfolio/new" className="text-primary font-bold text-sm hover:underline">
@@ -105,7 +210,7 @@ const ManagePortfolio = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="portfolio-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {portfolio.map((item) => (
             <div key={item.id} className={`bg-white rounded-lg overflow-hidden group transition-all duration-200 hover:scale-[1.02] ${item.is_pinned ? 'ring-2 ring-amber-400' : ''}`}>
               {item.image_url && (

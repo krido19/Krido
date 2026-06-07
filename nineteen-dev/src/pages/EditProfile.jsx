@@ -1,9 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import Avatar from '../components/Avatar';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Phone, Globe, Link2, AtSign, ExternalLink } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+// react-joyride v2 — named import wajib (tidak ada default export)
+
+// Beacon transparan yang mengklik dirinya sendiri otomatis — titik hitam Joyride tidak akan pernah muncul
+// Pola yang sama dengan AdminLayout.jsx (lihat README_TOUR.md)
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  // Ekstrak props bawaan Joyride agar tidak bocor ke DOM dan memicu warning React
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
 
 const Field = ({ label, htmlFor, children, colSpan }) => (
   <div className={colSpan ? 'md:col-span-2' : ''}>
@@ -47,12 +74,100 @@ const EditProfile = () => {
   const [session, setSession] = useState(null);
   const navigate = useNavigate();
 
+  // Tour lokal untuk halaman Profile — menggunakan mode UNCONTROLLED (tanpa prop stepIndex)
+  const [runProfileTour, setRunProfileTour] = useState(false);
+
+  // ── PERCOBAAN #7: Kembalikan step asli, avatar sebagai step 0
+  const profileSteps = [
+    {
+      target: '#tour-profile-avatar',
+      title: '📸 Ganti Wajah Bisnismu',
+      content: (
+        <div className="flex flex-col gap-2">
+          <p>Area ini khusus untuk <strong>Foto Profil</strong> Anda.</p>
+          <ul className="list-disc pl-4 mt-1 text-gray-600 space-y-1 text-sm">
+            <li>Klik tombol <strong>Upload</strong> untuk mengunggah foto baru.</li>
+            <li>Gunakan foto profesional atau logo studio agar klien lebih percaya.</li>
+          </ul>
+        </div>
+      ),
+      placement: 'right',
+      disableBeacon: true,
+    },
+    {
+      target: '#tour-profile-basic',
+      title: '📝 Lengkapi Identitas Dasar',
+      content: (
+        <div className="flex flex-col gap-2">
+          <p>Bagian <strong>Informasi Dasar</strong> adalah apa yang pertama kali dibaca klien.</p>
+          <ul className="list-disc pl-4 mt-1 text-gray-600 space-y-1 text-sm">
+            <li>Tuliskan <strong>Bio</strong> yang menarik dan menjual keahlian Anda.</li>
+            <li>Pastikan nomor <strong>WhatsApp</strong> aktif agar klien mudah menghubungi.</li>
+          </ul>
+        </div>
+      ),
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#tour-profile-social',
+      title: '🔗 Tautkan Portofolio Eksternal',
+      content: (
+        <div className="flex flex-col gap-2">
+          <p>Punya akun profesional lain? Tautkan di sini!</p>
+          <ul className="list-disc pl-4 mt-1 text-gray-600 space-y-1 text-sm">
+            <li>Masukkan link <strong>GitHub</strong> untuk programmer.</li>
+            <li>Masukkan link <strong>LinkedIn</strong> atau <strong>Instagram</strong> untuk desainer/freelancer.</li>
+          </ul>
+        </div>
+      ),
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#tour-profile-cv',
+      title: '📄 Senjata Utama: Resume / CV',
+      content: (
+        <div className="flex flex-col gap-2">
+          <p>Jangan lupa mengunggah <strong>CV/Resume</strong> (format PDF).</p>
+          <div className="bg-blue-50 text-blue-700 p-2 rounded-md mt-1 border border-blue-100 text-xs">
+            Klien korporat biasanya selalu meminta CV sebelum menyewa jasa Anda!
+          </div>
+        </div>
+      ),
+      placement: 'top',
+      disableBeacon: true,
+    },
+  ];
+
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) getProfile(session);
     });
   }, []);
+
+  // ✅ Trigger tour otomatis jika ada flag dari AdminLayout Hub
+  useEffect(() => {
+    if (!loading && sessionStorage.getItem('profileTourPending') === 'true') {
+      sessionStorage.removeItem('profileTourPending');
+      
+      const checkAndStart = () => {
+        const avatarEl = document.querySelector('#tour-profile-avatar');
+        const basicEl = document.querySelector('#tour-profile-basic');
+        if (avatarEl && basicEl) {
+          setRunProfileTour(true);
+        } else {
+          setTimeout(checkAndStart, 300);
+        }
+      };
+      
+      const timer = setTimeout(checkAndStart, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
 
   const getProfile = async (session) => {
     try {
@@ -83,6 +198,7 @@ const EditProfile = () => {
       alert(error.message);
     } finally {
       setLoading(false);
+      // loading=false akan memicu useEffect di atas — tidak perlu trigger tour di sini
     }
   };
 
@@ -141,6 +257,40 @@ const EditProfile = () => {
     <div>
       <SEO title="Edit Profile" />
 
+      {/* Tour Joyride lokal — LEBIH HANDAL karena hidup di page yang sama */}
+      <Joyride
+        steps={profileSteps}
+        run={runProfileTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true} // WAJIB: Paksa Joyride scroll window, jangan cari parent flex-1
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride Profile Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            localStorage.setItem('profileTourCompleted', 'true');
+            setRunProfileTour(false);
+            navigate('/dashboard');
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-foreground">Edit Profile</h1>
@@ -155,7 +305,7 @@ const EditProfile = () => {
       ) : (
         <form onSubmit={updateProfile} className="max-w-3xl space-y-6">
           {/* Avatar */}
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
+          <div id="tour-profile-avatar" className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 self-start">Foto Profil</p>
             <Avatar
               url={avatar_url}
@@ -165,7 +315,7 @@ const EditProfile = () => {
           </div>
 
           {/* Basic Info */}
-          <div className="bg-white rounded-lg p-6">
+          <div id="tour-profile-basic" className="bg-white rounded-lg p-6">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5 pb-2 border-b border-gray-100">
               Informasi Dasar
             </p>
@@ -235,7 +385,7 @@ const EditProfile = () => {
           </div>
 
           {/* Social Links */}
-          <div className="bg-white rounded-lg p-6">
+          <div id="tour-profile-social" className="bg-white rounded-lg p-6">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5 pb-2 border-b border-gray-100">
               Social Links
             </p>
@@ -276,7 +426,7 @@ const EditProfile = () => {
           </div>
 
           {/* Resume */}
-          <div className="bg-white rounded-lg p-6">
+          <div id="tour-profile-cv" className="bg-white rounded-lg p-6">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 pb-2 border-b border-gray-100">
               Resume / CV
             </p>

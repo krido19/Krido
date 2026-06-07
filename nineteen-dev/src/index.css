@@ -11,7 +11,7 @@
     box-sizing: border-box;
   }
   html {
-    scroll-behavior: smooth;
+    /* scroll-behavior: smooth; dihapus karena bentrok dengan react-joyride */
   }
   body {
     font-family: 'Outfit', sans-serif;

@@ -3,6 +3,30 @@ import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Smartphone, Download, Pin } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+import { useNavigate } from 'react-router-dom';
+
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = React.useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
 
 const ManageApps = () => {
   const [apps, setApps] = useState([]);
@@ -12,6 +36,54 @@ const ManageApps = () => {
   const [hasMore, setHasMore] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const ITEMS_PER_PAGE = 9;
+  const navigate = useNavigate();
+
+  const [runAppsTour, setRunAppsTour] = useState(false);
+
+  const appsSteps = [
+    {
+      target: '#apps-page-title',
+      title: '📦 Etalase Aplikasi',
+      content: 'Di sinilah semua produk digital atau aplikasi yang Anda rilis akan ditampilkan.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#add-app-btn',
+      title: '➕ Tambah Aplikasi',
+      content: 'Klik tombol ini untuk mengunggah file APK dan merilis aplikasi baru.',
+      placement: 'left',
+      disableBeacon: true,
+    },
+    {
+      target: '#apps-list',
+      title: '📱 Daftar Rilis',
+      content: 'Kelola aplikasi Anda: pantau jumlah unduhan, edit detail, pin ke atas, atau hapus rilis yang sudah usang.',
+      placement: 'top',
+      disableBeacon: true,
+    }
+  ];
+
+  useEffect(() => {
+    if (!loading && sessionStorage.getItem('appsTourPending') === 'true') {
+      sessionStorage.removeItem('appsTourPending');
+      
+      const checkAndStart = () => {
+        const titleEl = document.querySelector('#apps-page-title');
+        const btnEl = document.querySelector('#add-app-btn');
+        const listEl = document.querySelector('#apps-list');
+        
+        if (titleEl && btnEl && listEl) {
+          setRunAppsTour(true);
+        } else {
+          setTimeout(checkAndStart, 300);
+        }
+      };
+      
+      const timer = setTimeout(checkAndStart, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   useEffect(() => { fetchApps(); }, []);
 
@@ -88,12 +160,45 @@ const ManageApps = () => {
     <div>
       <SEO title="Manage Apps" />
 
+      <Joyride
+        steps={appsSteps}
+        run={runAppsTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true}
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride ManageApps Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            localStorage.setItem('appsTourCompleted', 'true');
+            setRunAppsTour(false);
+            navigate('/dashboard');
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
       <div className="flex items-center justify-between mb-8">
-        <div>
+        <div id="apps-page-title">
           <h1 className="text-2xl font-extrabold text-foreground">Applications</h1>
           <p className="text-sm text-gray-400 font-medium mt-0.5">Kelola rilis aplikasi yang bisa diunduh</p>
         </div>
-        <Link to="/dashboard/apps/new" className="btn-primary gap-2 text-sm">
+        <Link id="add-app-btn" to="/dashboard/apps/new" className="btn-primary gap-2 text-sm">
           <Plus className="w-4 h-4" /> Add New
         </Link>
       </div>
@@ -103,7 +208,7 @@ const ManageApps = () => {
           <div className="inline-block w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : apps.length === 0 ? (
-        <div className="bg-white rounded-lg p-16 text-center">
+        <div id="apps-list" className="bg-white rounded-lg p-16 text-center">
           <Smartphone className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="font-semibold text-gray-400 mb-3">Belum ada aplikasi</p>
           <Link to="/dashboard/apps/new" className="text-primary font-bold text-sm hover:underline">
@@ -111,7 +216,7 @@ const ManageApps = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="apps-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {apps.map((app) => (
             <div
               key={app.id}

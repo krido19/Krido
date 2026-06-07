@@ -2,7 +2,30 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, CreditCard, RefreshCw, Copy, Check, ExternalLink, Trash2, X, Eye, Download, CheckCircle, Clock, BarChart, MessageCircle } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
 import { listPayments, checkPayment } from '../utils/bayargg';
+
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+    const localRef = React.useRef(null);
+    const combinedRef = ref || localRef;
+
+    useEffect(() => {
+        if (combinedRef && combinedRef.current) {
+            combinedRef.current.click();
+        }
+    }, [combinedRef]);
+
+    const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+    return (
+        <span
+            ref={combinedRef}
+            {...domProps}
+            style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+        />
+    );
+});
 import { checkTransaction } from '../utils/pakasir';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
@@ -57,6 +80,61 @@ const ManagePayments = () => {
     });
 
     const [pakasirPayments, setPakasirPayments] = useState([]);
+
+    const [runPaymentsTour, setRunPaymentsTour] = useState(false);
+
+    const paymentsSteps = [
+        {
+            target: '#payments-page-title',
+            title: '💳 Pusat Pembayaran',
+            content: 'Di sini Anda memantau semua tagihan masuk melalui provider pembayaran (bayar.gg & Pakasir).',
+            placement: 'bottom',
+            disableBeacon: true,
+        },
+        {
+            target: '#payments-widgets',
+            title: '📊 Ringkasan Keuangan',
+            content: 'Lihat ringkasan total pemasukan lunas bulan ini, total tertunda, dan seluruh transaksi.',
+            placement: 'bottom',
+            disableBeacon: true,
+        },
+        {
+            target: '#add-payment-btn',
+            title: '➕ Buat Tagihan Baru',
+            content: 'Klik di sini untuk membuat link pembayaran (QRIS, E-Wallet, VA) secara manual untuk klien Anda.',
+            placement: 'left',
+            disableBeacon: true,
+        },
+        {
+            target: '#payments-list',
+            title: '📝 Daftar Transaksi',
+            content: 'Kelola transaksi: cek status terbaru, copy link, kirim pengingat WhatsApp, atau sembunyikan tagihan.',
+            placement: 'top',
+            disableBeacon: true,
+        }
+    ];
+
+    useEffect(() => {
+        if (!loading && sessionStorage.getItem('paymentsTourPending') === 'true') {
+            sessionStorage.removeItem('paymentsTourPending');
+            
+            const checkAndStart = () => {
+                const titleEl = document.querySelector('#payments-page-title');
+                const widgetEl = document.querySelector('#payments-widgets');
+                const btnEl = document.querySelector('#add-payment-btn');
+                const listEl = document.querySelector('#payments-list');
+                
+                if (titleEl && widgetEl && btnEl && listEl) {
+                    setRunPaymentsTour(true);
+                } else {
+                    setTimeout(checkAndStart, 300);
+                }
+            };
+            
+            const timer = setTimeout(checkAndStart, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [loading]);
 
     const fetchPayments = useCallback(async (page = 1) => {
         try {
@@ -276,9 +354,42 @@ const ManagePayments = () => {
         <div>
             <SEO title="Manage Payments" />
 
+            <Joyride
+                steps={paymentsSteps}
+                run={runPaymentsTour}
+                continuous={true}
+                showSkipButton={true}
+                showProgress={true}
+                scrollToFirstStep={true}
+                disableScrolling={false}
+                disableScrollParentFix={true}
+                scrollDuration={500}
+                spotlightClicks={false}
+                beaconComponent={AutoClickBeacon}
+                tooltipComponent={TourTooltip}
+                callback={(data) => {
+                    const { status, type } = data;
+                    if (type === 'error') {
+                        console.error('[Joyride ManagePayments Error]:', JSON.stringify(data));
+                    }
+                    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+                        localStorage.setItem('paymentsTourCompleted', 'true');
+                        setRunPaymentsTour(false);
+                        navigate('/dashboard');
+                    }
+                }}
+                locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+                styles={{
+                    options: { primaryColor: '#06b6d4', zIndex: 10000 },
+                    tooltip: { borderRadius: 14, padding: 20 },
+                    tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+                    tooltipContent: { fontSize: 13, padding: '8px 0' },
+                }}
+            />
+
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <div>
+                <div id="payments-page-title">
                     <h1 className="text-2xl font-extrabold text-foreground">Payments</h1>
                     <p className="text-sm text-gray-400 font-medium mt-0.5">
                         Kelola data pembayaran (bayar.gg & Pakasir)
@@ -294,6 +405,7 @@ const ManagePayments = () => {
                         Export CSV
                     </button>
                     <button
+                        id="add-payment-btn"
                         onClick={() => navigate('/dashboard/payments/new')}
                         className="btn-primary gap-2 text-sm"
                     >
@@ -304,7 +416,7 @@ const ManagePayments = () => {
             </div>
 
             {/* Dashboard Stat Widgets */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div id="payments-widgets" className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
                     <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center shrink-0">
                         <CheckCircle className="w-6 h-6 text-emerald-500" />
@@ -380,18 +492,18 @@ const ManagePayments = () => {
 
             {/* Table */}
             {loading ? (
-                <div className="bg-white rounded-lg p-12 text-center">
+                <div id="payments-list" className="bg-white rounded-lg p-12 text-center">
                     <div className="inline-block w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
                     <p className="text-sm text-gray-400 font-medium">Memuat data...</p>
                 </div>
             ) : displayPayments.length === 0 ? (
-                <div className="bg-white rounded-lg p-16 text-center">
+                <div id="payments-list" className="bg-white rounded-lg p-16 text-center">
                     <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                     <p className="font-semibold text-gray-400">Belum ada data pembayaran</p>
                     <p className="text-sm text-gray-300 mt-1">Klik "Buat Pembayaran" untuk transaksi pertama</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg overflow-hidden">
+                <div id="payments-list" className="bg-white rounded-lg overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>

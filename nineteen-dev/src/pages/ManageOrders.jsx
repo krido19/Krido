@@ -3,6 +3,29 @@ import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, FileText, Search, Filter, ShoppingCart, Wallet } from 'lucide-react';
 import SEO from '../components/SEO';
+import { Joyride, STATUS } from 'react-joyride';
+import TourTooltip from '../components/TourTooltip';
+
+const AutoClickBeacon = React.forwardRef((props, ref) => {
+  const localRef = React.useRef(null);
+  const combinedRef = ref || localRef;
+
+  useEffect(() => {
+    if (combinedRef && combinedRef.current) {
+      combinedRef.current.click();
+    }
+  }, [combinedRef]);
+
+  const { continuous, index, isLastStep, size, step, ...domProps } = props;
+
+  return (
+    <span
+      ref={combinedRef}
+      {...domProps}
+      style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
+    />
+  );
+});
 
 const ManageOrders = () => {
   const navigate = useNavigate();
@@ -15,6 +38,61 @@ const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const [runOrdersTour, setRunOrdersTour] = useState(false);
+
+  const ordersSteps = [
+    {
+      target: '#orders-page-title',
+      title: '🛒 Manajemen Pesanan',
+      content: 'Pantau semua pesanan jasa dari klien di halaman ini.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#add-order-btn',
+      title: '➕ Tambah Order',
+      content: 'Klik di sini jika Anda ingin memasukkan pesanan klien secara manual.',
+      placement: 'left',
+      disableBeacon: true,
+    },
+    {
+      target: '#orders-filters',
+      title: '🔍 Pencarian & Filter',
+      content: 'Gunakan fitur ini untuk mencari invoice spesifik atau memfilter pesanan berdasarkan status (misal: Lunas/Pending).',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '#orders-list',
+      title: '📝 Daftar Pesanan',
+      content: 'Di tabel ini Anda dapat memantau status pesanan, mencetak invoice, serta membuat link pembayaran.',
+      placement: 'top',
+      disableBeacon: true,
+    }
+  ];
+
+  useEffect(() => {
+    if (!loading && sessionStorage.getItem('ordersTourPending') === 'true') {
+      sessionStorage.removeItem('ordersTourPending');
+      
+      const checkAndStart = () => {
+        const titleEl = document.querySelector('#orders-page-title');
+        const btnEl = document.querySelector('#add-order-btn');
+        const filterEl = document.querySelector('#orders-filters');
+        const listEl = document.querySelector('#orders-list');
+        
+        if (titleEl && btnEl && filterEl && listEl) {
+          setRunOrdersTour(true);
+        } else {
+          setTimeout(checkAndStart, 300);
+        }
+      };
+      
+      const timer = setTimeout(checkAndStart, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   useEffect(() => { fetchOrders(); }, []);
 
@@ -90,13 +168,47 @@ const ManageOrders = () => {
     <div>
       <SEO title="Manage Orders" />
 
+      <Joyride
+        steps={ordersSteps}
+        run={runOrdersTour}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        disableScrolling={false}
+        disableScrollParentFix={true}
+        scrollDuration={500}
+        spotlightClicks={false}
+        beaconComponent={AutoClickBeacon}
+        tooltipComponent={TourTooltip}
+        callback={(data) => {
+          const { status, type } = data;
+          if (type === 'error') {
+            console.error('[Joyride ManageOrders Error]:', JSON.stringify(data));
+          }
+          if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+            localStorage.setItem('ordersTourCompleted', 'true');
+            setRunOrdersTour(false);
+            navigate('/dashboard');
+          }
+        }}
+        locale={{ back: 'Kembali', close: 'Tutup', last: 'Selesai ✔', next: 'Lanjut', skip: 'Lewati' }}
+        styles={{
+          options: { primaryColor: '#06b6d4', zIndex: 10000 },
+          tooltip: { borderRadius: 14, padding: 20 },
+          tooltipTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
+          tooltipContent: { fontSize: 13, padding: '8px 0' },
+        }}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div>
+        <div id="orders-page-title">
           <h1 className="text-2xl font-extrabold text-foreground">Orders</h1>
           <p className="text-sm text-gray-400 font-medium mt-0.5">Kelola semua pesanan klien</p>
         </div>
         <button
+          id="add-order-btn"
           onClick={() => navigate('/dashboard/orders/new')}
           className="btn-primary gap-2 text-sm"
         >
@@ -106,7 +218,7 @@ const ManageOrders = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div id="orders-filters" className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -134,19 +246,19 @@ const ManageOrders = () => {
 
       {/* Table */}
       {loading ? (
-        <div className="bg-white rounded-lg p-12 text-center">
+        <div id="orders-list" className="bg-white rounded-lg p-12 text-center">
           <div className="inline-block w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
           <p className="text-sm text-gray-400 font-medium">Memuat data...</p>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="bg-white rounded-lg p-16 text-center">
+        <div id="orders-list" className="bg-white rounded-lg p-16 text-center">
           <ShoppingCart className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="font-semibold text-gray-400">
             {orders.length === 0 ? 'Belum ada order' : 'Tidak ada order yang cocok'}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div id="orders-list" className="bg-white rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
