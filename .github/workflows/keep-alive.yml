@@ -13,17 +13,17 @@ jobs:
       - name: Ping Supabase REST API
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "Error: SUPABASE_URL or SUPABASE_ANON_KEY action secrets are missing."
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_API_KEY" ]; then
+            echo "Error: SUPABASE_URL and SUPABASE_API_KEY (Anon or Service Role) action secrets are missing."
             exit 1
           fi
 
           echo "Pinging Supabase at $SUPABASE_URL..."
           STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${SUPABASE_URL}/rest/v1/keep_alives" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "apikey: ${SUPABASE_API_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_API_KEY}" \
             -H "Content-Type: application/json" \
             -d '{"method": "cron"}')
           
