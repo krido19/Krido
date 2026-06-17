@@ -2,28 +2,36 @@ name: Database Keep-Alive
 
 on:
   schedule:
-    # Runs every 3 days at 00:00 UTC
+    # Run every 3 days at midnight UTC
     - cron: '0 0 */3 * *'
-  workflow_dispatch: # Allows manual triggering for testing
+  workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install @supabase/supabase-js dotenv
-
-      - name: Run keep-alive script
+      - name: Ping Supabase REST API
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/keep-alive.js
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Error: SUPABASE_URL or SUPABASE_ANON_KEY action secrets are missing."
+            exit 1
+          fi
+
+          echo "Pinging Supabase at $SUPABASE_URL..."
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${SUPABASE_URL}/rest/v1/keep_alives" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"method": "cron"}')
+          
+          echo "Response HTTP Status: $STATUS_CODE"
+          
+          if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 300 ]; then
+            echo "Keep-alive ping successful!"
+          else
+            echo "Keep-alive ping failed. Check your table setup and permissions."
+            exit 1
+          fi
