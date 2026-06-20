@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, Sun, Moon, Globe } from 'lucide-react';
+import { Lock, Mail, Sun, Moon, Globe, Info, X, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import Scene from '../components/Scene';
@@ -15,6 +15,7 @@ const Login = () => {
     const { t, i18n } = useTranslation();
 
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+    const [showGuidelines, setShowGuidelines] = useState(true);
 
     useEffect(() => {
         if (theme === 'dark') {
@@ -162,6 +163,47 @@ const Login = () => {
                         </Link>
                     </p>
                 </div> */}
+            </div>
+            {/* Floating Guidelines */}
+            <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+                {showGuidelines ? (
+                    <div className="w-72 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-md border border-cyan-500/50 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all duration-300 animate-fade-in-up">
+                        <div className="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-800 pb-2">
+                            <div className="flex items-center text-cyan-600 dark:text-cyan-400 font-bold text-sm tracking-wide">
+                                <ShieldAlert className="w-4 h-4 mr-2" />
+                                Admin Guidelines
+                            </div>
+                            <button 
+                                onClick={() => setShowGuidelines(false)}
+                                className="text-gray-500 hover:text-pink-500 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <ul className="space-y-2 text-xs text-gray-700 dark:text-gray-300">
+                            <li className="flex items-start">
+                                <span className="text-pink-500 mr-2">►</span>
+                                Restricted Area: Only authorized personnel.
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-pink-500 mr-2">►</span>
+                                Use your registered admin email.
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-pink-500 mr-2">►</span>
+                                Forgot password? Contact Super Admin.
+                            </li>
+                        </ul>
+                    </div>
+                ) : (
+                    <button 
+                        onClick={() => setShowGuidelines(true)}
+                        className="p-3 bg-cyan-500 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.5)] hover:bg-cyan-400 hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] transition-all duration-300"
+                        title="Show Guidelines"
+                    >
+                        <Info className="w-5 h-5" />
+                    </button>
+                )}
             </div>
         </div>
     );
