@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Download } from 'lucide-react';
 import { jsPDF } from 'jspdf';

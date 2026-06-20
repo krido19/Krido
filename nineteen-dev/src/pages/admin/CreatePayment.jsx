@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, Copy, Check, ExternalLink, AlertCircle, Loader2, HelpCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import SEO from '../components/SEO';
-import AppJoyride from '../components/AppJoyride';
-import { useTour } from '../hooks/useTour';
-import { createPayment, getPaymentMethods } from '../utils/bayargg';
-import { createTransaction } from '../utils/pakasir';
-import { supabase } from '../supabaseClient';
+import SEO from '../../components/SEO';
+import AppJoyride from '../../components/AppJoyride';
+import { useTour } from '../../hooks/useTour';
+import { createPayment, getPaymentMethods } from '../../utils/bayargg';
+import { createTransaction } from '../../utils/pakasir';
+import { supabase } from '../../supabaseClient';
 
 const Field = ({ label, required, hint, children }) => (
     <div>

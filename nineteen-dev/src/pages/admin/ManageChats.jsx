@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { MessageSquare, Send, CheckCircle2, Clock, User, Bot } from 'lucide-react';
-import SEO from '../components/SEO';
+import SEO from '../../components/SEO';
 
 const ManageChats = () => {
   const [sessions, setSessions] = useState([]);

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
-import SEO from '../components/SEO';
+import SEO from '../../components/SEO';
 
 const Login = () => {
   const [email, setEmail] = useState('');

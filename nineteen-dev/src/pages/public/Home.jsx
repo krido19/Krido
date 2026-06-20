@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ExternalLink, ArrowRight,
   MessageCircle, Code2, Zap, Users, Star, FileText,
   Share2, Link as LinkIcon, X, Play
 } from 'lucide-react';
-import SEO from '../components/SEO';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import Testimonials from '../components/Testimonials';
-import ContactForm from '../components/ContactForm';
+import SEO from '../../components/SEO';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import Testimonials from '../../components/Testimonials';
+import ContactForm from '../../components/ContactForm';
 import { useTranslation } from 'react-i18next';
 import toast, { Toaster } from 'react-hot-toast';
 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Calculator, HelpCircle } from 'lucide-react';
-import SEO from '../components/SEO';
-import AppJoyride from '../components/AppJoyride';
-import { useTour } from '../hooks/useTour';
+import SEO from '../../components/SEO';
+import AppJoyride from '../../components/AppJoyride';
+import { useTour } from '../../hooks/useTour';
 
 const Field = ({ label, required, children }) => (
   <div>

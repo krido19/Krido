@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, ArrowLeft, Save } from 'lucide-react';
-import { optimizeImage } from '../utils/imageOptimizer';
-import SEO from '../components/SEO';
+import { optimizeImage } from '../../utils/imageOptimizer';
+import SEO from '../../components/SEO';
 
 const Field = ({ label, htmlFor, children }) => (
   <div>

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, FileText, Search, Filter, ShoppingCart, Wallet } from 'lucide-react';
-import SEO from '../components/SEO';
-import AppJoyride from '../components/AppJoyride';
-import { useTour } from '../hooks/useTour';
+import SEO from '../../components/SEO';
+import AppJoyride from '../../components/AppJoyride';
+import { useTour } from '../../hooks/useTour';
 
 const ManageOrders = () => {
   const navigate = useNavigate();

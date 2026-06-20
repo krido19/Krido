@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { CreditCard, CheckCircle, Clock, Link as LinkIcon, AlertTriangle } from 'lucide-react';
-import { checkPayment } from '../utils/bayargg';
-import { checkTransaction } from '../utils/pakasir';
-import SEO from '../components/SEO';
+import { checkPayment } from '../../utils/bayargg';
+import { checkTransaction } from '../../utils/pakasir';
+import SEO from '../../components/SEO';
 
 const formatCurrency = (amount) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);

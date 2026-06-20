@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import SEO from '../components/SEO';
+import SEO from '../../components/SEO';
 import { Sparkles, Calendar } from 'lucide-react';
 
 const ComingSoon = () => {

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Plus, Trash2, HelpCircle } from 'lucide-react';
-import SEO from '../components/SEO';
-import AppJoyride from '../components/AppJoyride';
-import { useTour } from '../hooks/useTour';
+import SEO from '../../components/SEO';
+import AppJoyride from '../../components/AppJoyride';
+import { useTour } from '../../hooks/useTour';
 
 const colorOptions = [
   { label: 'Biru (Default)', value: 'from-cyan-400 to-blue-500' },

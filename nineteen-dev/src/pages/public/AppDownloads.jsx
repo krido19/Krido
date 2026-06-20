@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { Download, Smartphone, Package, Star, CheckCircle, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import SEO from '../components/SEO';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import SEO from '../../components/SEO';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
 import toast, { Toaster } from 'react-hot-toast';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;

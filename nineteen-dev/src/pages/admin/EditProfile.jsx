@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../supabaseClient';
-import Avatar from '../components/Avatar';
+import { supabase } from '../../supabaseClient';
+import Avatar from '../../components/Avatar';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Phone, Globe, Link2, AtSign, ExternalLink } from 'lucide-react';
-import SEO from '../components/SEO';
-import AppJoyride from '../components/AppJoyride';
-import { useTour } from '../hooks/useTour';
+import SEO from '../../components/SEO';
+import AppJoyride from '../../components/AppJoyride';
+import { useTour } from '../../hooks/useTour';
 
 const Field = ({ label, htmlFor, children, colSpan }) => (
   <div className={colSpan ? 'md:col-span-2' : ''}>

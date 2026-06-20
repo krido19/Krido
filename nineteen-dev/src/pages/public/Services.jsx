@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Check, Clock, MessageCircle, Zap, ChevronDown, ChevronUp } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useTranslation } from 'react-i18next';
-import SEO from '../components/SEO';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import SEO from '../../components/SEO';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
 import { Toaster } from 'react-hot-toast';
 
 const PLAN_COLORS = [

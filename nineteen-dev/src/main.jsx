@@ -5,11 +5,15 @@ import './index.css';
 import './i18n';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <HelmetProvider>
-      <App />
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
+        <App />
       <Toaster
         position="top-right"
         toastOptions={{
@@ -30,5 +34,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         }}
       />
     </HelmetProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );

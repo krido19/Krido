@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ExternalLink, Calendar, Eye, Share2, MessageCircle, Link as LinkIcon, Download, Loader2, FileArchive } from 'lucide-react';
-import SEO from '../components/SEO';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import SEO from '../../components/SEO';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
 import toast, { Toaster } from 'react-hot-toast';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;

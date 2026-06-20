@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, ExternalLink, Briefcase, Pin, HelpCircle } from 'lucide-react';
-import SEO from '../components/SEO';
-import AppJoyride from '../components/AppJoyride';
-import { useTour } from '../hooks/useTour';
+import SEO from '../../components/SEO';
+import AppJoyride from '../../components/AppJoyride';
+import { useTour } from '../../hooks/useTour';
 
 const ManagePortfolio = () => {
   const [portfolio, setPortfolio] = useState([]);

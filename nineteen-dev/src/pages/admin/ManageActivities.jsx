@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Calendar, Activity } from 'lucide-react';
-import SEO from '../components/SEO';
+import SEO from '../../components/SEO';
 
 const ManageActivities = () => {
   const [activities, setActivities] = useState([]);

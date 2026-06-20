@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from './supabaseClient';
 import Loading from './components/Loading';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -8,39 +9,36 @@ import { ChatProvider } from './contexts/ChatContext';
 import ChatWidget from './components/chat/ChatWidget';
 import ScrollToTop from './components/ScrollToTop';
 // ── Public pages ───────────────────────────────────────────────────────────
-const Home = React.lazy(() => import('./pages/Home'));
-const Login = React.lazy(() => import('./pages/Login'));
-const Services = React.lazy(() => import('./pages/Services'));
-const Projects = React.lazy(() => import('./pages/Projects'));
-const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
-const Activities = React.lazy(() => import('./pages/Activities'));
-const AppDownloads = React.lazy(() => import('./pages/AppDownloads'));
-const NotFound = React.lazy(() => import('./pages/NotFound'));
-const ComingSoon = React.lazy(() => import('./pages/ComingSoon'));
-const InvoiceLanding = React.lazy(() => import('./pages/InvoiceLanding'));
+const Home = React.lazy(() => import('./pages/public/Home'));
+const Login = React.lazy(() => import('./pages/auth/Login'));
+const Services = React.lazy(() => import('./pages/public/Services'));
+const Projects = React.lazy(() => import('./pages/public/Projects'));
+const ProjectDetail = React.lazy(() => import('./pages/public/ProjectDetail'));
+const Activities = React.lazy(() => import('./pages/public/Activities'));
+const AppDownloads = React.lazy(() => import('./pages/public/AppDownloads'));
+const NotFound = React.lazy(() => import('./pages/public/NotFound'));
+const ComingSoon = React.lazy(() => import('./pages/public/ComingSoon'));
+const InvoiceLanding = React.lazy(() => import('./pages/public/InvoiceLanding'));
 
 // ── Public Route Wrapper (Membelokkan pengunjung jika Launch Countdown aktif)
 const PublicRoute = ({ children }) => {
-  const [launchMode, setLaunchMode] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    const checkLaunchMode = async () => {
+  const { data: launchMode, isLoading: loading } = useQuery({
+    queryKey: ['launchMode'],
+    queryFn: async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('launch_countdown_enabled')
           .limit(1)
           .single();
-        setLaunchMode(!!data?.launch_countdown_enabled);
+        if (error) throw error;
+        return !!data?.launch_countdown_enabled;
       } catch (err) {
-        setLaunchMode(false); // Fallback ke normal jika gagal
-      } finally {
-        setLoading(false);
+        return false; // Fallback ke normal jika gagal
       }
-    };
-    checkLaunchMode();
-  }, []);
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
   if (loading) return <Loading />;
   if (launchMode) return <Navigate to="/coming-soon" replace />;
@@ -48,22 +46,22 @@ const PublicRoute = ({ children }) => {
 };
 
 // ── Admin pages ────────────────────────────────────────────────────────────
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const EditProfile = React.lazy(() => import('./pages/EditProfile'));
-const ManagePortfolio = React.lazy(() => import('./pages/ManagePortfolio'));
-const EditPortfolio = React.lazy(() => import('./pages/EditPortfolio'));
-const ManageActivities = React.lazy(() => import('./pages/ManageActivities'));
-const EditActivity = React.lazy(() => import('./pages/EditActivity'));
-const ManageApps = React.lazy(() => import('./pages/ManageApps'));
-const EditApp = React.lazy(() => import('./pages/EditApp'));
-const ManageServices = React.lazy(() => import('./pages/ManageServices'));
-const EditService = React.lazy(() => import('./pages/EditService'));
-const ManageOrders = React.lazy(() => import('./pages/ManageOrders'));
-const EditOrder = React.lazy(() => import('./pages/EditOrder'));
-const InvoicePrint = React.lazy(() => import('./pages/InvoicePrint'));
-const ManageChats = React.lazy(() => import('./pages/ManageChats'));
-const ManagePayments = React.lazy(() => import('./pages/ManagePayments'));
-const CreatePayment = React.lazy(() => import('./pages/CreatePayment'));
+const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
+const EditProfile = React.lazy(() => import('./pages/admin/EditProfile'));
+const ManagePortfolio = React.lazy(() => import('./pages/admin/ManagePortfolio'));
+const EditPortfolio = React.lazy(() => import('./pages/admin/EditPortfolio'));
+const ManageActivities = React.lazy(() => import('./pages/admin/ManageActivities'));
+const EditActivity = React.lazy(() => import('./pages/admin/EditActivity'));
+const ManageApps = React.lazy(() => import('./pages/admin/ManageApps'));
+const EditApp = React.lazy(() => import('./pages/admin/EditApp'));
+const ManageServices = React.lazy(() => import('./pages/admin/ManageServices'));
+const EditService = React.lazy(() => import('./pages/admin/EditService'));
+const ManageOrders = React.lazy(() => import('./pages/admin/ManageOrders'));
+const EditOrder = React.lazy(() => import('./pages/admin/EditOrder'));
+const InvoicePrint = React.lazy(() => import('./pages/admin/InvoicePrint'));
+const ManageChats = React.lazy(() => import('./pages/admin/ManageChats'));
+const ManagePayments = React.lazy(() => import('./pages/admin/ManagePayments'));
+const CreatePayment = React.lazy(() => import('./pages/admin/CreatePayment'));
 
 function App() {
   return (

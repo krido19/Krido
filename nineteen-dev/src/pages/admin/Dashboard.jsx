@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import {
   Briefcase, Activity, Zap, Package,
   MessageSquare, TrendingUp, Users, ChevronRight,
   ShoppingCart, Star, Rocket, Power, Database
 } from 'lucide-react';
-import SEO from '../components/SEO';
+import SEO from '../../components/SEO';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
