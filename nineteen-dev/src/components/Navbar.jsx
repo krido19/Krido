@@ -18,6 +18,7 @@ const Navbar = ({ transparent = false }) => {
     { href: '/services', label: t('nav_services') },
     { href: '/activities', label: t('nav_activities') },
     { href: '/apps', label: t('nav_apps', 'Apps') },
+    { href: '/blog', label: t('nav_blog', 'DevLog') },
   ];
 
   const isActive = (href) => location.pathname === href;

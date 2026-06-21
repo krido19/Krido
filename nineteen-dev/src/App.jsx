@@ -19,6 +19,8 @@ const AppDownloads = React.lazy(() => import('./pages/public/AppDownloads'));
 const NotFound = React.lazy(() => import('./pages/public/NotFound'));
 const ComingSoon = React.lazy(() => import('./pages/public/ComingSoon'));
 const InvoiceLanding = React.lazy(() => import('./pages/public/InvoiceLanding'));
+const Blogs = React.lazy(() => import('./pages/public/Blogs'));
+const BlogPost = React.lazy(() => import('./pages/public/BlogPost'));
 
 // ── Public Route Wrapper (Membelokkan pengunjung jika Launch Countdown aktif)
 const PublicRoute = ({ children }) => {
@@ -62,6 +64,8 @@ const InvoicePrint = React.lazy(() => import('./pages/admin/InvoicePrint'));
 const ManageChats = React.lazy(() => import('./pages/admin/ManageChats'));
 const ManagePayments = React.lazy(() => import('./pages/admin/ManagePayments'));
 const CreatePayment = React.lazy(() => import('./pages/admin/CreatePayment'));
+const ManageBlogs = React.lazy(() => import('./pages/admin/ManageBlogs'));
+const EditBlog = React.lazy(() => import('./pages/admin/EditBlog'));
 
 function App() {
   return (
@@ -77,6 +81,8 @@ function App() {
             <Route path="/projects/:id" element={<PublicRoute><ProjectDetail /></PublicRoute>} />
             <Route path="/activities" element={<PublicRoute><Activities /></PublicRoute>} />
             <Route path="/apps" element={<PublicRoute><AppDownloads /></PublicRoute>} />
+            <Route path="/blog" element={<PublicRoute><Blogs /></PublicRoute>} />
+            <Route path="/blog/:slug" element={<PublicRoute><BlogPost /></PublicRoute>} />
 
             {/* ── Unprotected Publics (Login, Invoice, Coming Soon) ── */}
             <Route path="/coming-soon" element={<ComingSoon />} />
@@ -110,6 +116,9 @@ function App() {
               <Route path="/dashboard/chats" element={<ManageChats />} />
               <Route path="/dashboard/payments" element={<ManagePayments />} />
               <Route path="/dashboard/payments/new" element={<CreatePayment />} />
+              <Route path="/dashboard/blogs" element={<ManageBlogs />} />
+              <Route path="/dashboard/blogs/new" element={<EditBlog />} />
+              <Route path="/dashboard/blogs/edit/:id" element={<EditBlog />} />
             </Route>
 
             {/* ── 404 ── */}

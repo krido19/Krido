@@ -6,7 +6,7 @@ import TourTooltip from './TourTooltip';
 import {
   LayoutDashboard, User, Briefcase, Activity,
   Package, Zap, ShoppingCart, MessageSquare,
-  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard, HelpCircle
+  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard, HelpCircle, FileText
 } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -20,6 +20,7 @@ const navItems = [
   { to: '/dashboard/services', icon: Zap, label: 'Services' },
   { to: '/dashboard/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/dashboard/payments', icon: CreditCard, label: 'Payments' },
+  { to: '/dashboard/blogs', icon: FileText, label: 'Blogs' },
 ];
 
 // idPrefix: 'menu-' untuk desktop (tour targets), 'mobile-menu-' untuk mobile (hindari ID duplikat)
@@ -155,15 +156,14 @@ const AdminLayout = () => {
   const [runTour, setRunTour] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
-  // ✅ PERCOBAAN #5 fix: Joyride AdminLayout harus benar-benar MATI saat halaman
-  // lokal punya Joyride sendiri. Dua overlay = layar gelap total.
   const isLocalTourPage = [
     '/profile', 
     '/portfolio', 
     '/dashboard/apps', 
     '/dashboard/services', 
     '/dashboard/orders', 
-    '/dashboard/payments'
+    '/dashboard/payments',
+    '/dashboard/blogs'
   ].includes(location.pathname);
 
   const steps = useMemo(() => {
