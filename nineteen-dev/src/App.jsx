@@ -19,6 +19,8 @@ const AppDownloads = React.lazy(() => import('./pages/public/AppDownloads'));
 const NotFound = React.lazy(() => import('./pages/public/NotFound'));
 const ComingSoon = React.lazy(() => import('./pages/public/ComingSoon'));
 const InvoiceLanding = React.lazy(() => import('./pages/public/InvoiceLanding'));
+const TrackOrder = React.lazy(() => import('./pages/public/TrackOrder'));
+const ReviewForm = React.lazy(() => import('./pages/public/ReviewForm'));
 const Blogs = React.lazy(() => import('./pages/public/Blogs'));
 const BlogPost = React.lazy(() => import('./pages/public/BlogPost'));
 
@@ -88,6 +90,8 @@ function App() {
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/login" element={<Login />} />
             <Route path="/invoice/:id" element={<InvoiceLanding />} />
+            <Route path="/track" element={<TrackOrder />} />
+            <Route path="/review" element={<ReviewForm />} />
 
             {/* ── Admin (Protected + AdminLayout sidebar) ── */}
             <Route element={
