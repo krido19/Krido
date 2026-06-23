@@ -36,7 +36,7 @@ const Blogs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <SEO title="DevLog - Technical Blog & Updates" description="Read the latest thoughts, dev logs, and technical articles." url={`${window.location.origin}/blog`} />
       <Navbar />
 
@@ -54,8 +54,8 @@ const Blogs = () => {
       </section>
 
       {/* ── Blog Grid ── */}
-      <section className="section-white py-16">
-        <div className="container-max">
+      <section className="section-white py-16 flex-1 flex flex-col">
+        <div className="container-max flex-1">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
