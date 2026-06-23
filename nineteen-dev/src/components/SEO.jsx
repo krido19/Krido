@@ -22,6 +22,23 @@ const SEO = ({ title, description, url, image }) => {
       <meta name="twitter:description" content={description || defaultDesc} />
       <meta name="twitter:image" content={image || defaultImage} />
       <link rel="canonical" href={url || 'https://nineteen.dev'} />
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": siteName,
+          "url": "https://nineteen.dev/",
+          "description": defaultDesc,
+          "publisher": {
+            "@type": "Organization",
+            "name": siteName,
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://nineteen.dev/logo.png"
+            }
+          }
+        })}
+      </script>
     </Helmet>
   );
 };
