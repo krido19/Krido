@@ -63,48 +63,61 @@ export default function ManageBlogs() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-400">Loading blogs...</div>;
+    return <div className="p-8 text-center text-gray-500">Loading blogs...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Manage Blogs</h1>
+        <h1 className="text-2xl font-extrabold text-foreground">Manage Blogs</h1>
         <Link
           to="/dashboard/blogs/new"
-          className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-colors"
+          className="btn-primary gap-2"
         >
-          <Plus size={20} />
+          <Plus size={18} />
           New Blog Post
         </Link>
       </div>
 
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-700/50 bg-gray-800/80">
-                <th className="p-4 text-gray-300 font-medium">Title</th>
-                <th className="p-4 text-gray-300 font-medium">Date</th>
-                <th className="p-4 text-gray-300 font-medium text-center">Status</th>
-                <th className="p-4 text-gray-300 font-medium text-right">Actions</th>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Title</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Date</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Status</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {blogs.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="p-8 text-center text-gray-400">
+                  <td colSpan="4" className="p-8 text-center text-gray-500 font-medium">
                     No blog posts found. Create one!
                   </td>
                 </tr>
               ) : (
                 blogs.map((blog) => (
-                  <tr key={blog.id} className="border-b border-gray-700/50 hover:bg-gray-800/30 transition-colors">
+                  <tr key={blog.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="p-4">
-                      <div className="font-medium text-white">{blog.title}</div>
-                      <div className="text-sm text-gray-400">/{blog.slug}</div>
+                      <div className="flex items-center gap-4">
+                        {blog.cover_image ? (
+                          <img
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/blog-covers/${blog.cover_image}`}
+                            alt={blog.title}
+                            className="w-20 h-14 object-cover rounded-md border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-20 h-14 bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center text-gray-400 text-xs">No img</div>
+                        )}
+                        <div>
+                          <div className="font-bold text-foreground line-clamp-1">{blog.title}</div>
+                          <div className="text-sm text-gray-500">/{blog.slug}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="p-4 text-gray-400">
+                    <td className="p-4 text-gray-500 font-medium">
                       {format(new Date(blog.created_at), 'dd MMM yyyy')}
                     </td>
                     <td className="p-4 text-center">
@@ -127,14 +140,14 @@ export default function ManageBlogs() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/dashboard/blogs/edit/${blog.id}`}
-                          className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </Link>
                         <button
                           onClick={() => handleDelete(blog.id)}
-                          className="p-2 text-gray-400 hover:text-pink-400 hover:bg-pink-400/10 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={18} />

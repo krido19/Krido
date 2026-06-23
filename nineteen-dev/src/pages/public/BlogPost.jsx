@@ -120,37 +120,43 @@ const BlogPost = () => {
       <Navbar />
 
       <main className="pt-32 pb-20">
-        <div className="max-w-3xl mx-auto px-6">
-          <Link to="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-primary transition-colors mb-8">
-            <ArrowLeft className="w-4 h-4" /> Back to DevLog
-          </Link>
-          
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-foreground leading-tight mb-6">
-            {blog.title}
-          </h1>
-          
-          <div className="flex flex-wrap items-center gap-4 text-sm font-bold text-gray-400 mb-10 pb-10 border-b border-gray-100">
-            <div className="flex items-center gap-2 text-primary">
-              <Calendar className="w-4 h-4" />
-              <span>{format(new Date(blog.created_at), 'MMMM dd, yyyy')}</span>
+        <div className="container-max">
+          <div className="max-w-4xl mx-auto mb-10 text-center">
+            <div className="flex justify-center mb-6">
+              <Link to="/blog" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors bg-gray-50 px-4 py-2 rounded-full">
+                <ArrowLeft className="w-4 h-4" /> Back to DevLog
+              </Link>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span>{Math.max(1, Math.ceil(blog.content.length / 1000))} min read</span>
+            
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-foreground leading-tight mb-8">
+              {blog.title}
+            </h1>
+            
+            <div className="flex items-center justify-center gap-6 text-sm font-bold text-gray-400">
+              <div className="flex items-center gap-2 text-primary">
+                <Calendar className="w-4 h-4" />
+                <span>{format(new Date(blog.created_at), 'MMMM dd, yyyy')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{Math.max(1, Math.ceil(blog.content.length / 1000))} min read</span>
+              </div>
             </div>
           </div>
-          
+
           {blog.cover_image && (
-            <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100 mb-12 shadow-sm border border-gray-100">
+            <div className="max-w-5xl mx-auto rounded-2xl md:rounded-[2rem] overflow-hidden bg-gray-50 mb-16 shadow-2xl shadow-blue-900/10 border border-gray-100 flex justify-center">
               <img
                 src={`${SUPABASE_URL}/storage/v1/object/public/blog-covers/${blog.cover_image}`}
                 alt={blog.title}
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-contain"
               />
             </div>
           )}
+        </div>
 
-          <article className="prose prose-lg prose-blue max-w-none mb-16 prose-headings:font-extrabold prose-p:text-gray-600 prose-img:rounded-xl">
+        <div className="max-w-3xl mx-auto px-6">
+          <article className="prose prose-lg prose-blue max-w-none mb-16 prose-headings:font-extrabold prose-p:text-gray-600 prose-img:rounded-2xl prose-img:w-full prose-img:shadow-md">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {blog.content}
             </ReactMarkdown>
