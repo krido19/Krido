@@ -92,10 +92,6 @@ const Navbar = ({ transparent = false }) => {
             </div>
             </div>
 
-            <Link to="/login" className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-foreground transition-colors">
-              <LogIn className="w-4 h-4" />
-              <span>{t('signin')}</span>
-            </Link>
 
             <a
               href="#contact"
@@ -152,9 +148,6 @@ const Navbar = ({ transparent = false }) => {
                   }`}
                 >ID</button>
               </div>
-              <Link to="/login" onClick={() => setMobileOpen(false)} className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                <LogIn className="w-4 h-4" /> {t('signin')}
-              </Link>
             </div>
             <a
               href="#contact"
