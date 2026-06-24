@@ -15,7 +15,7 @@ const Loading = () => {
             <span className="text-2xl font-black text-primary tracking-tight">.dev</span>
           </div>
           <div className="bg-blue-50 text-blue-600 px-3 py-1 mt-1 rounded-full text-xs font-extrabold tracking-widest uppercase border border-blue-100 shadow-sm animate-pulse">
-            Coming Soon 4.4
+            4.4
           </div>
         </div>
       </div>
