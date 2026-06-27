@@ -30,10 +30,13 @@ export default function ManageBlogs() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, coverImage) => {
     if (!window.confirm('Are you sure you want to delete this blog post?')) return;
 
     try {
+      if (coverImage) {
+        await supabase.storage.from('blog-covers').remove([coverImage]);
+      }
       const { error } = await supabase.from('blogs').delete().eq('id', id);
       if (error) throw error;
       
@@ -146,7 +149,7 @@ export default function ManageBlogs() {
                           <Edit2 size={18} />
                         </Link>
                         <button
-                          onClick={() => handleDelete(blog.id)}
+                          onClick={() => handleDelete(blog.id, blog.cover_image)}
                           className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >

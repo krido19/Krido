@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Image as ImageIcon, Eye, Edit3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import SEO from '../../components/SEO';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import imageCompression from 'browser-image-compression';
 
 const Field = ({ label, htmlFor, hint, children }) => (
   <div>
@@ -18,6 +21,7 @@ const EditBlog = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [activeTab, setActiveTab] = useState('write');
   const [formData, setFormData] = useState({ 
     title: '', 
     slug: '', 
@@ -62,11 +66,22 @@ const EditBlog = () => {
       setUploadingImage(true);
       const file = e.target.files[0];
       if (!file) return;
-      const fileName = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
-      const { error } = await supabase.storage.from('blog-covers').upload(fileName, file);
+
+      const options = {
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+
+      const fileName = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${compressedFile.name.split('.').pop()}`;
+      const { error } = await supabase.storage.from('blog-covers').upload(fileName, compressedFile);
+      
       if (error) throw error;
+      
       setFormData(prev => ({ ...prev, cover_image: fileName }));
-      toast.success('Cover uploaded');
+      toast.success('Cover uploaded & compressed');
     } catch (error) { 
       toast.error('Error uploading image');
       console.error(error);
@@ -93,7 +108,11 @@ const EditBlog = () => {
       toast.success(id ? 'Blog updated' : 'Blog created');
       navigate('/dashboard/blogs');
     } catch (error) { 
-      toast.error('Gagal menyimpan: ' + error.message); 
+      if (error.code === '23505' || error.message?.includes('duplicate key')) {
+        toast.error('Judul atau Slug ini sudah pernah dipakai, silakan gunakan yang lain.');
+      } else {
+        toast.error('Gagal menyimpan: ' + error.message); 
+      }
     } finally { 
       setLoading(false); 
     }
@@ -161,18 +180,53 @@ const EditBlog = () => {
             </div>
           </Field>
 
-          <Field label="Content (Markdown)" htmlFor="content" hint="You can use Markdown syntax to format your post.">
-            <textarea 
-              id="content" 
-              name="content" 
-              value={formData.content} 
-              onChange={handleChange} 
-              rows={15} 
-              className="w-full px-4 py-3 font-mono text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
-              required 
-              placeholder="# Heading 1&#10;## Heading 2&#10;**Bold text**&#10;*Italic text*&#10;[Link](https://example.com)&#10;&#10;```javascript&#10;const hello = 'world';&#10;```"
-            />
-          </Field>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Content (Markdown)</label>
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('write')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'write' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Write
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('preview')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'preview' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Preview
+                </button>
+              </div>
+            </div>
+            
+            {activeTab === 'write' ? (
+              <textarea 
+                id="content" 
+                name="content" 
+                value={formData.content} 
+                onChange={handleChange} 
+                rows={15} 
+                className="w-full px-4 py-3 font-mono text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                required 
+                placeholder="# Heading 1&#10;## Heading 2&#10;**Bold text**&#10;*Italic text*&#10;[Link](https://example.com)&#10;&#10;```javascript&#10;const hello = 'world';&#10;```"
+              />
+            ) : (
+              <div className="w-full px-4 py-4 min-h-[350px] border border-gray-200 rounded-lg bg-gray-50 prose prose-sm sm:prose max-w-none">
+                {formData.content ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {formData.content}
+                  </ReactMarkdown>
+                ) : (
+                  <p className="text-gray-400 italic">Preview konten akan muncul di sini...</p>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-1">You can use Markdown syntax to format your post.</p>
+          </div>
           
           <div className="flex items-center gap-2 pt-2">
             <input 
