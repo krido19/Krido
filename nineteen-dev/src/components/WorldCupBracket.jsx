@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { Link } from 'react-router-dom';
 
@@ -20,7 +20,7 @@ const COUNTRY_CODES = {
 };
 
 // Komponen Card untuk satu pertandingan
-const MatchCard = ({ match, roundIndex, searchQuery = "" }) => {
+const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }) => {
   // API worldcup26.ir menggunakan waktu Amerika (EDT / UTC-4). 
   // Kita tambahkan "-04:00" agar Javascript tahu itu jam Amerika, lalu otomatis mengonversinya ke jam lokal pengguna (WIB).
   const dateObj = new Date(match.local_date.replace(/-/g, '/') + " -04:00");
@@ -56,15 +56,16 @@ const MatchCard = ({ match, roundIndex, searchQuery = "" }) => {
   // Pilih warna aksen berdasarkan index ronde untuk variasi "26"
   const accentColor = COLORS[roundIndex % COLORS.length];
 
-  // Logika Pencarian (Highlight)
+  // Logika Pencarian & Filter (Highlight / Dim)
   const matchesSearch = searchQuery && (
     (match.home_team_name_en && match.home_team_name_en.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (match.away_team_name_en && match.away_team_name_en.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-  const isDimmed = searchQuery && !matchesSearch;
+  
+  const isDimmed = (searchQuery && !matchesSearch) || (showLiveOnly && !isLive);
 
   return (
-    <Link to={`/world-cup/${match.id}`} className={`bg-white text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery ? 'ring-4 ring-white shadow-2xl scale-[1.02] z-50' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
+    <Link to={`/world-cup/${match.id}`} className={`bg-white text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly ? 'ring-4 ring-white shadow-2xl scale-[1.02] z-50' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
       {/* Ornamen Grafis "26" di background */}
       <div 
         className="absolute -right-8 -bottom-10 text-9xl font-black opacity-5 pointer-events-none transition-transform group-hover:scale-110"
@@ -136,7 +137,31 @@ export default function WorldCupBracket() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLiveOnly, setShowLiveOnly] = useState(false);
+  const [showTopScorers, setShowTopScorers] = useState(false);
   const bracketRef = useRef(null);
+
+  // Parse pencetak gol otomatis dari semua pertandingan untuk Leaderboard
+  const topScorers = useMemo(() => {
+    const counts = {};
+    fixtures.forEach(match => {
+      const process = (scorersStr) => {
+        if (!scorersStr || scorersStr === "null") return;
+        const cleaned = scorersStr.replace(/[{}]/g, '').replace(/[“”"]/g, '');
+        cleaned.split(',').forEach(goal => {
+          if (!goal.trim()) return;
+          // Hapus angka, koma, kutip, tanda tambah, dan kode (P) / (OG) untuk mendapatkan nama murni
+          const name = goal.replace(/[0-9+']|(\([a-zA-Z]+\))/g, '').trim();
+          if (name) {
+            counts[name] = (counts[name] || 0) + 1;
+          }
+        });
+      };
+      process(match.home_scorers);
+      process(match.away_scorers);
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  }, [fixtures]);
 
   const handleExport = () => {
     if (bracketRef.current === null) {
@@ -225,6 +250,22 @@ export default function WorldCupBracket() {
           className="px-4 md:px-6 py-2 rounded-full border border-black/10 bg-white/90 backdrop-blur hover:bg-white text-black font-black text-xs md:text-sm outline-none focus:border-[#4D00FF] transition-all shadow-xl w-32 md:w-48 focus:w-48 md:focus:w-64 placeholder-gray-500 uppercase tracking-widest text-center"
         />
 
+        {/* Top Skor Button */}
+        <button 
+          onClick={() => setShowTopScorers(true)}
+          className="bg-yellow-400/90 backdrop-blur hover:bg-yellow-400 text-black font-black px-4 md:px-6 py-2 rounded-full shadow-xl border border-yellow-500/20 transition-transform hover:scale-105 active:scale-95 text-xs md:text-sm shrink-0"
+        >
+          🏆 TOP SKOR
+        </button>
+
+        {/* Live Filter Toggle */}
+        <button 
+          onClick={() => setShowLiveOnly(!showLiveOnly)}
+          className={`${showLiveOnly ? 'bg-red-600 text-white animate-pulse border-red-500' : 'bg-white/90 text-black border-black/10'} backdrop-blur hover:bg-red-500 hover:text-white font-black px-4 md:px-6 py-2 rounded-full shadow-xl border transition-colors active:scale-95 text-xs md:text-sm shrink-0`}
+        >
+          🔴 LIVE
+        </button>
+
         {!!navigator.share && (
           <button 
             onClick={handleShare}
@@ -285,35 +326,35 @@ export default function WorldCupBracket() {
         <div id="round-32" className="flex flex-col gap-4 relative z-10 scroll-mt-20">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Round of 32</h3>
           {round32.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {round32.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={0} searchQuery={searchQuery} />)}
+          {round32.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Round of 16 (8 Matches) */}
         <div id="round-16" className="flex flex-col gap-8 relative z-10 scroll-mt-20">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Round of 16</h3>
           {round16.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {round16.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} />)}
+          {round16.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Quarter-finals (4 Matches) */}
         <div id="round-QF" className="flex flex-col gap-16 relative z-10 scroll-mt-20">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Quarter-Finals</h3>
           {quarterFinals.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {quarterFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={2} searchQuery={searchQuery} />)}
+          {quarterFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={2} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Semi-finals (2 Matches) */}
         <div id="round-SF" className="flex flex-col gap-32 relative z-10 scroll-mt-20">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Semi-Finals</h3>
           {semiFinals.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {semiFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={3} searchQuery={searchQuery} />)}
+          {semiFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={3} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Final (1 Match) */}
         <div id="round-FINAL" className="flex flex-col gap-4 relative z-10 scroll-mt-20">
           <h3 className="text-white text-4xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">FINAL</h3>
           {final.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {final.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} />)}
+          {final.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Watermark nineteen.dev di samping Final */}
