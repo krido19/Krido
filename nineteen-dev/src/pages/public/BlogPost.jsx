@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Clock, Calendar, MessageSquare, Send } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Turnstile } from '@marsidev/react-turnstile';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import SEO from '../../components/SEO';
@@ -14,45 +16,32 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const BlogPost = () => {
   const { slug } = useParams();
-  const [blog, setBlog] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [commentForm, setCommentForm] = useState({ name: '', content: '' });
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
 
-  useEffect(() => {
-    fetchBlogAndComments();
-  }, [slug]);
-
-  const fetchBlogAndComments = async () => {
-    try {
-      setLoading(true);
-      // Fetch blog
+  const { data: { blog, comments } = {}, isLoading: loading } = useQuery({
+    queryKey: ['blog', slug],
+    queryFn: async () => {
       const { data: blogData, error: blogError } = await supabase
         .from('blogs')
         .select('*')
         .eq('slug', slug)
         .eq('is_published', true)
         .single();
-
       if (blogError) throw blogError;
-      setBlog(blogData);
 
-      // Fetch comments
       const { data: commentsData, error: commentsError } = await supabase
         .from('blog_comments')
         .select('*')
         .eq('blog_id', blogData.id)
         .order('created_at', { ascending: true });
-
       if (commentsError) throw commentsError;
-      setComments(commentsData || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+
+      return { blog: blogData, comments: commentsData || [] };
     }
-  };
+  });
 
   const handleCommentChange = (e) => {
     setCommentForm({ ...commentForm, [e.target.name]: e.target.value });
@@ -61,6 +50,10 @@ const BlogPost = () => {
   const submitComment = async (e) => {
     e.preventDefault();
     if (!commentForm.name.trim() || !commentForm.content.trim()) return;
+    if (!captchaToken) {
+      toast.error('Tolong verifikasi bahwa Anda bukan robot.');
+      return;
+    }
 
     try {
       setSubmittingComment(true);
@@ -74,7 +67,8 @@ const BlogPost = () => {
       
       toast.success('Comment posted successfully');
       setCommentForm({ name: '', content: '' });
-      fetchBlogAndComments(); // Refresh comments
+      setCaptchaToken(null);
+      queryClient.invalidateQueries({ queryKey: ['blog', slug] });
     } catch (error) {
       console.error(error);
       toast.error('Failed to post comment');
@@ -198,9 +192,13 @@ const BlogPost = () => {
                     className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                   />
                 </div>
+                <Turnstile 
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
+                  onSuccess={setCaptchaToken}
+                />
                 <button
                   type="submit"
-                  disabled={submittingComment || !commentForm.name.trim() || !commentForm.content.trim()}
+                  disabled={submittingComment || !commentForm.name.trim() || !commentForm.content.trim() || !captchaToken}
                   className="inline-flex items-center gap-2 bg-primary hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submittingComment ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-5 h-5" />}

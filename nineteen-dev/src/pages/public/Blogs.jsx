@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Clock, ChevronRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import SEO from '../../components/SEO';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
@@ -10,30 +11,18 @@ import { format } from 'date-fns';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const Blogs = () => {
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchBlogs();
-  }, []);
-
-  const fetchBlogs = async () => {
-    try {
-      setLoading(true);
+  const { data: blogs = [], isLoading: loading } = useQuery({
+    queryKey: ['blogs'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('blogs')
         .select('id, title, slug, excerpt, cover_image, created_at')
         .eq('is_published', true)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-      setBlogs(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      return data || [];
     }
-  };
+  });
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
