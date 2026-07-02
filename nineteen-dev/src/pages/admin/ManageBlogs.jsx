@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import WorldCupBracket from '../../components/WorldCupBracket';
 
 export default function ManageBlogs() {
   const [blogs, setBlogs] = useState([]);
@@ -77,6 +78,14 @@ export default function ManageBlogs() {
           <Plus size={18} />
           New Blog Post
         </Link>
+      </div>
+
+      {/* PONITAIL: Menyisipkan bagan sesuai permintaan user untuk test */}
+      <div className="mt-4">
+        <h2 className="text-xl font-bold mb-2">World Cup 2026 Bracket</h2>
+        <div className="rounded-xl overflow-hidden border border-gray-800">
+          <WorldCupBracket />
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

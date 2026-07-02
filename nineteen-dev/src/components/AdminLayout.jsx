@@ -6,7 +6,7 @@ import TourTooltip from './TourTooltip';
 import {
   LayoutDashboard, User, Briefcase, Activity,
   Package, Zap, ShoppingCart, MessageSquare,
-  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard, HelpCircle, FileText
+  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard, HelpCircle, FileText, Trophy
 } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -21,6 +21,7 @@ const navItems = [
   { to: '/dashboard/orders', icon: ShoppingCart, label: 'Orders' },
   { to: '/dashboard/payments', icon: CreditCard, label: 'Payments' },
   { to: '/dashboard/blogs', icon: FileText, label: 'Blogs' },
+  { to: '/dashboard/world-cup', icon: Trophy, label: 'World Cup' },
 ];
 
 // idPrefix: 'menu-' untuk desktop (tour targets), 'mobile-menu-' untuk mobile (hindari ID duplikat)

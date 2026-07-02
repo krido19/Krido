@@ -23,6 +23,8 @@ const TrackOrder = React.lazy(() => import('./pages/public/TrackOrder'));
 const ReviewForm = React.lazy(() => import('./pages/public/ReviewForm'));
 const Blogs = React.lazy(() => import('./pages/public/Blogs'));
 const BlogPost = React.lazy(() => import('./pages/public/BlogPost'));
+const WorldCup = React.lazy(() => import('./pages/public/WorldCup'));
+const MatchDetail = React.lazy(() => import('./pages/public/MatchDetail'));
 
 // ── Public Route Wrapper (Membelokkan pengunjung jika Launch Countdown aktif)
 const PublicRoute = ({ children }) => {
@@ -68,6 +70,7 @@ const ManagePayments = React.lazy(() => import('./pages/admin/ManagePayments'));
 const CreatePayment = React.lazy(() => import('./pages/admin/CreatePayment'));
 const ManageBlogs = React.lazy(() => import('./pages/admin/ManageBlogs'));
 const EditBlog = React.lazy(() => import('./pages/admin/EditBlog'));
+const WorldCupBracketPage = React.lazy(() => import('./pages/admin/WorldCupBracketPage'));
 
 function App() {
   return (
@@ -85,6 +88,8 @@ function App() {
             <Route path="/apps" element={<PublicRoute><AppDownloads /></PublicRoute>} />
             <Route path="/blog" element={<PublicRoute><Blogs /></PublicRoute>} />
             <Route path="/blog/:slug" element={<PublicRoute><BlogPost /></PublicRoute>} />
+            <Route path="/world-cup" element={<PublicRoute><WorldCup /></PublicRoute>} />
+            <Route path="/world-cup/:id" element={<PublicRoute><MatchDetail /></PublicRoute>} />
 
             {/* ── Unprotected Publics (Login, Invoice, Coming Soon) ── */}
             <Route path="/coming-soon" element={<ComingSoon />} />
@@ -123,6 +128,7 @@ function App() {
               <Route path="/dashboard/blogs" element={<ManageBlogs />} />
               <Route path="/dashboard/blogs/new" element={<EditBlog />} />
               <Route path="/dashboard/blogs/edit/:id" element={<EditBlog />} />
+              <Route path="/dashboard/world-cup" element={<WorldCupBracketPage />} />
             </Route>
 
             {/* ── 404 ── */}
