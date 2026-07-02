@@ -38,6 +38,7 @@ export default function MatchDetail() {
   const [stadiums, setStadiums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isStadiumZoomed, setIsStadiumZoomed] = useState(false);
 
   useEffect(() => {
     const fetchMatchAndStadiums = async () => {
@@ -230,22 +231,45 @@ export default function MatchDetail() {
 
           {/* Match Timeline Section */}
           {(timelineEvents.length > 0) && (
-            <div className="w-full max-w-2xl mt-12 flex flex-col">
+            <div className="w-full max-w-2xl mt-12 flex flex-col relative mx-auto">
               <h3 className="text-center font-black text-2xl uppercase tracking-tighter mb-8">Match Timeline</h3>
-              <div className="relative border-l-4 border-gray-200 ml-[50%] flex flex-col gap-6 py-4">
+              
+              {/* Garis Vertikal Tengah */}
+              <div className="absolute left-1/2 top-[4.5rem] bottom-0 w-1 bg-gray-200 transform -translate-x-1/2"></div>
+              
+              <div className="flex flex-col gap-6 py-4 w-full">
                 {timelineEvents.map((ev, idx) => (
-                  <div key={idx} className={`relative flex items-center w-full ${ev.team === 'home' ? 'justify-end pr-[50%] left-[-50%]' : 'justify-start pl-[50%] left-0'}`}>
-                    {/* Event Dot */}
-                    <div className="absolute left-[50%] transform -translate-x-[52%] w-4 h-4 bg-[#FF004D] rounded-full border-4 border-white shadow-md z-10"></div>
+                  <div key={idx} className="relative flex items-center w-full justify-center">
                     
-                    {/* Content Box */}
-                    <div className={`bg-gray-50 px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 ${ev.team === 'home' ? 'mr-4 flex-row-reverse' : 'ml-4'}`}>
-                      <div className="text-base sm:text-xl">⚽</div>
-                      <div className={`flex flex-col ${ev.team === 'home' ? 'items-end' : 'items-start'}`}>
-                        <span className="font-bold text-gray-900 text-xs sm:text-base">{ev.player}</span>
-                        {ev.minute !== 999 && <span className="text-[10px] sm:text-xs font-black text-[#4D00FF]">{ev.minute}'</span>}
-                      </div>
+                    {/* Bagian Kiri (Untuk Tim Home) */}
+                    <div className={`w-1/2 flex ${ev.team === 'home' ? 'justify-end pr-6 sm:pr-8' : 'invisible'}`}>
+                      {ev.team === 'home' && (
+                        <div className="bg-gray-50 px-3 sm:px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2 sm:gap-3 flex-row-reverse z-20 relative">
+                          <div className="text-base sm:text-xl">⚽</div>
+                          <div className="flex flex-col items-end">
+                            <span className="font-bold text-gray-900 text-xs sm:text-base text-right">{ev.player}</span>
+                            {ev.minute !== 999 && <span className="text-[10px] sm:text-xs font-black text-[#4D00FF]">{ev.minute}'</span>}
+                          </div>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Titik Merah (Selalu di Tengah) */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-[#FF004D] rounded-full border-4 border-white shadow-md z-30"></div>
+
+                    {/* Bagian Kanan (Untuk Tim Away) */}
+                    <div className={`w-1/2 flex ${ev.team === 'away' ? 'justify-start pl-6 sm:pl-8' : 'invisible'}`}>
+                      {ev.team === 'away' && (
+                        <div className="bg-gray-50 px-3 sm:px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2 sm:gap-3 z-20 relative">
+                          <div className="text-base sm:text-xl">⚽</div>
+                          <div className="flex flex-col items-start">
+                            <span className="font-bold text-gray-900 text-xs sm:text-base text-left">{ev.player}</span>
+                            {ev.minute !== 999 && <span className="text-[10px] sm:text-xs font-black text-[#4D00FF]">{ev.minute}'</span>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                 ))}
               </div>
@@ -254,7 +278,10 @@ export default function MatchDetail() {
 
           {/* Info Stadion Raksasa */}
           {currentStadium ? (
-            <div className="w-full mt-12 relative rounded-[2rem] overflow-hidden shadow-2xl group border-4 border-gray-900 bg-black">
+            <div 
+              onClick={() => setIsStadiumZoomed(true)}
+              className="w-full mt-12 relative rounded-[2rem] overflow-hidden shadow-2xl group border-4 border-gray-900 bg-black cursor-zoom-in"
+            >
               {/* Cover Foto Stadion Keren dari Unsplash */}
               <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1200&auto=format&fit=crop" alt="Stadium" className="w-full h-48 sm:h-64 object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none"></div>
@@ -286,6 +313,35 @@ export default function MatchDetail() {
 
         </div>
       </main>
+
+      {/* Modal Zoom Stadion */}
+      {isStadiumZoomed && currentStadium && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 sm:p-8 cursor-zoom-out transition-opacity duration-300"
+          onClick={() => setIsStadiumZoomed(false)}
+        >
+          <div className="relative w-full max-w-6xl max-h-full flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+            <button 
+              className="absolute top-2 right-2 sm:top-[-40px] sm:right-0 text-white font-bold bg-white/10 hover:bg-white/20 rounded-full w-10 h-10 flex items-center justify-center transition-colors z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsStadiumZoomed(false);
+              }}
+            >
+              ✕
+            </button>
+            <img 
+              src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000&auto=format&fit=crop" 
+              alt="Stadium Zoomed" 
+              className="w-full max-h-[60vh] sm:max-h-[75vh] object-cover rounded-2xl shadow-2xl border-2 border-white/10 pointer-events-none" 
+            />
+            <div className="mt-6 sm:mt-8 text-center text-white">
+              <h3 className="font-black text-2xl sm:text-5xl uppercase tracking-tighter drop-shadow-lg">{currentStadium.name_en}</h3>
+              <p className="text-gray-300 font-bold mt-2 text-sm sm:text-lg">📍 {currentStadium.city_en}, {currentStadium.country_en} &nbsp; | &nbsp; 👥 {currentStadium.capacity.toLocaleString()} Capacity</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
