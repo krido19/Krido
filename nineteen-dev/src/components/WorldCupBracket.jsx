@@ -65,7 +65,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }
   const isDimmed = (searchQuery && !matchesSearch) || (showLiveOnly && !isLive);
 
   return (
-    <Link to={`/world-cup/${match.id}`} className={`bg-white text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly ? 'ring-4 ring-white shadow-2xl scale-[1.02] z-50' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
+    <Link to={`/world-cup/${match.id}`} className={`bg-white/80 backdrop-blur-xl border-white/50 text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly ? 'ring-4 ring-white shadow-2xl scale-[1.02] z-50 highlighted-match' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
       {/* Ornamen Grafis "26" di background */}
       <div 
         className="absolute -right-8 -bottom-10 text-9xl font-black opacity-5 pointer-events-none transition-transform group-hover:scale-110"
@@ -83,7 +83,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }
 
       <div className="flex flex-col gap-2 mt-2 z-10">
         {/* Team Home */}
-        <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl border-2 border-transparent hover:border-gray-200 transition-colors">
+        <div className="flex justify-between items-center bg-white/50 backdrop-blur-sm p-2.5 rounded-xl border-2 border-white/30 hover:border-white/80 transition-colors shadow-sm">
           <div className="flex items-center gap-3">
             {COUNTRY_CODES[match.home_team_name_en] ? (
               <div className="w-12 h-8 rounded border-2 border-gray-900 bg-white shrink-0 shadow-sm overflow-hidden">
@@ -106,7 +106,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }
         </div>
 
         {/* Team Away */}
-        <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl border-2 border-transparent hover:border-gray-200 transition-colors">
+        <div className="flex justify-between items-center bg-white/50 backdrop-blur-sm p-2.5 rounded-xl border-2 border-white/30 hover:border-white/80 transition-colors shadow-sm">
           <div className="flex items-center gap-3">
             {COUNTRY_CODES[match.away_team_name_en] ? (
               <div className="w-12 h-8 rounded border-2 border-gray-900 bg-white shrink-0 shadow-sm overflow-hidden">
@@ -224,6 +224,14 @@ export default function WorldCupBracket() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (searchQuery || showLiveOnly) {
+      setTimeout(() => {
+        document.querySelector('.highlighted-match')?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+      }, 100);
+    }
+  }, [searchQuery, showLiveOnly]);
+
   if (loading) return <div className="text-black font-black text-2xl p-8 uppercase tracking-widest">Loading FIFA 26...</div>;
   if (error) return <div className="text-red-600 font-black text-2xl p-8 uppercase">Error: {error}</div>;
 
@@ -234,8 +242,33 @@ export default function WorldCupBracket() {
   const semiFinals = fixtures.filter(f => f.type === "sf" || f.group === "SF");
   const final = fixtures.filter(f => f.type === "final" || f.group === "FINAL" || f.group === "Final");
 
+  const hasSearchResults = searchQuery ? fixtures.some(match => 
+    (match.home_team_name_en && match.home_team_name_en.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (match.away_team_name_en && match.away_team_name_en.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : true;
+
   return (
     <div className="relative" style={{ fontFamily: '"Noto Sans", sans-serif' }}>
+      <style>{`
+        @keyframes gradient-flow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-gradient-flow {
+          background-size: 200% 200%;
+          animation: gradient-flow 15s ease infinite;
+        }
+      `}</style>
+      
+      {/* Toast Not Found */}
+      {searchQuery && !hasSearchResults && (
+        <div className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
+          <div className="bg-red-600 text-white px-6 py-3 rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl border-4 border-black animate-bounce">
+            Tim Tidak Ditemukan
+          </div>
+        </div>
+      )}
       
       {/* Tombol Export dan Share di luar area yang diexport agar tidak ikut kefoto */}
       {/* Tombol Export dan Share di luar area yang diexport agar tidak ikut kefoto */}
@@ -243,7 +276,7 @@ export default function WorldCupBracket() {
         
         {/* Input Pencarian Tim */}
         <input 
-          type="text" 
+          type="search" 
           placeholder="Cari Tim..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -311,7 +344,7 @@ export default function WorldCupBracket() {
       {/* Area yang akan diexport */}
       <div 
         ref={bracketRef} 
-        className="p-8 min-h-screen overflow-x-auto relative bg-gradient-to-br from-[#4D00FF] via-[#FF004D] to-[#00B3FF]"
+        className="p-8 min-h-screen overflow-x-auto snap-x snap-mandatory relative bg-gradient-to-br from-[#4D00FF] via-[#FF004D] to-[#00B3FF] animate-gradient-flow"
       >
         {/* Dekorasi Background Ala FIFA 26 */}
         <div className="absolute top-10 right-10 text-right text-[20rem] font-black opacity-20 pointer-events-none leading-none tracking-tighter text-white mix-blend-overlay">
@@ -323,35 +356,35 @@ export default function WorldCupBracket() {
         <div className="flex gap-16 min-w-max items-center mt-20 z-10 relative">
         
         {/* Round of 32 (16 Matches) */}
-        <div id="round-32" className="flex flex-col gap-4 relative z-10 scroll-mt-20">
+        <div id="round-32" className="flex flex-col gap-4 relative z-10 scroll-mt-20 snap-center">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Round of 32</h3>
           {round32.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
           {round32.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Round of 16 (8 Matches) */}
-        <div id="round-16" className="flex flex-col gap-8 relative z-10 scroll-mt-20">
+        <div id="round-16" className="flex flex-col gap-8 relative z-10 scroll-mt-20 snap-center">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Round of 16</h3>
           {round16.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
           {round16.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Quarter-finals (4 Matches) */}
-        <div id="round-QF" className="flex flex-col gap-16 relative z-10 scroll-mt-20">
+        <div id="round-QF" className="flex flex-col gap-16 relative z-10 scroll-mt-20 snap-center">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Quarter-Finals</h3>
           {quarterFinals.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
           {quarterFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={2} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Semi-finals (2 Matches) */}
-        <div id="round-SF" className="flex flex-col gap-32 relative z-10 scroll-mt-20">
+        <div id="round-SF" className="flex flex-col gap-32 relative z-10 scroll-mt-20 snap-center">
           <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Semi-Finals</h3>
           {semiFinals.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
           {semiFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={3} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
         </div>
 
         {/* Final (1 Match) */}
-        <div id="round-FINAL" className="flex flex-col gap-4 relative z-10 scroll-mt-20">
+        <div id="round-FINAL" className="flex flex-col gap-4 relative z-10 scroll-mt-20 snap-center">
           <h3 className="text-white text-4xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">FINAL</h3>
           {final.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
           {final.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}

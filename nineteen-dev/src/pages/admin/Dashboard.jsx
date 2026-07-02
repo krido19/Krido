@@ -5,7 +5,7 @@ import { supabase } from '../../supabaseClient';
 import {
   Briefcase, Activity, Zap, Package,
   MessageSquare, TrendingUp, Users, ChevronRight,
-  ShoppingCart, Star, Rocket, Power, Database
+  ShoppingCart, Star, Rocket, Power, Database, Trophy
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 
@@ -78,6 +78,7 @@ const Dashboard = () => {
     { icon: Zap, label: 'Services', desc: 'Edit pricing & packages', href: '/dashboard/services', color: 'bg-pink-50 text-pink-600' },
     { icon: ShoppingCart, label: 'Orders', desc: 'View & manage orders', href: '/dashboard/orders', color: 'bg-orange-50 text-orange-600' },
     { icon: MessageSquare, label: 'Messages', desc: 'View contact messages', href: '/dashboard/chats', color: 'bg-gray-50 text-gray-600' },
+    { icon: Trophy, label: 'World Cup', desc: 'FIFA 26 Live Bracket', href: '/dashboard/world-cup', color: 'bg-red-50 text-red-600' },
   ];
 
   return (

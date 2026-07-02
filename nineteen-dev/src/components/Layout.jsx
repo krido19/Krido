@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, LogOut, LayoutDashboard, User, Briefcase, Calendar, Menu, X, Smartphone, Globe, Database } from 'lucide-react';
+import { Sun, Moon, LogOut, LayoutDashboard, User, Briefcase, Calendar, Menu, X, Smartphone, Globe, Database, Trophy } from 'lucide-react';
 import { exportToSQL } from '../utils/sqlExport';
 import Modal from './Modal';
 import ContactFab from './ContactFab';
@@ -149,12 +149,17 @@ const Layout = () => {
                     <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500">
                         nineteen.dev
                     </span>
-                    <button
-                        onClick={toggleTheme}
-                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
-                    >
-                        {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <Link to="/world-cup" className="p-2 text-cyan-600 dark:text-cyan-400 hover:text-pink-500 transition-colors" title="FIFA 26 Bracket">
+                            <Trophy className="w-5 h-5" />
+                        </Link>
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
+                        >
+                            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                        </button>
+                    </div>
                 </header>
 
                 <main className="flex-1 overflow-x-hidden overflow-y-auto">

@@ -482,15 +482,20 @@ const AdminLayout = () => {
       {/* Main content */}
       <div className="flex-1 md:ml-60 flex flex-col min-h-screen">
         {/* Mobile topbar */}
-        <header className="md:hidden bg-white border-b-2 border-gray-100 h-14 flex items-center px-4 gap-4 sticky top-0 z-30">
-          <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-gray-600">
-            <Menu className="w-5 h-5" />
-          </button>
-          <Link to="/" className="flex items-center gap-1.5">
-            <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-white font-black text-xs">19</span>
-            </div>
-            <span className="text-base font-extrabold text-foreground">nineteen<span className="text-primary">.dev</span></span>
+        <header className="md:hidden bg-white border-b-2 border-gray-100 h-14 flex items-center justify-between px-4 sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-gray-600">
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link to="/" className="flex items-center gap-1.5">
+              <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
+                <span className="text-white font-black text-xs">19</span>
+              </div>
+              <span className="text-base font-extrabold text-foreground">nineteen<span className="text-primary">.dev</span></span>
+            </Link>
+          </div>
+          <Link to="/dashboard/world-cup" className="p-1.5 text-gray-600 hover:text-primary transition-colors bg-gray-50 rounded-full flex items-center justify-center w-8 h-8">
+            <Trophy className="w-4 h-4" />
           </Link>
         </header>
 
