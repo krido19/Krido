@@ -19,6 +19,69 @@ const COUNTRY_CODES = {
   "England": "gb-eng", "Croatia": "hr", "Uzbekistan": "uz", "Colombia": "co", "Ghana": "gh", "Panama": "pa"
 };
 
+// Hardcoded API bracket topology for worldcup26.ir
+const BRACKET_ORDER = {
+  r32: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88"],
+  r16: ["89", "90", "91", "92", "94", "93", "95", "96"],
+  qf: ["97", "98", "99", "100"],
+  sf: ["101", "102"],
+  final: ["104"]
+};
+
+// Custom sort function based on predefined ID order
+const sortMatches = (matches, orderArray) => {
+  return [...matches].sort((a, b) => {
+    const indexA = orderArray.indexOf(a.id);
+    const indexB = orderArray.indexOf(b.id);
+    if (indexA === -1 && indexB === -1) return 0;
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+};
+
+const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly) => {
+  const currentRoundMatches = rounds[currentRoundIdx] || [];
+  // Fallback match jika API belum ada data untuk slot ini
+  const match = currentRoundMatches[matchIdx] || { 
+    id: `mock-${currentRoundIdx}-${matchIdx}`, 
+    home_team_name_en: 'TBD', 
+    away_team_name_en: 'TBD', 
+    time_elapsed: 'notstarted', 
+    local_date: 'TBD TBD',
+    isMock: true
+  };
+
+  // Ronde pertama (R32) sebagai leaf nodes (tidak punya anak)
+  if (currentRoundIdx === 0) {
+    return <MatchCard key={match.id} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />;
+  }
+
+  // Rekursif ke ronde sebelumnya (2 anak)
+  const leftChild = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly);
+  const rightChild = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly);
+
+  return (
+    <div key={match.id} className="flex items-center gap-16 relative">
+      {/* Kolom Anak (Ronde Sebelumnya) */}
+      <div className="flex flex-col gap-4 justify-center relative">
+        {/* Garis Bracket (Bentuk ]) */}
+        <div className="absolute -right-8 top-[25%] bottom-[25%] w-8 border-y-2 border-r-2 border-white/40 rounded-r-xl pointer-events-none z-0" />
+        {/* Garis Horizontal menuju ke ronde ini */}
+        <div className="absolute -right-16 top-1/2 w-8 border-b-2 border-white/40 pointer-events-none z-0" />
+        
+        <div className="relative z-10">{leftChild}</div>
+        <div className="relative z-10">{rightChild}</div>
+      </div>
+      
+      {/* Pertandingan Ronde Ini */}
+      <div className="relative z-10">
+        <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />
+      </div>
+    </div>
+  );
+};
+
 // Komponen Card untuk satu pertandingan
 const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }) => {
   // API worldcup26.ir menggunakan waktu Amerika (EDT / UTC-4). 
@@ -235,12 +298,12 @@ export default function WorldCupBracket() {
   if (loading) return <div className="text-black font-black text-2xl p-8 uppercase tracking-widest">Loading FIFA 26...</div>;
   if (error) return <div className="text-red-600 font-black text-2xl p-8 uppercase">Error: {error}</div>;
 
-  // Filter menggunakan field 'type' atau 'group' dari worldcup26.ir
-  const round32 = fixtures.filter(f => f.type === "r32" || f.group === "R32");
-  const round16 = fixtures.filter(f => f.type === "r16" || f.group === "R16");
-  const quarterFinals = fixtures.filter(f => f.type === "qf" || f.group === "QF");
-  const semiFinals = fixtures.filter(f => f.type === "sf" || f.group === "SF");
-  const final = fixtures.filter(f => f.type === "final" || f.group === "FINAL" || f.group === "Final");
+  // Filter dan Sort menggunakan topology bracket 
+  const round32 = sortMatches(fixtures.filter(f => f.type === "r32" || f.group === "R32"), BRACKET_ORDER.r32);
+  const round16 = sortMatches(fixtures.filter(f => f.type === "r16" || f.group === "R16"), BRACKET_ORDER.r16);
+  const quarterFinals = sortMatches(fixtures.filter(f => f.type === "qf" || f.group === "QF"), BRACKET_ORDER.qf);
+  const semiFinals = sortMatches(fixtures.filter(f => f.type === "sf" || f.group === "SF"), BRACKET_ORDER.sf);
+  const final = sortMatches(fixtures.filter(f => f.type === "final" || f.group === "FINAL" || f.group === "Final"), BRACKET_ORDER.final);
 
   const hasSearchResults = searchQuery ? fixtures.some(match => 
     (match.home_team_name_en && match.home_team_name_en.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -351,57 +414,34 @@ export default function WorldCupBracket() {
           WE<br/>ARE<br/>26
         </div>
 
-        {/* Watermark dihapus dari sini, dipindah ke samping final */}
-
-        <div className="flex gap-16 min-w-max items-center mt-20 z-10 relative">
-        
-        {/* Round of 32 (16 Matches) */}
-        <div id="round-32" className="flex flex-col gap-4 relative z-10 scroll-mt-20 snap-center">
-          <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Round of 32</h3>
-          {round32.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {round32.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
-        </div>
-
-        {/* Round of 16 (8 Matches) */}
-        <div id="round-16" className="flex flex-col gap-8 relative z-10 scroll-mt-20 snap-center">
-          <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Round of 16</h3>
-          {round16.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {round16.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
-        </div>
-
-        {/* Quarter-finals (4 Matches) */}
-        <div id="round-QF" className="flex flex-col gap-16 relative z-10 scroll-mt-20 snap-center">
-          <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Quarter-Finals</h3>
-          {quarterFinals.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {quarterFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={2} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
-        </div>
-
-        {/* Semi-finals (2 Matches) */}
-        <div id="round-SF" className="flex flex-col gap-32 relative z-10 scroll-mt-20 snap-center">
-          <h3 className="text-white text-2xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">Semi-Finals</h3>
-          {semiFinals.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {semiFinals.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={3} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
-        </div>
-
-        {/* Final (1 Match) */}
-        <div id="round-FINAL" className="flex flex-col gap-4 relative z-10 scroll-mt-20 snap-center">
-          <h3 className="text-white text-4xl font-black tracking-tighter mb-6 text-center uppercase drop-shadow-md">FINAL</h3>
-          {final.length === 0 && <p className="text-white/80 font-bold text-sm text-center w-72 mt-8 uppercase">No Matches Yet</p>}
-          {final.map(match => <MatchCard key={match.id || Math.random()} match={match} roundIndex={1} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />)}
-        </div>
-
-        {/* Watermark nineteen.dev di samping Final */}
-        <div className="flex flex-col items-start justify-center ml-8 pointer-events-none">
-          <div className="text-7xl font-black text-white/70 tracking-tighter leading-none drop-shadow-2xl">
-            nineteen.dev
+        <div className="relative min-w-max z-10 mt-20">
+          
+          {/* Header Kolom (Absolute) agar sejajar dengan node tree */}
+          <div className="flex gap-16 absolute top-0 left-0 pointer-events-none z-20 w-full" style={{ paddingLeft: '0px' }}>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Round of 32</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Round of 16</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Quarter-Finals</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Semi-Finals</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-4xl font-black tracking-tighter uppercase drop-shadow-md text-yellow-400">FINAL</h3></div>
           </div>
-          <div className="text-white/90 font-black text-sm tracking-widest uppercase mt-4 bg-black/30 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-xl">
-            Updated: {new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }).replace('.', ':')} WIB
-          </div>
-        </div>
 
+          {/* Render Full Bracket Tree */}
+          <div className="pt-20 pb-16 flex items-center">
+            {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 4, 0, searchQuery, showLiveOnly)}
+            
+            {/* Watermark nineteen.dev di samping Final */}
+            <div className="flex flex-col items-start justify-center ml-16 pointer-events-none">
+              <div className="text-7xl font-black text-white/70 tracking-tighter leading-none drop-shadow-2xl">
+                nineteen.dev
+              </div>
+              <div className="text-white/90 font-black text-sm tracking-widest uppercase mt-4 bg-black/30 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-xl">
+                Updated: {new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }).replace('.', ':')} WIB
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
