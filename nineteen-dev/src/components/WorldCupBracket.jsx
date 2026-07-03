@@ -28,6 +28,26 @@ const BRACKET_ORDER = {
   final: ["104"]
 };
 
+// Data Stadion Piala Dunia 2026
+const STADIUM_INFO = {
+  "1": { name: "Estadio Azteca", videoId: "vSHDZYm5HlE" },
+  "2": { name: "Estadio Akron", videoId: "5BJ4cnNt3WM" },
+  "3": { name: "Estadio BBVA", videoId: "NPM6Y295Zh8" },
+  "4": { name: "AT&T Stadium", videoId: "UxyphPYPf6g" },
+  "5": { name: "NRG Stadium", videoId: "xjoo2ZtwKUM" },
+  "6": { name: "Arrowhead Stadium", videoId: "TnAwHXW5vD0" },
+  "7": { name: "Mercedes-Benz Stadium", videoId: "anUhGgUaar4" },
+  "8": { name: "Hard Rock Stadium", videoId: "-1yN8Xy1uPo" },
+  "9": { name: "Gillette Stadium", videoId: "X07RSoCO2JA" },
+  "10": { name: "Lincoln Financial Field", videoId: "pJX9y8eKTtg" },
+  "11": { name: "MetLife Stadium", videoId: "ZaqAyf8SgaE" },
+  "12": { name: "BMO Field", videoId: "evUTtT_B3JA" },
+  "13": { name: "BC Place", videoId: "JAown-dJZLc" },
+  "14": { name: "Lumen Field", videoId: "Zghz13xrYM8" },
+  "15": { name: "Levi's Stadium", videoId: "7EpDugp0RGM" },
+  "16": { name: "SoFi Stadium", videoId: "qlgH-jyB-qo" },
+};
+
 // Custom sort function based on predefined ID order
 const sortMatches = (matches, orderArray) => {
   return [...matches].sort((a, b) => {
@@ -50,7 +70,7 @@ const formatMatchDateTime = (localDateStr) => {
   return `${dateString}, ${timeString}`;
 };
 
-const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left') => {
+const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left', onStadiumClick) => {
   const currentRoundMatches = rounds[currentRoundIdx] || [];
   // Fallback match jika API belum ada data untuk slot ini
   const match = currentRoundMatches[matchIdx] || { 
@@ -64,12 +84,12 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
 
   // Ronde pertama (R32) sebagai leaf nodes (tidak punya anak)
   if (currentRoundIdx === 0) {
-    return <MatchCard key={match.id} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />;
+    return <MatchCard key={match.id} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} />;
   }
 
   // Rekursif ke ronde sebelumnya (2 anak)
-  const leftChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly, direction);
-  const rightChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly, direction);
+  const leftChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly, direction, onStadiumClick);
+  const rightChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly, direction, onStadiumClick);
 
   const childrenContainer = (
     <div className="flex flex-col gap-4 justify-center relative">
@@ -97,13 +117,13 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
         <>
           {childrenContainer}
           <div className="relative z-10">
-            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />
+            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} />
           </div>
         </>
       ) : (
         <>
           <div className="relative z-10">
-            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />
+            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} />
           </div>
           {childrenContainer}
         </>
@@ -113,7 +133,7 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
 };
 
 // Komponen Card untuk satu pertandingan
-const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }) => {
+const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, onStadiumClick }) => {
   // API worldcup26.ir menggunakan waktu Amerika (EDT / UTC-4). 
   // Kita tambahkan "-04:00" agar Javascript tahu itu jam Amerika, lalu otomatis mengonversinya ke jam lokal pengguna (WIB).
   const dateObj = new Date(match.local_date.replace(/-/g, '/') + " -04:00");
@@ -167,9 +187,26 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }
         26
       </div>
 
-      <div className="flex justify-between items-center text-xs font-black tracking-widest uppercase z-10">
-        <span className="text-gray-900">{dateString} {isNotStarted && `, ${timeString}`}</span>
-        <span className={`px-2 py-1 rounded text-white ${isLive ? 'bg-red-600 animate-pulse' : 'bg-black'}`}>
+      <div className="flex justify-between items-start z-10">
+        <div className="flex flex-col gap-1">
+          <div className="text-xs font-black tracking-widest uppercase text-gray-900">
+            {dateString} {isNotStarted && `, ${timeString}`}
+          </div>
+          {/* Tombol Stadion */}
+          {STADIUM_INFO[match.stadium_id] && (
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onStadiumClick) onStadiumClick(STADIUM_INFO[match.stadium_id]);
+              }}
+              className="text-[9px] text-white bg-black/80 hover:bg-[#FF004D] px-2 py-0.5 rounded-full w-max flex items-center gap-1 transition-colors"
+            >
+              <span className="text-yellow-400">🏟️</span> {STADIUM_INFO[match.stadium_id].name}
+            </button>
+          )}
+        </div>
+        <span className={`px-2 py-1 rounded text-white text-xs font-black tracking-widest uppercase shrink-0 ${isLive ? 'bg-red-600 animate-pulse' : 'bg-black'}`}>
           {isLive ? 'LIVE' : statusDisplay}
         </span>
       </div>
@@ -233,6 +270,7 @@ export default function WorldCupBracket() {
   const [showLiveOnly, setShowLiveOnly] = useState(false);
   const [showTopScorers, setShowTopScorers] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [stadiumVideo, setStadiumVideo] = useState(null);
   const bracketRef = useRef(null);
 
   // Parse pencetak gol otomatis dari semua pertandingan untuk Leaderboard
@@ -343,12 +381,26 @@ export default function WorldCupBracket() {
     }
   }, [searchQuery, showLiveOnly]);
 
-  // Auto-scroll ke tengah (Final) saat pertama dimuat
+  // Auto-scroll ke Pertandingan Live atau Final saat pertama dimuat
   useEffect(() => {
     if (fixtures && fixtures.length > 0) {
-      const finalElement = document.getElementById('round-FINAL');
-      if (finalElement) {
-        finalElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'start' });
+      // Cari pertandingan live pertama
+      const liveMatch = fixtures.find(m => {
+        const isFinished = m.finished === "TRUE" || m.finished === true;
+        const isNotStarted = m.time_elapsed === "notstarted";
+        return !isFinished && !isNotStarted;
+      });
+
+      if (liveMatch) {
+        const liveElement = document.getElementById(`match-${liveMatch.id}`);
+        if (liveElement) {
+          liveElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+        }
+      } else {
+        const finalElement = document.getElementById('round-FINAL');
+        if (finalElement) {
+          finalElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'start' });
+        }
       }
     }
   }, [fixtures]);
@@ -470,7 +522,7 @@ export default function WorldCupBracket() {
             
             {/* Sisi Kiri (SF Index 0) */}
             <div className="relative z-10">
-              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 0, searchQuery, showLiveOnly, 'left')}
+              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 0, searchQuery, showLiveOnly, 'left', setStadiumVideo)}
             </div>
             
             {/* Tengah (FINAL) */}
@@ -494,6 +546,7 @@ export default function WorldCupBracket() {
                     roundIndex={4} 
                     searchQuery={searchQuery} 
                     showLiveOnly={showLiveOnly} 
+                    onStadiumClick={setStadiumVideo}
                   />
                 </div>
               </div>
@@ -511,7 +564,7 @@ export default function WorldCupBracket() {
 
             {/* Sisi Kanan (SF Index 1) */}
             <div className="relative z-10">
-              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 1, searchQuery, showLiveOnly, 'right')}
+              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 1, searchQuery, showLiveOnly, 'right', setStadiumVideo)}
             </div>
 
           </div>
@@ -613,6 +666,49 @@ export default function WorldCupBracket() {
                     );
                   })}
                 </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Video Stadion */}
+      {stadiumVideo && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+            onClick={() => setStadiumVideo(null)}
+          ></div>
+          <div className="relative w-full max-w-4xl bg-black rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl animate-in fade-in zoom-in duration-300">
+            {/* Header / Judul Stadion */}
+            <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-10">
+              <h2 className="text-white font-black text-2xl uppercase tracking-widest drop-shadow-md">
+                🏟️ {stadiumVideo.name}
+              </h2>
+              <button 
+                onClick={() => setStadiumVideo(null)}
+                className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-red-600 text-white rounded-full transition-colors backdrop-blur-md"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Area Video */}
+            <div className="w-full aspect-video bg-black/50 flex items-center justify-center">
+              {stadiumVideo.videoId ? (
+                <iframe 
+                  className="w-full h-full"
+                  src={`https://www.youtube.com/embed/${stadiumVideo.videoId}?autoplay=1&mute=1`} 
+                  title={stadiumVideo.name} 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="text-white/50 font-black text-xl tracking-widest uppercase animate-pulse text-center p-8">
+                  <span className="text-4xl mb-4 block">🚧</span>
+                  Video Tur Stadion<br/>Segera Hadir
+                </div>
               )}
             </div>
           </div>
