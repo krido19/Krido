@@ -21,9 +21,9 @@ const COUNTRY_CODES = {
 
 // Hardcoded API bracket topology for worldcup26.ir
 const BRACKET_ORDER = {
-  r32: ["74", "77", "73", "75", "76", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88"],
-  r16: ["89", "90", "91", "92", "94", "93", "95", "96"],
-  qf: ["97", "98", "99", "100"],
+  r32: ["74", "77", "73", "75", "83", "84", "81", "82", "76", "78", "79", "80", "86", "88", "85", "87"],
+  r16: ["89", "90", "93", "94", "91", "92", "95", "96"],
+  qf: ["97", "99", "98", "100"],
   sf: ["101", "102"],
   final: ["104"]
 };
@@ -40,7 +40,7 @@ const sortMatches = (matches, orderArray) => {
   });
 };
 
-const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly) => {
+const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left') => {
   const currentRoundMatches = rounds[currentRoundIdx] || [];
   // Fallback match jika API belum ada data untuk slot ini
   const match = currentRoundMatches[matchIdx] || { 
@@ -58,26 +58,46 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
   }
 
   // Rekursif ke ronde sebelumnya (2 anak)
-  const leftChild = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly);
-  const rightChild = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly);
+  const leftChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly, direction);
+  const rightChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly, direction);
+
+  const childrenContainer = (
+    <div className="flex flex-col gap-4 justify-center relative">
+      {direction === 'left' ? (
+        <>
+          {/* Garis Bracket ] (Anak di kiri, menuju kanan) */}
+          <div className="absolute -right-8 top-[25%] bottom-[25%] w-8 border-y-2 border-r-2 border-white/40 rounded-r-xl pointer-events-none z-0" />
+          <div className="absolute -right-16 top-1/2 w-8 border-b-2 border-white/40 pointer-events-none z-0" />
+        </>
+      ) : (
+        <>
+          {/* Garis Bracket [ (Anak di kanan, menuju kiri) */}
+          <div className="absolute -left-8 top-[25%] bottom-[25%] w-8 border-y-2 border-l-2 border-white/40 rounded-l-xl pointer-events-none z-0" />
+          <div className="absolute -left-16 top-1/2 w-8 border-b-2 border-white/40 pointer-events-none z-0" />
+        </>
+      )}
+      <div className="relative z-10">{leftChildNode}</div>
+      <div className="relative z-10">{rightChildNode}</div>
+    </div>
+  );
 
   return (
     <div key={match.id} className="flex items-center gap-16 relative">
-      {/* Kolom Anak (Ronde Sebelumnya) */}
-      <div className="flex flex-col gap-4 justify-center relative">
-        {/* Garis Bracket (Bentuk ]) */}
-        <div className="absolute -right-8 top-[25%] bottom-[25%] w-8 border-y-2 border-r-2 border-white/40 rounded-r-xl pointer-events-none z-0" />
-        {/* Garis Horizontal menuju ke ronde ini */}
-        <div className="absolute -right-16 top-1/2 w-8 border-b-2 border-white/40 pointer-events-none z-0" />
-        
-        <div className="relative z-10">{leftChild}</div>
-        <div className="relative z-10">{rightChild}</div>
-      </div>
-      
-      {/* Pertandingan Ronde Ini */}
-      <div className="relative z-10">
-        <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />
-      </div>
+      {direction === 'left' ? (
+        <>
+          {childrenContainer}
+          <div className="relative z-10">
+            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="relative z-10">
+            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} />
+          </div>
+          {childrenContainer}
+        </>
+      )}
     </div>
   );
 };
@@ -295,6 +315,16 @@ export default function WorldCupBracket() {
     }
   }, [searchQuery, showLiveOnly]);
 
+  // Auto-scroll ke tengah (Final) saat pertama dimuat
+  useEffect(() => {
+    if (fixtures && fixtures.length > 0) {
+      const finalElement = document.getElementById('round-FINAL');
+      if (finalElement) {
+        finalElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'start' });
+      }
+    }
+  }, [fixtures]);
+
   if (loading) return <div className="text-black font-black text-2xl p-8 uppercase tracking-widest">Loading FIFA 26...</div>;
   if (error) return <div className="text-red-600 font-black text-2xl p-8 uppercase">Error: {error}</div>;
 
@@ -333,7 +363,6 @@ export default function WorldCupBracket() {
         </div>
       )}
       
-      {/* Tombol Export dan Share di luar area yang diexport agar tidak ikut kefoto */}
       {/* Tombol Export dan Share di luar area yang diexport agar tidak ikut kefoto */}
       <div className="absolute top-4 right-4 md:right-8 z-50 flex flex-col md:flex-row gap-2 md:gap-4 items-end">
         
@@ -378,32 +407,6 @@ export default function WorldCupBracket() {
         </button>
       </div>
 
-      {/* Navigasi Cepat Khusus Mobile (Floating Dock Style) */}
-      <div className="md:hidden fixed bottom-6 left-4 right-24 z-50 flex gap-3 overflow-x-auto bg-transparent p-2 hide-scrollbar">
-        {[
-          { id: '32', label: 'R32' },
-          { id: '16', label: 'R16' },
-          { id: 'QF', label: 'QF' },
-          { id: 'SF', label: 'SF' },
-          { id: 'FINAL', label: 'FINAL' }
-        ].map(round => (
-          <button
-            key={round.id}
-            onClick={() => {
-              const el = document.getElementById(`round-${round.id}`);
-              if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }}
-            className="text-white font-black text-xs px-5 py-3 rounded-full whitespace-nowrap bg-black/60 backdrop-blur-xl border border-white/20 hover:bg-gradient-to-r hover:from-[#4D00FF] hover:to-[#FF004D] transition-all active:scale-95 shadow-lg shrink-0"
-          >
-            {round.label}
-          </button>
-        ))}
-        {/* Spacer ajaib: Jika chat widget menutupi ujung kanan, user bisa scroll ekstra berkat div kosong ini */}
-        <div className="w-16 shrink-0 pointer-events-none"></div>
-      </div>
-
-
-
       {/* Area yang akan diexport */}
       <div 
         ref={bracketRef} 
@@ -414,30 +417,75 @@ export default function WorldCupBracket() {
           WE<br/>ARE<br/>26
         </div>
 
-        <div className="relative min-w-max z-10 mt-20">
+        <div className="relative min-w-max z-10 mt-20 pb-20">
           
-          {/* Header Kolom (Absolute) agar sejajar dengan node tree */}
+          {/* Header Kolom (Absolute) agar sejajar dengan 9 node tree (Sisi Kiri, Final, Sisi Kanan) */}
           <div className="flex gap-16 absolute top-0 left-0 pointer-events-none z-20 w-full" style={{ paddingLeft: '0px' }}>
+            {/* Kiri */}
             <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Round of 32</h3></div>
             <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Round of 16</h3></div>
             <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Quarter-Finals</h3></div>
             <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Semi-Finals</h3></div>
+            
+            {/* Tengah (Final) */}
             <div className="w-72 shrink-0 text-center"><h3 className="text-white text-4xl font-black tracking-tighter uppercase drop-shadow-md text-yellow-400">FINAL</h3></div>
+            
+            {/* Kanan */}
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Semi-Finals</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Quarter-Finals</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Round of 16</h3></div>
+            <div className="w-72 shrink-0 text-center"><h3 className="text-white text-2xl font-black tracking-tighter uppercase drop-shadow-md">Round of 32</h3></div>
           </div>
 
-          {/* Render Full Bracket Tree */}
-          <div className="pt-20 pb-16 flex items-center">
-            {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 4, 0, searchQuery, showLiveOnly)}
+          {/* Render Full 2-Sided Bracket Tree */}
+          <div className="pt-20 pb-16 flex items-center gap-16">
             
-            {/* Watermark nineteen.dev di samping Final */}
-            <div className="flex flex-col items-start justify-center ml-16 pointer-events-none">
-              <div className="text-7xl font-black text-white/70 tracking-tighter leading-none drop-shadow-2xl">
-                nineteen.dev
+            {/* Sisi Kiri (SF Index 0) */}
+            <div className="relative z-10">
+              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 0, searchQuery, showLiveOnly, 'left')}
+            </div>
+            
+            {/* Tengah (FINAL) */}
+            <div id="round-FINAL" className="relative z-20 flex flex-col items-center gap-16 scroll-mt-20">
+              
+              <div className="flex flex-col items-center gap-6">
+                {/* Piala dan Tulisan Final */}
+                <div className="flex flex-col items-center pointer-events-none drop-shadow-2xl z-30">
+                  <span className="text-[6rem] leading-none mb-2 filter drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]">🏆</span>
+                  <h2 className="text-yellow-400 font-black text-4xl tracking-[0.15em] uppercase drop-shadow-lg">World Cup</h2>
+                  <h3 className="text-white font-black text-2xl tracking-[0.3em] uppercase mt-1 opacity-90">Final</h3>
+                </div>
+
+                <div className="relative">
+                  {/* Garis Konektor ke Kiri dan Kanan */}
+                  <div className="absolute -left-16 top-1/2 w-16 border-b-2 border-white/40 pointer-events-none z-0" />
+                  <div className="absolute -right-16 top-1/2 w-16 border-b-2 border-white/40 pointer-events-none z-0" />
+                  
+                  <MatchCard 
+                    match={final[0] || { id: 'mock-final', home_team_name_en: 'TBD', away_team_name_en: 'TBD', time_elapsed: 'notstarted', local_date: 'TBD TBD', isMock: true }} 
+                    roundIndex={4} 
+                    searchQuery={searchQuery} 
+                    showLiveOnly={showLiveOnly} 
+                  />
+                </div>
               </div>
-              <div className="text-white/90 font-black text-sm tracking-widest uppercase mt-4 bg-black/30 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-xl">
-                Updated: {new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }).replace('.', ':')} WIB
+
+              {/* Watermark nineteen.dev di bawah Final */}
+              <div className="flex flex-col items-center justify-center pointer-events-none opacity-80 hover:opacity-100 transition-opacity">
+                <div className="text-5xl font-black text-white/70 tracking-tighter leading-none drop-shadow-2xl">
+                  nineteen.dev
+                </div>
+                <div className="text-white/90 font-black text-xs tracking-widest uppercase mt-4 bg-black/30 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-xl">
+                  Updated: {new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }).replace('.', ':')} WIB
+                </div>
               </div>
             </div>
+
+            {/* Sisi Kanan (SF Index 1) */}
+            <div className="relative z-10">
+              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 1, searchQuery, showLiveOnly, 'right')}
+            </div>
+
           </div>
 
         </div>
