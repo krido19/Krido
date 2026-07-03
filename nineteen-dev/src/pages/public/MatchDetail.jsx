@@ -122,7 +122,12 @@ export default function MatchDetail() {
   }
 
   // Parse Waktu
-  const dateObj = new Date(match.local_date.replace(/-/g, '/') + " -04:00");
+  const tzOffset = {
+    "1": "-06:00", "2": "-06:00", "3": "-06:00",
+    "4": "-05:00", "5": "-05:00", "6": "-05:00",
+    "13": "-07:00", "14": "-07:00", "15": "-07:00", "16": "-07:00"
+  }[match.stadium_id] || "-04:00";
+  const dateObj = new Date(match.local_date.replace(/-/g, '/') + " " + tzOffset);
   const dateString = isNaN(dateObj) ? match.local_date.split(' ')[0] : dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
   const timeString = isNaN(dateObj) ? match.local_date.split(' ')[1] + ' WIB' : dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':') + ' WIB';
 

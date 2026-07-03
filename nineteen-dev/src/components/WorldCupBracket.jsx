@@ -60,10 +60,20 @@ const sortMatches = (matches, orderArray) => {
   });
 };
 
-// Helper untuk format tanggal dari API (EDT -04:00) ke format WIB
-const formatMatchDateTime = (localDateStr) => {
+// Helper timezone berdasarkan stadium_id karena API memberikan waktu lokal stadion
+const getStadiumTimezone = (stadiumId) => {
+  return {
+    "1": "-06:00", "2": "-06:00", "3": "-06:00", // Mexico (CST)
+    "4": "-05:00", "5": "-05:00", "6": "-05:00", // Central US (CDT)
+    "13": "-07:00", "14": "-07:00", "15": "-07:00", "16": "-07:00" // Pacific (PDT)
+  }[stadiumId] || "-04:00"; // Default Eastern (EDT)
+};
+
+// Helper untuk format tanggal dari API (waktu lokal stadion) ke format WIB
+const formatMatchDateTime = (localDateStr, stadiumId) => {
   if (!localDateStr) return 'TBD';
-  const dateObj = new Date(localDateStr.replace(/-/g, '/') + " -04:00");
+  const tzOffset = getStadiumTimezone(stadiumId);
+  const dateObj = new Date(localDateStr.replace(/-/g, '/') + " " + tzOffset);
   if (isNaN(dateObj)) return localDateStr + ' WIB';
   const dateString = dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).toUpperCase();
   const timeString = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':') + ' WIB';
@@ -134,9 +144,9 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
 
 // Komponen Card untuk satu pertandingan
 const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, onStadiumClick, focusedMatchId }) => {
-  // API worldcup26.ir menggunakan waktu Amerika (EDT / UTC-4). 
-  // Kita tambahkan "-04:00" agar Javascript tahu itu jam Amerika, lalu otomatis mengonversinya ke jam lokal pengguna (WIB).
-  const dateObj = new Date(match.local_date.replace(/-/g, '/') + " -04:00");
+  // API worldcup26.ir menggunakan waktu lokal stadion.
+  const tzOffset = getStadiumTimezone(match.stadium_id);
+  const dateObj = new Date(match.local_date.replace(/-/g, '/') + " " + tzOffset);
   
   const dateString = isNaN(dateObj) ? match.local_date.split(' ')[0] : dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).toUpperCase();
   const timeString = isNaN(dateObj) ? match.local_date.split(' ')[1] + ' WIB' : dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':') + ' WIB';
@@ -395,7 +405,7 @@ export default function WorldCupBracket() {
 
       const upcoming = fixtures
         .filter(m => m.time_elapsed === "notstarted" && m.local_date && !m.local_date.includes("TBD"))
-        .sort((a, b) => new Date(a.local_date.replace(/-/g, '/') + " -04:00") - new Date(b.local_date.replace(/-/g, '/') + " -04:00"))[0];
+        .sort((a, b) => new Date(a.local_date.replace(/-/g, '/') + " " + getStadiumTimezone(a.stadium_id)) - new Date(b.local_date.replace(/-/g, '/') + " " + getStadiumTimezone(b.stadium_id)))[0];
       
       const targetMatch = liveMatch || upcoming;
 
@@ -666,7 +676,7 @@ export default function WorldCupBracket() {
                                   <span className="animate-pulse">▶</span> Laga Selanjutnya
                                 </div>
                                 <div className="font-black text-gray-900 text-sm">{scorer.nextMatch.home_team_name_en} vs {scorer.nextMatch.away_team_name_en}</div>
-                                <div className="text-xs font-bold text-gray-500 mt-1">{formatMatchDateTime(scorer.nextMatch.local_date)}</div>
+                                <div className="text-xs font-bold text-gray-500 mt-1">{formatMatchDateTime(scorer.nextMatch.local_date, scorer.nextMatch.stadium_id)}</div>
                               </button>
                             ) : scorer.lastMatch ? (
                               <button 
@@ -683,7 +693,7 @@ export default function WorldCupBracket() {
                                   <span>⚽</span> Gol Terakhir Dicetak Pada
                                 </div>
                                 <div className="font-black text-gray-900 text-sm">{scorer.lastMatch.home_team_name_en} vs {scorer.lastMatch.away_team_name_en}</div>
-                                <div className="text-xs font-bold text-gray-500 mt-1">{formatMatchDateTime(scorer.lastMatch.local_date)} (Skor: {scorer.lastMatch.home_score} - {scorer.lastMatch.away_score})</div>
+                                <div className="text-xs font-bold text-gray-500 mt-1">{formatMatchDateTime(scorer.lastMatch.local_date, scorer.lastMatch.stadium_id)} (Skor: {scorer.lastMatch.home_score} - {scorer.lastMatch.away_score})</div>
                               </button>
                             ) : null}
                           </div>
