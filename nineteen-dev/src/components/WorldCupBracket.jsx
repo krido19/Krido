@@ -40,6 +40,16 @@ const sortMatches = (matches, orderArray) => {
   });
 };
 
+// Helper untuk format tanggal dari API (EDT -04:00) ke format WIB
+const formatMatchDateTime = (localDateStr) => {
+  if (!localDateStr) return 'TBD';
+  const dateObj = new Date(localDateStr.replace(/-/g, '/') + " -04:00");
+  if (isNaN(dateObj)) return localDateStr + ' WIB';
+  const dateString = dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).toUpperCase();
+  const timeString = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':') + ' WIB';
+  return `${dateString}, ${timeString}`;
+};
+
 const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left') => {
   const currentRoundMatches = rounds[currentRoundIdx] || [];
   // Fallback match jika API belum ada data untuk slot ini
@@ -148,7 +158,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false }
   const isDimmed = (searchQuery && !matchesSearch) || (showLiveOnly && !isLive);
 
   return (
-    <Link to={`/world-cup/${match.id}`} className={`bg-white/80 backdrop-blur-xl border-white/50 text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly ? 'ring-4 ring-white shadow-2xl scale-[1.02] z-50 highlighted-match' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
+    <Link id={`match-${match.id}`} to={`/world-cup/${match.id}`} className={`bg-white/80 backdrop-blur-xl border-white/50 text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly ? 'ring-4 ring-white shadow-2xl scale-[1.02] z-50 highlighted-match' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
       {/* Ornamen Grafis "26" di background */}
       <div 
         className="absolute -right-8 -bottom-10 text-9xl font-black opacity-5 pointer-events-none transition-transform group-hover:scale-110"
@@ -222,13 +232,14 @@ export default function WorldCupBracket() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showLiveOnly, setShowLiveOnly] = useState(false);
   const [showTopScorers, setShowTopScorers] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const bracketRef = useRef(null);
 
   // Parse pencetak gol otomatis dari semua pertandingan untuk Leaderboard
   const topScorers = useMemo(() => {
     const counts = {};
     fixtures.forEach(match => {
-      const process = (scorersStr) => {
+      const process = (scorersStr, teamName) => {
         if (!scorersStr || scorersStr === "null") return;
         const cleaned = scorersStr.replace(/[{}]/g, '').replace(/[“”"]/g, '');
         cleaned.split(',').forEach(goal => {
@@ -236,14 +247,31 @@ export default function WorldCupBracket() {
           // Hapus angka, koma, kutip, tanda tambah, dan kode (P) / (OG) untuk mendapatkan nama murni
           const name = goal.replace(/[0-9+']|(\([a-zA-Z]+\))/g, '').trim();
           if (name) {
-            counts[name] = (counts[name] || 0) + 1;
+            if (!counts[name]) {
+              counts[name] = { goals: 0, team: teamName, lastMatch: null };
+            }
+            counts[name].goals += 1;
+            // Rekam pertandingan terakhir dimana ia mencetak gol
+            if (!counts[name].lastMatch || (new Date(match.local_date) > new Date(counts[name].lastMatch.local_date))) {
+              counts[name].lastMatch = match;
+            }
           }
         });
       };
-      process(match.home_scorers);
-      process(match.away_scorers);
+      process(match.home_scorers, match.home_team_name_en);
+      process(match.away_scorers, match.away_team_name_en);
     });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    
+    // Cari jadwal laga selanjutnya (jika timnya masih bermain)
+    const scorersArray = Object.entries(counts).map(([name, data]) => {
+      const nextMatch = fixtures.find(m => 
+        (m.home_team_name_en === data.team || m.away_team_name_en === data.team) && 
+        m.time_elapsed === 'notstarted'
+      );
+      return { name, ...data, nextMatch };
+    });
+    
+    return scorersArray.sort((a, b) => b.goals - a.goals).slice(0, 10);
   }, [fixtures]);
 
   const handleExport = () => {
@@ -490,6 +518,106 @@ export default function WorldCupBracket() {
 
         </div>
       </div>
+
+      {/* Modal Top Skor */}
+      {showTopScorers && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            onClick={() => setShowTopScorers(false)}
+          ></div>
+          
+          {/* Modal Content */}
+          <div className="relative bg-white text-black w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-4 border-[#FF004D] animate-in fade-in zoom-in duration-200">
+            <div className="bg-[#FF004D] text-white p-6 text-center relative">
+              <h2 className="text-3xl font-black tracking-tighter uppercase drop-shadow-md">Top Scorers</h2>
+              <button 
+                onClick={() => setShowTopScorers(false)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-black/20 hover:bg-black/40 rounded-full transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-0 max-h-[60vh] overflow-y-auto">
+              {topScorers.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 font-bold uppercase tracking-widest">
+                  Belum ada gol tercetak
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {topScorers.map((scorer, idx) => {
+                    const isSelected = selectedPlayer === scorer.name;
+                    return (
+                      <li key={scorer.name} className="flex flex-col border-b border-gray-100 last:border-b-0">
+                        <button 
+                          onClick={() => setSelectedPlayer(isSelected ? null : scorer.name)}
+                          className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors w-full text-left focus:outline-none"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-inner shrink-0 ${idx === 0 ? 'bg-yellow-400 text-black' : idx === 1 ? 'bg-gray-300 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                              {idx + 1}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-gray-900 uppercase text-sm tracking-wide">{scorer.name}</span>
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{scorer.team}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-black text-[#4D00FF]">{scorer.goals}</span>
+                            <span className="text-xs text-gray-400 font-bold uppercase">Gol</span>
+                          </div>
+                        </button>
+                        
+                        {isSelected && (
+                          <div className="bg-gray-50 p-4 pt-0 animate-in slide-in-from-top-2 duration-200">
+                            {scorer.nextMatch ? (
+                              <button 
+                                onClick={() => {
+                                  setShowTopScorers(false);
+                                  setSearchQuery(scorer.team);
+                                  setTimeout(() => {
+                                    document.getElementById(`match-${scorer.nextMatch.id}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+                                  }, 100);
+                                }}
+                                className="w-full text-left bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-[#00B3FF] hover:shadow-md transition-all group"
+                              >
+                                <div className="text-xs font-black text-[#00B3FF] mb-1 uppercase tracking-widest flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                  <span className="animate-pulse">▶</span> Laga Selanjutnya
+                                </div>
+                                <div className="font-black text-gray-900 text-sm">{scorer.nextMatch.home_team_name_en} vs {scorer.nextMatch.away_team_name_en}</div>
+                                <div className="text-xs font-bold text-gray-500 mt-1">{formatMatchDateTime(scorer.nextMatch.local_date)}</div>
+                              </button>
+                            ) : scorer.lastMatch ? (
+                              <button 
+                                onClick={() => {
+                                  setShowTopScorers(false);
+                                  setSearchQuery(scorer.team);
+                                  setTimeout(() => {
+                                    document.getElementById(`match-${scorer.lastMatch.id}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+                                  }, 100);
+                                }}
+                                className="w-full text-left bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-[#FF004D] hover:shadow-md transition-all group"
+                              >
+                                <div className="text-xs font-black text-[#FF004D] mb-1 uppercase tracking-widest flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                  <span>⚽</span> Gol Terakhir Dicetak Pada
+                                </div>
+                                <div className="font-black text-gray-900 text-sm">{scorer.lastMatch.home_team_name_en} vs {scorer.lastMatch.away_team_name_en}</div>
+                                <div className="text-xs font-bold text-gray-500 mt-1">{formatMatchDateTime(scorer.lastMatch.local_date)} (Skor: {scorer.lastMatch.home_score} - {scorer.lastMatch.away_score})</div>
+                              </button>
+                            ) : null}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
