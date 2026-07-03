@@ -283,10 +283,16 @@ export default function MatchDetail() {
               className="w-full mt-12 relative rounded-[2rem] overflow-hidden shadow-2xl group border-4 border-gray-900 bg-black cursor-zoom-in"
             >
               {/* Cover Foto Stadion Keren dari Unsplash */}
-              <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1200&auto=format&fit=crop" alt="Stadium" className="w-full h-48 sm:h-64 object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700" />
+              <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1200&auto=format&fit=crop" alt="Stadium" className="w-full h-48 sm:h-64 object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none"></div>
+              {/* Tombol Play Hover */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                <div className="bg-[#FF004D] text-white rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shadow-[0_0_30px_rgba(255,0,77,0.8)] animate-pulse">
+                  <svg className="w-8 h-8 sm:w-10 sm:h-10 ml-1 sm:ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                </div>
+              </div>
               
-              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 flex justify-between items-end">
+              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 flex justify-between items-end z-20 pointer-events-none">
                 <div className="flex flex-col text-white w-2/3">
                   <span className="text-[#00B3FF] font-black uppercase tracking-widest text-[10px] sm:text-xs mb-1">Matchday {match.matchday} • Host Venue</span>
                   <h3 className="font-black text-2xl sm:text-4xl leading-tight uppercase tracking-tighter drop-shadow-lg">{currentStadium.name_en}</h3>
@@ -314,11 +320,62 @@ export default function MatchDetail() {
         </div>
       </main>
 
-      {/* Modal Zoom Stadion */}
+      {/* Modal Video Stadion */}
       {isStadiumZoomed && currentStadium && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 sm:p-8 cursor-zoom-out transition-opacity duration-300"
-          onClick={() => setIsStadiumZoomed(false)}
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4"
+        >
+          <div 
+            className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-zoom-out"
+            onClick={() => setIsStadiumZoomed(false)}
+          ></div>
+          <div className="relative w-full max-w-4xl bg-black rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl animate-in fade-in zoom-in duration-300 z-10">
+            {/* Header / Judul Stadion */}
+            <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-10">
+              <h2 className="text-white font-black text-2xl uppercase tracking-widest drop-shadow-md">
+                🏟️ {currentStadium.name_en}
+              </h2>
+              <button 
+                onClick={() => setIsStadiumZoomed(false)}
+                className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-red-600 text-white rounded-full transition-colors backdrop-blur-md"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Area Video */}
+            <div className="w-full aspect-video bg-black/50 flex items-center justify-center">
+              {STADIUM_INFO[currentStadium.id]?.videoId ? (
+                <iframe 
+                  className="w-full h-full"
+                  src={`https://www.youtube.com/embed/${STADIUM_INFO[currentStadium.id].videoId}?autoplay=1&mute=1`} 
+                  title={currentStadium.name_en} 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="relative w-full h-full flex flex-col items-center justify-center">
+                  <img 
+                    src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000&auto=format&fit=crop" 
+                    alt="Stadium Zoomed" 
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-50" 
+                  />
+                  <div className="relative z-10 text-white/90 font-black text-xl tracking-widest uppercase animate-pulse text-center p-8 bg-black/60 rounded-2xl backdrop-blur-sm">
+                    <span className="text-4xl mb-4 block">🚧</span>
+                    Video Tur Stadion<br/>Segera Hadir
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Footer Modal */}
+            <div className="p-4 sm:p-6 text-center text-white bg-black">
+              <p className="text-gray-300 font-bold text-sm sm:text-base">📍 {currentStadium.city_en}, {currentStadium.country_en} &nbsp; | &nbsp; 👥 {currentStadium.capacity.toLocaleString()} Capacity</p>
+            </div>
+          </div>
+        </div>
+      )}
         >
           <div className="relative w-full max-w-6xl max-h-full flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
             <button 
