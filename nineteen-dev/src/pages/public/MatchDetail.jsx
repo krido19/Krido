@@ -18,6 +18,26 @@ const COUNTRY_CODES = {
   "England": "gb-eng", "Croatia": "hr", "Uzbekistan": "uz", "Colombia": "co", "Ghana": "gh", "Panama": "pa"
 };
 
+// Data Stadion Piala Dunia 2026
+const STADIUM_INFO = {
+  "1": { name: "Estadio Azteca", videoId: "vSHDZYm5HlE" },
+  "2": { name: "Estadio Akron", videoId: "5BJ4cnNt3WM" },
+  "3": { name: "Estadio BBVA", videoId: "NPM6Y295Zh8" },
+  "4": { name: "AT&T Stadium", videoId: "UxyphPYPf6g" },
+  "5": { name: "NRG Stadium", videoId: "xjoo2ZtwKUM" },
+  "6": { name: "Arrowhead Stadium", videoId: "TnAwHXW5vD0" },
+  "7": { name: "Mercedes-Benz Stadium", videoId: "anUhGgUaar4" },
+  "8": { name: "Hard Rock Stadium", videoId: "-1yN8Xy1uPo" },
+  "9": { name: "Gillette Stadium", videoId: "X07RSoCO2JA" },
+  "10": { name: "Lincoln Financial Field", videoId: "pJX9y8eKTtg" },
+  "11": { name: "MetLife Stadium", videoId: "ZaqAyf8SgaE" },
+  "12": { name: "BMO Field", videoId: "evUTtT_B3JA" },
+  "13": { name: "BC Place", videoId: "JAown-dJZLc" },
+  "14": { name: "Lumen Field", videoId: "Zghz13xrYM8" },
+  "15": { name: "Levi's Stadium", videoId: "7EpDugp0RGM" },
+  "16": { name: "SoFi Stadium", videoId: "qlgH-jyB-qo" },
+};
+
 const formatScorers = (scorersString) => {
   if (!scorersString || scorersString === "null") return [];
   const cleaned = scorersString.replace(/[{}]/g, '').replace(/[“”"]/g, '');
@@ -375,5 +395,9 @@ export default function MatchDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      <Footer />
+    </div>
   );
 }
