@@ -375,32 +375,5 @@ export default function MatchDetail() {
             </div>
           </div>
         </div>
-      )}
-        >
-          <div className="relative w-full max-w-6xl max-h-full flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
-            <button 
-              className="absolute top-2 right-2 sm:top-[-40px] sm:right-0 text-white font-bold bg-white/10 hover:bg-white/20 rounded-full w-10 h-10 flex items-center justify-center transition-colors z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsStadiumZoomed(false);
-              }}
-            >
-              ✕
-            </button>
-            <img 
-              src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000&auto=format&fit=crop" 
-              alt="Stadium Zoomed" 
-              className="w-full max-h-[60vh] sm:max-h-[75vh] object-cover rounded-2xl shadow-2xl border-2 border-white/10 pointer-events-none" 
-            />
-            <div className="mt-6 sm:mt-8 text-center text-white">
-              <h3 className="font-black text-2xl sm:text-5xl uppercase tracking-tighter drop-shadow-lg">{currentStadium.name_en}</h3>
-              <p className="text-gray-300 font-bold mt-2 text-sm sm:text-lg">📍 {currentStadium.city_en}, {currentStadium.country_en} &nbsp; | &nbsp; 👥 {currentStadium.capacity.toLocaleString()} Capacity</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Footer />
-    </div>
   );
 }
