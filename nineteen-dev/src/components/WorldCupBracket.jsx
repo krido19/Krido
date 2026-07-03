@@ -329,7 +329,13 @@ export default function WorldCupBracket() {
       return;
     }
 
-    toPng(bracketRef.current, { cacheBust: true, style: { background: 'linear-gradient(to bottom right, #4D00FF, #FF004D, #00B3FF)' } })
+    const node = bracketRef.current;
+    toPng(node, { 
+      cacheBust: true, 
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+      style: { background: 'linear-gradient(to bottom right, #4D00FF, #FF004D, #00B3FF)' } 
+    })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = 'world-cup-26-bracket.png';
