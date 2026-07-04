@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { Link } from 'react-router-dom';
+import { useWorldCupFixtures } from '../hooks/useWorldCupFixtures';
 
 // Palet warna resmi FIFA 26
 const COLORS = ['#4D00FF', '#FF004D', '#00FF87', '#00B3FF'];
@@ -274,9 +275,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, 
 };
 
 export default function WorldCupBracket() {
-  const [fixtures, setFixtures] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { fixtures, loading, error } = useWorldCupFixtures();
   const [searchQuery, setSearchQuery] = useState("");
   const [showLiveOnly, setShowLiveOnly] = useState(false);
   const [showTopScorers, setShowTopScorers] = useState(false);
@@ -284,6 +283,10 @@ export default function WorldCupBracket() {
   const [stadiumVideo, setStadiumVideo] = useState(null);
   const [focusedMatchId, setFocusedMatchId] = useState(null);
   const bracketRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [scale, setScale] = useState(1);
 
   // Parse pencetak gol otomatis dari semua pertandingan untuk Leaderboard
   const topScorers = useMemo(() => {
@@ -324,6 +327,57 @@ export default function WorldCupBracket() {
     return scorersArray.sort((a, b) => b.goals - a.goals).slice(0, 10);
   }, [fixtures]);
 
+  const handleMouseDown = (e) => {
+    const slider = bracketRef.current;
+    if (!slider) return;
+    setIsDragging(true);
+    setStartX(e.pageX - slider.offsetLeft);
+    setScrollLeft(slider.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const slider = bracketRef.current;
+    if (!slider) return;
+    const x = e.pageX - slider.offsetLeft;
+    const walk = (x - startX) * 2;
+    slider.scrollLeft = scrollLeft - walk;
+  };
+
+  useEffect(() => {
+    const slider = bracketRef.current;
+    if (!slider) return;
+    
+    const handleWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const zoomSensitivity = 0.001;
+      const delta = -e.deltaY * zoomSensitivity;
+      
+      setScale(s => {
+        let newScale = s + delta;
+        // fallback for standard mouse wheels which send deltaY = 100
+        if (Math.abs(e.deltaY) >= 100) {
+           newScale = s + (e.deltaY < 0 ? 0.1 : -0.1);
+        }
+        return Math.min(Math.max(0.3, newScale), 2);
+      });
+    };
+
+    slider.addEventListener('wheel', handleWheel, { passive: false });
+    return () => slider.removeEventListener('wheel', handleWheel);
+  }, []);
+
   const handleExport = () => {
     if (bracketRef.current === null) {
       return;
@@ -362,34 +416,6 @@ export default function WorldCupBracket() {
       alert('Maaf, browser Anda tidak mendukung fitur Share bawaan.');
     }
   };
-
-  useEffect(() => {
-    const fetchFixtures = async () => {
-      try {
-        // MENGGUNAKAN OPEN SOURCE API, TIDAK PERLU API KEY
-        const response = await fetch("https://worldcup26.ir/get/games");
-
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        setFixtures(data.games || []);
-      } catch (err) {
-        // Jangan timpa error jika data sudah ada, supaya UI tidak crash saat fetch gagal
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFixtures();
-    
-    // Auto-refresh setiap 60 detik (60000 ms)
-    const interval = setInterval(fetchFixtures, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (searchQuery || showLiveOnly) {
@@ -520,6 +546,26 @@ export default function WorldCupBracket() {
             ↗ SHARE
           </button>
         )}
+        
+        {/* Zoom Controls */}
+        <div className="flex gap-1 bg-white/90 backdrop-blur p-1 rounded-full shadow-xl border border-black/10 shrink-0 items-center group relative cursor-help">
+          <button 
+            onClick={() => setScale(s => Math.max(0.3, s - 0.1))}
+            className="hover:bg-gray-200 text-black font-black w-8 h-8 flex items-center justify-center rounded-full transition-colors text-lg"
+          >
+            -
+          </button>
+          <div className="flex items-center justify-center text-black font-black text-xs w-10">
+            {Math.round(scale * 100)}%
+          </div>
+          <button 
+            onClick={() => setScale(s => Math.min(2, s + 0.1))}
+            className="hover:bg-gray-200 text-black font-black w-8 h-8 flex items-center justify-center rounded-full transition-colors text-lg"
+          >
+            +
+          </button>
+        </div>
+
         <button 
           onClick={handleExport}
           className="bg-black/90 backdrop-blur hover:bg-black text-white font-black px-4 md:px-6 py-2 rounded-full shadow-xl border border-white/20 transition-transform hover:scale-105 active:scale-95 text-xs md:text-sm"
@@ -531,14 +577,18 @@ export default function WorldCupBracket() {
       {/* Area yang akan diexport */}
       <div 
         ref={bracketRef} 
-        className="p-8 min-h-screen overflow-x-auto snap-x snap-mandatory relative bg-gradient-to-br from-[#4D00FF] via-[#FF004D] to-[#00B3FF] animate-gradient-flow"
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        className={`p-8 min-h-screen overflow-x-auto snap-x snap-mandatory relative bg-gradient-to-br from-[#4D00FF] via-[#FF004D] to-[#00B3FF] animate-gradient-flow ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
       >
         {/* Dekorasi Background Ala FIFA 26 */}
         <div className="absolute top-10 right-10 text-right text-[20rem] font-black opacity-20 pointer-events-none leading-none tracking-tighter text-white mix-blend-overlay">
           WE<br/>ARE<br/>26
         </div>
 
-        <div className="relative min-w-max z-10 mt-20 pb-20">
+        <div className="relative min-w-max z-10 mt-20 pb-20 origin-top-left transition-transform duration-200" style={{ transform: `scale(${scale})` }}>
           
           {/* Header Kolom (Absolute) agar sejajar dengan 9 node tree (Sisi Kiri, Final, Sisi Kanan) */}
           <div className="flex gap-16 absolute top-0 left-0 pointer-events-none z-20 w-full" style={{ paddingLeft: '0px' }}>

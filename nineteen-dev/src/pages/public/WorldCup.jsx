@@ -11,7 +11,7 @@ const WorldCup = () => {
       <SEO title="World Cup 2026 Bracket | nineteen.dev" />
       <Navbar />
       
-      <main className="flex-grow pt-24 pb-12 bg-white">
+      <main className="flex-grow pt-24 pb-12 bg-white dark:bg-gray-900 transition-colors duration-200">
         <WorldCupBracket />
         <div className="mt-12">
           <WorldCupSchedule />

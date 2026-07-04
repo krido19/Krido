@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogIn } from 'lucide-react';
+import { Menu, X, LogIn, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 const Navbar = ({ transparent = false }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const location = useLocation();
+  const [isDarkMode, toggleDarkMode] = useDarkMode();
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -25,7 +27,7 @@ const Navbar = ({ transparent = false }) => {
   const isActive = (href) => location.pathname === href;
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 bg-white border-b-2 border-gray-100 transition-all duration-200`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b-2 border-gray-100 dark:border-gray-800 transition-all duration-200`}>
       <div className="container-max">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -64,6 +66,13 @@ const Navbar = ({ transparent = false }) => {
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-4">
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 text-gray-500 hover:text-primary transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Toggle Dark Mode"
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
             {/* Language Toggle */}
             <div className="flex items-center gap-2 group" title="Change Language / Ganti Bahasa">
               <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors cursor-default hidden lg:block">
