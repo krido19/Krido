@@ -154,7 +154,26 @@ export default function MatchDetail() {
     awayScorers.push(...matchOverride.away_scorers_extra.split(',').map(s => s.trim()).filter(Boolean));
   }
 
-  // Parse Timeline Events
+  let homeRedCards = [];
+  let awayRedCards = [];
+  if (matchOverride?.red_cards) {
+    try {
+      const reds = JSON.parse(matchOverride.red_cards);
+      homeRedCards = reds.filter(r => r.team === 'home');
+      awayRedCards = reds.filter(r => r.team === 'away');
+    } catch(e) {}
+  }
+
+  // Gabungkan gol + kartu merah dan sort per menit untuk tampilan di kartu
+  const parseMinute = (str) => { const m = (str || '').match(/(\d+)'/); return m ? parseInt(m[1]) : 999; };
+  const homeEvents = [
+    ...homeScorers.map(s => ({ label: `⚽ ${s}`, minute: parseMinute(s) })),
+    ...homeRedCards.map(r => ({ label: `🟥 ${r.player}${r.minute ? ` ${r.minute}'` : ''}`, minute: parseInt(r.minute) || 999 }))
+  ].sort((a, b) => a.minute - b.minute);
+  const awayEvents = [
+    ...awayScorers.map(s => ({ label: `⚽ ${s}`, minute: parseMinute(s) })),
+    ...awayRedCards.map(r => ({ label: `🟥 ${r.player}${r.minute ? ` ${r.minute}'` : ''}`, minute: parseInt(r.minute) || 999 }))
+  ].sort((a, b) => a.minute - b.minute);
   const timelineEvents = [];
   const parseEvents = (scorersArr, team) => {
     scorersArr.forEach(scorer => {
@@ -238,8 +257,8 @@ export default function MatchDetail() {
               </div>
               <h2 className="text-sm sm:text-4xl font-black text-black uppercase text-center tracking-tighter leading-none break-words">{match.home_team_name_en || 'TBD'}</h2>
               <div className="mt-2 sm:mt-4 flex flex-col items-center gap-1">
-                {homeScorers.map((scorer, idx) => (
-                  <span key={idx} className="text-[10px] sm:text-base font-bold text-gray-600 text-center leading-tight">⚽ {scorer}</span>
+                {homeEvents.map((ev, idx) => (
+                  <span key={idx} className={`text-[10px] sm:text-base font-bold text-center leading-tight ${ev.label.startsWith('🟥') ? 'text-red-600' : 'text-gray-600'}`}>{ev.label}</span>
                 ))}
               </div>
             </div>
@@ -271,8 +290,8 @@ export default function MatchDetail() {
               </div>
               <h2 className="text-sm sm:text-4xl font-black text-black uppercase text-center tracking-tighter leading-none break-words">{match.away_team_name_en || 'TBD'}</h2>
               <div className="mt-2 sm:mt-4 flex flex-col items-center gap-1">
-                {awayScorers.map((scorer, idx) => (
-                  <span key={idx} className="text-[10px] sm:text-base font-bold text-gray-600 text-center leading-tight">⚽ {scorer}</span>
+                {awayEvents.map((ev, idx) => (
+                  <span key={idx} className={`text-[10px] sm:text-base font-bold text-center leading-tight ${ev.label.startsWith('🟥') ? 'text-red-600' : 'text-gray-600'}`}>{ev.label}</span>
                 ))}
               </div>
             </div>
