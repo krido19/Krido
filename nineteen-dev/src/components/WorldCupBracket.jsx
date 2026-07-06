@@ -81,7 +81,7 @@ const formatMatchDateTime = (localDateStr, stadiumId) => {
   return `${dateString}, ${timeString}`;
 };
 
-const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left', onStadiumClick, focusedMatchId) => {
+const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left', onStadiumClick, focusedMatchId, onMatchClick) => {
   const currentRoundMatches = rounds[currentRoundIdx] || [];
   // Fallback match jika API belum ada data untuk slot ini
   const match = currentRoundMatches[matchIdx] || { 
@@ -95,12 +95,12 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
 
   // Ronde pertama (R32) sebagai leaf nodes (tidak punya anak)
   if (currentRoundIdx === 0) {
-    return <MatchCard key={match.id} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} focusedMatchId={focusedMatchId} />;
+    return <MatchCard key={match.id} match={match} roundIndex={0} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} focusedMatchId={focusedMatchId} onMatchClick={onMatchClick} />;
   }
 
   // Rekursif ke ronde sebelumnya (2 anak)
-  const leftChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly, direction, onStadiumClick, focusedMatchId);
-  const rightChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly, direction, onStadiumClick, focusedMatchId);
+  const leftChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2, searchQuery, showLiveOnly, direction, onStadiumClick, focusedMatchId, onMatchClick);
+  const rightChildNode = buildTreeLevel(rounds, currentRoundIdx - 1, matchIdx * 2 + 1, searchQuery, showLiveOnly, direction, onStadiumClick, focusedMatchId, onMatchClick);
 
   const childrenContainer = (
     <div className="flex flex-col gap-4 justify-center relative">
@@ -128,13 +128,13 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
         <>
           {childrenContainer}
           <div className="relative z-10">
-            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} focusedMatchId={focusedMatchId} />
+            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} focusedMatchId={focusedMatchId} onMatchClick={onMatchClick} />
           </div>
         </>
       ) : (
         <>
           <div className="relative z-10">
-            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} focusedMatchId={focusedMatchId} />
+            <MatchCard match={match} roundIndex={currentRoundIdx} searchQuery={searchQuery} showLiveOnly={showLiveOnly} onStadiumClick={onStadiumClick} focusedMatchId={focusedMatchId} onMatchClick={onMatchClick} />
           </div>
           {childrenContainer}
         </>
@@ -144,7 +144,7 @@ const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLive
 };
 
 // Komponen Card untuk satu pertandingan
-const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, onStadiumClick, focusedMatchId }) => {
+const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, onStadiumClick, focusedMatchId, onMatchClick }) => {
   // API worldcup26.ir menggunakan waktu lokal stadion.
   const tzOffset = getStadiumTimezone(match.stadium_id);
   const dateObj = new Date(match.local_date.replace(/-/g, '/') + " " + tzOffset);
@@ -189,8 +189,23 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, 
   const isFocused = focusedMatchId === match.id;
   const isDimmed = (searchQuery && !matchesSearch) || (showLiveOnly && !isLive) || (focusedMatchId && !isFocused);
 
+  const cardClassName = `bg-white/80 backdrop-blur-xl border-white/50 text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly || isFocused ? 'ring-4 ring-white shadow-2xl scale-[1.05] z-50 highlighted-match' : 'shadow-xl')}`;
+
+  const Wrapper = onMatchClick ? 'button' : Link;
+  const wrapperProps = onMatchClick 
+    ? { 
+        id: `match-${match.id}`, 
+        onClick: (e) => { e.preventDefault(); if (!match.isMock) onMatchClick(match); }, 
+        className: `${cardClassName} text-left w-72` 
+      } 
+    : { 
+        id: `match-${match.id}`, 
+        to: match.isMock ? "#" : `/world-cup/${match.id}`, 
+        className: cardClassName 
+      };
+
   return (
-    <Link id={`match-${match.id}`} to={`/world-cup/${match.id}`} className={`bg-white/80 backdrop-blur-xl border-white/50 text-black rounded-2xl p-4 w-72 border-4 font-sans relative shrink-0 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden group block ${isDimmed ? 'opacity-30 grayscale saturate-0' : (searchQuery || showLiveOnly || isFocused ? 'ring-4 ring-white shadow-2xl scale-[1.05] z-50 highlighted-match' : 'shadow-xl')}`} style={{ borderColor: accentColor }}>
+    <Wrapper {...wrapperProps} style={{ borderColor: accentColor }}>
       {/* Ornamen Grafis "26" di background */}
       <div 
         className="absolute -right-8 -bottom-10 text-9xl font-black opacity-5 pointer-events-none transition-transform group-hover:scale-110"
@@ -270,11 +285,11 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, 
           </div>
         </div>
       </div>
-    </Link>
+    </Wrapper>
   );
 };
 
-export default function WorldCupBracket() {
+export default function WorldCupBracket({ onMatchClick }) {
   const { fixtures, loading, error } = useWorldCupFixtures();
   const [searchQuery, setSearchQuery] = useState("");
   const [showLiveOnly, setShowLiveOnly] = useState(false);
@@ -613,7 +628,7 @@ export default function WorldCupBracket() {
             
             {/* Sisi Kiri (SF Index 0) */}
             <div className="relative z-10">
-              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 0, searchQuery, showLiveOnly, 'left', setStadiumVideo, focusedMatchId)}
+              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 0, searchQuery, showLiveOnly, 'left', setStadiumVideo, focusedMatchId, onMatchClick)}
             </div>
             
             {/* Tengah (FINAL) */}
@@ -639,6 +654,7 @@ export default function WorldCupBracket() {
                     showLiveOnly={showLiveOnly} 
                     onStadiumClick={setStadiumVideo}
                     focusedMatchId={focusedMatchId}
+                    onMatchClick={onMatchClick}
                   />
                 </div>
               </div>
@@ -656,7 +672,7 @@ export default function WorldCupBracket() {
 
             {/* Sisi Kanan (SF Index 1) */}
             <div className="relative z-10">
-              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 1, searchQuery, showLiveOnly, 'right', setStadiumVideo, focusedMatchId)}
+              {buildTreeLevel([round32, round16, quarterFinals, semiFinals, final], 3, 1, searchQuery, showLiveOnly, 'right', setStadiumVideo, focusedMatchId, onMatchClick)}
             </div>
 
           </div>

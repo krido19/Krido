@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import SEO from '../../components/SEO';
+import { supabase } from '../../supabaseClient';
 
 // Konstanta ISO Country Code (dicopy dari Bracket untuk bendera)
 const COUNTRY_CODES = {
@@ -59,6 +60,7 @@ export default function MatchDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isStadiumZoomed, setIsStadiumZoomed] = useState(false);
+  const [matchOverride, setMatchOverride] = useState(null);
 
   useEffect(() => {
     const fetchMatchAndStadiums = async () => {
@@ -81,6 +83,12 @@ export default function MatchDetail() {
         const found = gamesData.games?.find(g => String(g.id) === String(id));
         if (found) {
           setMatch(found);
+          try {
+            const { data: overrideData } = await supabase.from('match_overrides').select('*').eq('match_id', id).single();
+            if (overrideData) setMatchOverride(overrideData);
+          } catch (e) {
+            // Abaikan jika tidak ada data override
+          }
         } else {
           setError("Pertandingan tidak ditemukan.");
         }
@@ -137,7 +145,14 @@ export default function MatchDetail() {
   let statusDisplay = isFinished ? "FULL TIME" : (isNotStarted ? "UPCOMING" : match.time_elapsed);
 
   const homeScorers = formatScorers(match.home_scorers);
+  if (matchOverride?.home_scorers_extra) {
+    homeScorers.push(...matchOverride.home_scorers_extra.split(',').map(s => s.trim()).filter(Boolean));
+  }
+
   const awayScorers = formatScorers(match.away_scorers);
+  if (matchOverride?.away_scorers_extra) {
+    awayScorers.push(...matchOverride.away_scorers_extra.split(',').map(s => s.trim()).filter(Boolean));
+  }
 
   // Parse Timeline Events
   const timelineEvents = [];
@@ -153,6 +168,16 @@ export default function MatchDetail() {
   };
   parseEvents(homeScorers, 'home');
   parseEvents(awayScorers, 'away');
+  
+  if (matchOverride?.red_cards) {
+    try {
+      const reds = JSON.parse(matchOverride.red_cards);
+      reds.forEach(r => {
+        timelineEvents.push({ player: r.player, minute: parseInt(r.minute) || 999, team: r.team, isRedCard: true });
+      });
+    } catch(e) {}
+  }
+
   timelineEvents.sort((a, b) => a.minute - b.minute);
 
   // Parse Phase / Group
@@ -254,6 +279,10 @@ export default function MatchDetail() {
 
           </div>
 
+          <div className="mt-4 text-center">
+            <p className="text-xs font-bold text-gray-400">*Catatan: Detail gol penalti dan kartu merah tidak disediakan oleh API.</p>
+          </div>
+
           {/* Match Timeline Section */}
           {(timelineEvents.length > 0) && (
             <div className="w-full max-w-2xl mt-12 flex flex-col relative mx-auto">
@@ -270,7 +299,7 @@ export default function MatchDetail() {
                     <div className={`w-1/2 flex ${ev.team === 'home' ? 'justify-end pr-6 sm:pr-8' : 'invisible'}`}>
                       {ev.team === 'home' && (
                         <div className="bg-gray-50 px-3 sm:px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2 sm:gap-3 flex-row-reverse z-20 relative">
-                          <div className="text-base sm:text-xl">⚽</div>
+                          <div className="text-base sm:text-xl">{ev.isRedCard ? '🟥' : '⚽'}</div>
                           <div className="flex flex-col items-end">
                             <span className="font-bold text-gray-900 text-xs sm:text-base text-right">{ev.player}</span>
                             {ev.minute !== 999 && <span className="text-[10px] sm:text-xs font-black text-[#4D00FF]">{ev.minute}'</span>}
@@ -286,7 +315,7 @@ export default function MatchDetail() {
                     <div className={`w-1/2 flex ${ev.team === 'away' ? 'justify-start pl-6 sm:pl-8' : 'invisible'}`}>
                       {ev.team === 'away' && (
                         <div className="bg-gray-50 px-3 sm:px-4 py-2 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2 sm:gap-3 z-20 relative">
-                          <div className="text-base sm:text-xl">⚽</div>
+                          <div className="text-base sm:text-xl">{ev.isRedCard ? '🟥' : '⚽'}</div>
                           <div className="flex flex-col items-start">
                             <span className="font-bold text-gray-900 text-xs sm:text-base text-left">{ev.player}</span>
                             {ev.minute !== 999 && <span className="text-[10px] sm:text-xs font-black text-[#4D00FF]">{ev.minute}'</span>}
