@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+  <title>Nineteen Dev Blog</title>
+  <link>https://nineteen-dev.vercel.app</link>
+  <description>Latest articles and dev logs from Nineteen Dev</description>
+  <language>en-us</language>
+  <item>
+    <title>DevLog: Menjaga Database Tetap Hidup 24/7 dengan GitHub Actions Cron Jobs</title>
+    <link>https://nineteen-dev.vercel.app/blog/devlog-menjaga-database-tetap-hidup-24-7-dengan-github-actions-cron-jobs</link>
+    <guid>https://nineteen-dev.vercel.app/blog/devlog-menjaga-database-tetap-hidup-24-7-dengan-github-actions-cron-jobs</guid>
+    <pubDate>Tue, 23 Jun 2026 05:45:18 GMT</pubDate>
+    <description></description>
+  </item>
+  <item>
+    <title>DevLog : 5 Alasan Kenapa Bisnis Anda Wajib Punya Website Custom di Tahun 2024</title>
+    <link>https://nineteen-dev.vercel.app/blog/5-alasan-kenapa-bisnis-anda-wajib-punya-website-custom-di-tahun-2024</link>
+    <guid>https://nineteen-dev.vercel.app/blog/5-alasan-kenapa-bisnis-anda-wajib-punya-website-custom-di-tahun-2024</guid>
+    <pubDate>Tue, 23 Jun 2026 05:36:17 GMT</pubDate>
+    <description></description>
+  </item>
+</channel>
+</rss>

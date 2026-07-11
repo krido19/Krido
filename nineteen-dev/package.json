@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node generate-rss.js && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -17,6 +17,7 @@
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "dotenv": "^17.4.2",
     "html-to-image": "^1.11.13",
     "i18next": "^26.0.2",
     "jspdf": "^4.2.1",
