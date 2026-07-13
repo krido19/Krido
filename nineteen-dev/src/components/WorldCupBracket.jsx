@@ -3,51 +3,8 @@ import { toPng } from 'html-to-image';
 import { Link } from 'react-router-dom';
 import { useWorldCupFixtures } from '../hooks/useWorldCupFixtures';
 
-// Palet warna resmi FIFA 26
-const COLORS = ['#4D00FF', '#FF004D', '#00FF87', '#00B3FF'];
-
-// Mapping Negara ke ISO Code untuk bendera (karena API worldcup26.ir tidak menyediakan logo)
-const COUNTRY_CODES = {
-  "Mexico": "mx", "South Africa": "za", "South Korea": "kr", "Czech Republic": "cz",
-  "Canada": "ca", "Bosnia and Herzegovina": "ba", "United States": "us", "Paraguay": "py",
-  "Haiti": "ht", "Scotland": "gb-sct", "Australia": "au", "Turkey": "tr", "Brazil": "br",
-  "Morocco": "ma", "Qatar": "qa", "Switzerland": "ch", "Ivory Coast": "ci", "Ecuador": "ec",
-  "Germany": "de", "Curaçao": "cw", "Netherlands": "nl", "Japan": "jp", "Sweden": "se",
-  "Tunisia": "tn", "Iran": "ir", "New Zealand": "nz", "Spain": "es", "Cape Verde": "cv",
-  "Belgium": "be", "Egypt": "eg", "Saudi Arabia": "sa", "Uruguay": "uy", "France": "fr",
-  "Senegal": "sn", "Iraq": "iq", "Norway": "no", "Argentina": "ar", "Algeria": "dz",
-  "Austria": "at", "Jordan": "jo", "Portugal": "pt", "Democratic Republic of the Congo": "cd",
-  "England": "gb-eng", "Croatia": "hr", "Uzbekistan": "uz", "Colombia": "co", "Ghana": "gh", "Panama": "pa"
-};
-
-// Hardcoded API bracket topology for worldcup26.ir
-const BRACKET_ORDER = {
-  r32: ["74", "77", "73", "75", "83", "84", "81", "82", "76", "78", "79", "80", "86", "88", "85", "87"],
-  r16: ["89", "90", "93", "94", "91", "92", "95", "96"],
-  qf: ["97", "99", "98", "100"],
-  sf: ["101", "102"],
-  final: ["104"]
-};
-
-// Data Stadion Piala Dunia 2026
-const STADIUM_INFO = {
-  "1": { name: "Estadio Azteca", videoId: "vSHDZYm5HlE" },
-  "2": { name: "Estadio Akron", videoId: "5BJ4cnNt3WM" },
-  "3": { name: "Estadio BBVA", videoId: "NPM6Y295Zh8" },
-  "4": { name: "AT&T Stadium", videoId: "UxyphPYPf6g" },
-  "5": { name: "NRG Stadium", videoId: "xjoo2ZtwKUM" },
-  "6": { name: "Arrowhead Stadium", videoId: "TnAwHXW5vD0" },
-  "7": { name: "Mercedes-Benz Stadium", videoId: "anUhGgUaar4" },
-  "8": { name: "Hard Rock Stadium", videoId: "-1yN8Xy1uPo" },
-  "9": { name: "Gillette Stadium", videoId: "X07RSoCO2JA" },
-  "10": { name: "Lincoln Financial Field", videoId: "pJX9y8eKTtg" },
-  "11": { name: "MetLife Stadium", videoId: "ZaqAyf8SgaE" },
-  "12": { name: "BMO Field", videoId: "evUTtT_B3JA" },
-  "13": { name: "BC Place", videoId: "JAown-dJZLc" },
-  "14": { name: "Lumen Field", videoId: "Zghz13xrYM8" },
-  "15": { name: "Levi's Stadium", videoId: "7EpDugp0RGM" },
-  "16": { name: "SoFi Stadium", videoId: "qlgH-jyB-qo" },
-};
+import { COLORS, COUNTRY_CODES, BRACKET_ORDER, STADIUM_INFO } from '../utils/worldCupConstants';
+import { getStadiumTimezone, formatMatchDateTime, getInitials } from '../utils/worldCupHelpers';
 
 // Custom sort function based on predefined ID order
 const sortMatches = (matches, orderArray) => {
@@ -59,26 +16,6 @@ const sortMatches = (matches, orderArray) => {
     if (indexB === -1) return -1;
     return indexA - indexB;
   });
-};
-
-// Helper timezone berdasarkan stadium_id karena API memberikan waktu lokal stadion
-const getStadiumTimezone = (stadiumId) => {
-  return {
-    "1": "-06:00", "2": "-06:00", "3": "-06:00", // Mexico (CST)
-    "4": "-05:00", "5": "-05:00", "6": "-05:00", // Central US (CDT)
-    "13": "-07:00", "14": "-07:00", "15": "-07:00", "16": "-07:00" // Pacific (PDT)
-  }[stadiumId] || "-04:00"; // Default Eastern (EDT)
-};
-
-// Helper untuk format tanggal dari API (waktu lokal stadion) ke format WIB
-const formatMatchDateTime = (localDateStr, stadiumId) => {
-  if (!localDateStr) return 'TBD';
-  const tzOffset = getStadiumTimezone(stadiumId);
-  const dateObj = new Date(localDateStr.replace(/-/g, '/') + " " + tzOffset);
-  if (isNaN(dateObj)) return localDateStr + ' WIB';
-  const dateString = dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).toUpperCase();
-  const timeString = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':') + ' WIB';
-  return `${dateString}, ${timeString}`;
 };
 
 const buildTreeLevel = (rounds, currentRoundIdx, matchIdx, searchQuery, showLiveOnly, direction = 'left', onStadiumClick, focusedMatchId, onMatchClick) => {
@@ -167,16 +104,6 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, 
   const homeScorers = formatScorers(match.home_scorers);
   const awayScorers = formatScorers(match.away_scorers);
 
-  // Ambil inisial 3 huruf untuk desain (contoh: MEX, BRA, ARG)
-  const getInitials = (name) => {
-    if (!name) return "TBD";
-    // Jika nama lebih dari 1 kata, ambil huruf depan 3 kata pertama, kalau 1 kata ambil 3 huruf pertama
-    const words = name.split(' ');
-    if (words.length >= 3) return (words[0][0] + words[1][0] + words[2][0]).toUpperCase();
-    if (words.length === 2) return (words[0].substring(0, 2) + words[1][0]).toUpperCase();
-    return name.substring(0, 3).toUpperCase();
-  };
-
   // Pilih warna aksen berdasarkan index ronde untuk variasi "26"
   const accentColor = COLORS[roundIndex % COLORS.length];
 
@@ -244,7 +171,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, 
           <div className="flex items-center gap-3">
             {COUNTRY_CODES[match.home_team_name_en] ? (
               <div className="w-12 h-8 rounded border-2 border-gray-900 bg-white shrink-0 shadow-sm overflow-hidden">
-                <img src={`https://flagcdn.com/w40/${COUNTRY_CODES[match.home_team_name_en]}.png`} alt={match.home_team_name_en} className="w-full h-full object-cover" />
+                <img src={`https://flagcdn.com/w40/${COUNTRY_CODES[match.home_team_name_en]}.png`} loading="lazy" alt={match.home_team_name_en} className="w-full h-full object-cover" />
               </div>
             ) : (
               <div className="w-12 h-8 rounded border-2 border-gray-900 bg-black text-white shrink-0 shadow-sm flex items-center justify-center font-black tracking-tighter text-xs">
@@ -267,7 +194,7 @@ const MatchCard = ({ match, roundIndex, searchQuery = "", showLiveOnly = false, 
           <div className="flex items-center gap-3">
             {COUNTRY_CODES[match.away_team_name_en] ? (
               <div className="w-12 h-8 rounded border-2 border-gray-900 bg-white shrink-0 shadow-sm overflow-hidden">
-                <img src={`https://flagcdn.com/w40/${COUNTRY_CODES[match.away_team_name_en]}.png`} alt={match.away_team_name_en} className="w-full h-full object-cover" />
+                <img src={`https://flagcdn.com/w40/${COUNTRY_CODES[match.away_team_name_en]}.png`} loading="lazy" alt={match.away_team_name_en} className="w-full h-full object-cover" />
               </div>
             ) : (
               <div className="w-12 h-8 rounded border-2 border-gray-900 bg-black text-white shrink-0 shadow-sm flex items-center justify-center font-black tracking-tighter text-xs">

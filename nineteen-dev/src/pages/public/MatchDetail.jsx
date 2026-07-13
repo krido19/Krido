@@ -5,39 +5,9 @@ import Footer from '../../components/Footer';
 import SEO from '../../components/SEO';
 import { supabase } from '../../supabaseClient';
 
-// Konstanta ISO Country Code (dicopy dari Bracket untuk bendera)
-const COUNTRY_CODES = {
-  "Mexico": "mx", "South Africa": "za", "South Korea": "kr", "Czech Republic": "cz",
-  "Canada": "ca", "Bosnia and Herzegovina": "ba", "United States": "us", "Paraguay": "py",
-  "Haiti": "ht", "Scotland": "gb-sct", "Australia": "au", "Turkey": "tr", "Brazil": "br",
-  "Morocco": "ma", "Qatar": "qa", "Switzerland": "ch", "Ivory Coast": "ci", "Ecuador": "ec",
-  "Germany": "de", "Curaçao": "cw", "Netherlands": "nl", "Japan": "jp", "Sweden": "se",
-  "Tunisia": "tn", "Iran": "ir", "New Zealand": "nz", "Spain": "es", "Cape Verde": "cv",
-  "Belgium": "be", "Egypt": "eg", "Saudi Arabia": "sa", "Uruguay": "uy", "France": "fr",
-  "Senegal": "sn", "Iraq": "iq", "Norway": "no", "Argentina": "ar", "Algeria": "dz",
-  "Austria": "at", "Jordan": "jo", "Portugal": "pt", "Democratic Republic of the Congo": "cd",
-  "England": "gb-eng", "Croatia": "hr", "Uzbekistan": "uz", "Colombia": "co", "Ghana": "gh", "Panama": "pa"
-};
-
-// Data Stadion Piala Dunia 2026
-const STADIUM_INFO = {
-  "1": { name: "Estadio Azteca", videoId: "vSHDZYm5HlE" },
-  "2": { name: "Estadio Akron", videoId: "5BJ4cnNt3WM" },
-  "3": { name: "Estadio BBVA", videoId: "NPM6Y295Zh8" },
-  "4": { name: "AT&T Stadium", videoId: "UxyphPYPf6g" },
-  "5": { name: "NRG Stadium", videoId: "xjoo2ZtwKUM" },
-  "6": { name: "Arrowhead Stadium", videoId: "TnAwHXW5vD0" },
-  "7": { name: "Mercedes-Benz Stadium", videoId: "anUhGgUaar4" },
-  "8": { name: "Hard Rock Stadium", videoId: "-1yN8Xy1uPo" },
-  "9": { name: "Gillette Stadium", videoId: "X07RSoCO2JA" },
-  "10": { name: "Lincoln Financial Field", videoId: "pJX9y8eKTtg" },
-  "11": { name: "MetLife Stadium", videoId: "ZaqAyf8SgaE" },
-  "12": { name: "BMO Field", videoId: "evUTtT_B3JA" },
-  "13": { name: "BC Place", videoId: "JAown-dJZLc" },
-  "14": { name: "Lumen Field", videoId: "Zghz13xrYM8" },
-  "15": { name: "Levi's Stadium", videoId: "7EpDugp0RGM" },
-  "16": { name: "SoFi Stadium", videoId: "qlgH-jyB-qo" },
-};
+import { COUNTRY_CODES, STADIUM_INFO } from '../../utils/worldCupConstants';
+import { getStadiumTimezone, getInitials } from '../../utils/worldCupHelpers';
+import { useWorldCupFixtures } from '../../hooks/useWorldCupFixtures';
 
 const formatScorers = (scorersString) => {
   if (!scorersString || scorersString === "null") return [];
@@ -45,63 +15,28 @@ const formatScorers = (scorersString) => {
   return cleaned.split(',').map(s => s.trim()).filter(Boolean);
 };
 
-const getInitials = (name) => {
-  if (!name) return "TBD";
-  const words = name.split(' ');
-  if (words.length >= 3) return (words[0][0] + words[1][0] + words[2][0]).toUpperCase();
-  if (words.length === 2) return (words[0].substring(0, 2) + words[1][0]).toUpperCase();
-  return name.substring(0, 3).toUpperCase();
-};
-
 export default function MatchDetail() {
   const { id } = useParams();
-  const [match, setMatch] = useState(null);
-  const [stadiums, setStadiums] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isStadiumZoomed, setIsStadiumZoomed] = useState(false);
+  const { fixtures, loading: fixturesLoading, error: fixturesError } = useWorldCupFixtures();
   const [matchOverride, setMatchOverride] = useState(null);
+  const [isStadiumZoomed, setIsStadiumZoomed] = useState(false);
+
+  const loading = fixturesLoading;
+  const error = fixturesError || (!loading && !fixtures.find(g => String(g.id) === String(id)) ? "Pertandingan tidak ditemukan." : null);
+  const match = fixtures.find(g => String(g.id) === String(id));
 
   useEffect(() => {
-    const fetchMatchAndStadiums = async () => {
-      try {
-        const [gamesRes, stadiumsRes] = await Promise.all([
-          fetch("https://worldcup26.ir/get/games"),
-          fetch("https://worldcup26.ir/get/stadiums")
-        ]);
-
-        if (!gamesRes.ok) throw new Error(`Games API Error: ${gamesRes.status}`);
-        
-        const gamesData = await gamesRes.json();
-        
-        // Stadiums API kadang gagal (misal CORS atau server mati), jadi kita tampung tanpa membatalkan render laga
-        if (stadiumsRes.ok) {
-          const stadiumsData = await stadiumsRes.json();
-          setStadiums(stadiumsData.stadiums || []);
+    const fetchOverride = async () => {
+      if (id) {
+        try {
+          const { data } = await supabase.from('match_overrides').select('*').eq('match_id', id).single();
+          if (data) setMatchOverride(data);
+        } catch (e) {
+          // Abaikan jika tidak ada data override
         }
-        
-        const found = gamesData.games?.find(g => String(g.id) === String(id));
-        if (found) {
-          setMatch(found);
-          try {
-            const { data: overrideData } = await supabase.from('match_overrides').select('*').eq('match_id', id).single();
-            if (overrideData) setMatchOverride(overrideData);
-          } catch (e) {
-            // Abaikan jika tidak ada data override
-          }
-        } else {
-          setError("Pertandingan tidak ditemukan.");
-        }
-      } catch (err) {
-        if (!match) setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
-
-    fetchMatchAndStadiums();
-    const interval = setInterval(fetchMatchAndStadiums, 60000);
-    return () => clearInterval(interval);
+    fetchOverride();
   }, [id]);
 
   if (loading) {
@@ -130,11 +65,7 @@ export default function MatchDetail() {
   }
 
   // Parse Waktu
-  const tzOffset = {
-    "1": "-06:00", "2": "-06:00", "3": "-06:00",
-    "4": "-05:00", "5": "-05:00", "6": "-05:00",
-    "13": "-07:00", "14": "-07:00", "15": "-07:00", "16": "-07:00"
-  }[match.stadium_id] || "-04:00";
+  const tzOffset = getStadiumTimezone(match.stadium_id);
   const dateObj = new Date(match.local_date.replace(/-/g, '/') + " " + tzOffset);
   const dateString = isNaN(dateObj) ? match.local_date.split(' ')[0] : dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
   const timeString = isNaN(dateObj) ? match.local_date.split(' ')[1] + ' WIB' : dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':') + ' WIB';
@@ -210,7 +141,7 @@ export default function MatchDetail() {
   else if (match.type === "final") phaseText = "FINAL";
 
   // Temukan detail stadion
-  const currentStadium = stadiums.find(s => String(s.id) === String(match.stadium_id));
+  const currentStadium = STADIUM_INFO[match.stadium_id];
 
   return (
     <div className="min-h-screen bg-primary flex flex-col font-sans">
@@ -250,7 +181,7 @@ export default function MatchDetail() {
             <div className="flex flex-col items-center w-[35%] sm:w-1/3">
               <div className="w-16 h-12 sm:w-48 sm:h-32 rounded-lg sm:rounded-xl border-2 sm:border-4 border-gray-900 overflow-hidden shadow-xl bg-black mb-3 sm:mb-6">
                 {COUNTRY_CODES[match.home_team_name_en] ? (
-                  <img src={`https://flagcdn.com/w160/${COUNTRY_CODES[match.home_team_name_en]}.png`} alt={match.home_team_name_en} className="w-full h-full object-cover" />
+                  <img src={`https://flagcdn.com/w160/${COUNTRY_CODES[match.home_team_name_en]}.png`} loading="lazy" alt={match.home_team_name_en} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white font-black text-sm sm:text-3xl">{getInitials(match.home_team_name_en)}</div>
                 )}
@@ -283,7 +214,7 @@ export default function MatchDetail() {
             <div className="flex flex-col items-center w-[35%] sm:w-1/3">
               <div className="w-16 h-12 sm:w-48 sm:h-32 rounded-lg sm:rounded-xl border-2 sm:border-4 border-gray-900 overflow-hidden shadow-xl bg-black mb-3 sm:mb-6">
                 {COUNTRY_CODES[match.away_team_name_en] ? (
-                  <img src={`https://flagcdn.com/w160/${COUNTRY_CODES[match.away_team_name_en]}.png`} alt={match.away_team_name_en} className="w-full h-full object-cover" />
+                  <img src={`https://flagcdn.com/w160/${COUNTRY_CODES[match.away_team_name_en]}.png`} loading="lazy" alt={match.away_team_name_en} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white font-black text-sm sm:text-3xl">{getInitials(match.away_team_name_en)}</div>
                 )}
@@ -368,8 +299,8 @@ export default function MatchDetail() {
               <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 flex justify-between items-end z-20 pointer-events-none">
                 <div className="flex flex-col text-white w-2/3">
                   <span className="text-[#00B3FF] font-black uppercase tracking-widest text-[10px] sm:text-xs mb-1">Matchday {match.matchday} • Host Venue</span>
-                  <h3 className="font-black text-2xl sm:text-4xl leading-tight uppercase tracking-tighter drop-shadow-lg">{currentStadium.name_en}</h3>
-                  <p className="font-bold text-gray-300 text-xs sm:text-sm mt-1 sm:mt-2 tracking-wide">📍 {currentStadium.city_en}, {currentStadium.country_en}</p>
+                  <h3 className="font-black text-2xl sm:text-4xl leading-tight uppercase tracking-tighter drop-shadow-lg">{currentStadium.name}</h3>
+                  <p className="font-bold text-gray-300 text-xs sm:text-sm mt-1 sm:mt-2 tracking-wide">📍 {currentStadium.city}, {currentStadium.country}</p>
                 </div>
                 <div className="flex flex-col items-end text-white w-1/3">
                   <span className="text-gray-400 font-bold uppercase text-[10px] sm:text-xs">Capacity</span>
@@ -406,7 +337,7 @@ export default function MatchDetail() {
             {/* Header / Judul Stadion */}
             <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-10">
               <h2 className="text-white font-black text-2xl uppercase tracking-widest drop-shadow-md">
-                🏟️ {currentStadium.name_en}
+                🏟️ {currentStadium.name}
               </h2>
               <button 
                 onClick={() => setIsStadiumZoomed(false)}
@@ -421,8 +352,8 @@ export default function MatchDetail() {
               {STADIUM_INFO[currentStadium.id]?.videoId ? (
                 <iframe 
                   className="w-full h-full"
-                  src={`https://www.youtube.com/embed/${STADIUM_INFO[currentStadium.id].videoId}?autoplay=1&mute=1`} 
-                  title={currentStadium.name_en} 
+                  src={`https://www.youtube.com/embed/${STADIUM_INFO[currentStadium.id]?.videoId || currentStadium.videoId}?autoplay=1&mute=1`} 
+                  title={currentStadium.name} 
                   frameBorder="0" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                   allowFullScreen
@@ -444,7 +375,7 @@ export default function MatchDetail() {
             
             {/* Footer Modal */}
             <div className="p-4 sm:p-6 text-center text-white bg-black">
-              <p className="text-gray-300 font-bold text-sm sm:text-base">📍 {currentStadium.city_en}, {currentStadium.country_en} &nbsp; | &nbsp; 👥 {currentStadium.capacity.toLocaleString()} Capacity</p>
+              <p className="text-gray-300 font-bold text-sm sm:text-base">📍 {currentStadium.city}, {currentStadium.country} &nbsp; | &nbsp; 👥 {currentStadium.capacity.toLocaleString()} Capacity</p>
             </div>
           </div>
         </div>
