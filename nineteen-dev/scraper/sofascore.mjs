@@ -49,6 +49,19 @@ async function fetchEventsByDate(dateStr) {
 }
 
 /** Ambil timeline (gol, kartu) untuk satu match */
+// TheSportsDB → nilai yang dipakai frontend
+function normalizeDetail(type, detail) {
+  if (type === 'Card') {
+    if (detail === 'Yellow Card') return 'yellow';
+    if (detail === 'Red Card')    return 'red';
+    return detail;
+  }
+  // Goal
+  if (detail === 'Penalty')  return 'penalty';
+  if (detail === 'Own Goal') return 'ownGoal';
+  return 'regular';
+}
+
 async function fetchTimeline(idEvent) {
   const data = await fetchJson(`${TSDB}/lookupeventtimeline.php?id=${idEvent}`);
   return (data.timeline ?? [])
@@ -59,7 +72,7 @@ async function fetchTimeline(idEvent) {
       player:  t.strPlayer ?? null,
       assist:  t.strAssist || null,
       team:    t.strHome === 'Yes' ? 'home' : 'away',
-      detail:  t.strTimelineDetail ?? null,  // 'Normal Goal', 'Penalty', 'Own Goal', 'Yellow Card', 'Red Card'
+      detail:  normalizeDetail(t.strTimeline, t.strTimelineDetail),
     }));
 }
 

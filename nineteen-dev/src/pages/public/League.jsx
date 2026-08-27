@@ -59,24 +59,75 @@ function NextMatchCountdown({ fixtures }) {
   }, [next]);
 
   if (!timeLeft) return null;
+  const m = timeLeft.match;
 
   return (
-    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white mb-8">
-      <p className="text-xs font-black uppercase tracking-widest text-white/70 mb-2">⏱ Pertandingan Berikutnya</p>
-      <p className="font-black text-lg mb-4">
-        {timeLeft.match.homeTeam} <span className="text-white/50">vs</span> {timeLeft.match.awayTeam}
-      </p>
-      <div className="flex gap-4">
-        {[['Hari', timeLeft.d], ['Jam', timeLeft.h], ['Menit', timeLeft.m], ['Detik', timeLeft.s]].map(([label, val]) => (
-          <div key={label} className="text-center">
-            <div className="text-3xl font-black tabular-nums bg-white/20 rounded-xl px-3 py-2 min-w-[56px]">
-              {String(val).padStart(2, '0')}
-            </div>
-            <div className="text-[10px] font-bold text-white/60 mt-1 uppercase tracking-widest">{label}</div>
+    <div className="relative overflow-hidden rounded-[2rem] bg-indigo-900 dark:bg-[#100b2a] text-white shadow-2xl shadow-indigo-900/50 mb-10 border border-indigo-500/20">
+      {/* Glow Effects */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-blue-600/40 via-purple-600/40 to-indigo-600/40 mix-blend-overlay"></div>
+      <div className="absolute -right-32 -top-32 w-96 h-96 bg-purple-600/50 rounded-full blur-[100px]"></div>
+      <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-blue-600/50 rounded-full blur-[100px]"></div>
+      
+      <div className="relative z-10 flex flex-col md:flex-row justify-between items-center p-8 md:p-12 gap-10">
+        
+        {/* Left: Info & Countdown */}
+        <div className="flex-1 w-full text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+            <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.8)]"></span>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-purple-200">Pertandingan Berikutnya</p>
           </div>
-        ))}
+          <h2 className="text-2xl md:text-4xl font-black mb-8 leading-tight">
+            {m.homeTeam} <span className="text-white/40 font-normal">vs</span> {m.awayTeam}
+          </h2>
+          
+          {/* Countdown Boxes */}
+          <div className="flex justify-center md:justify-start gap-3 mb-8">
+            {[['Hari', timeLeft.d], ['Jam', timeLeft.h], ['Menit', timeLeft.m], ['Detik', timeLeft.s]].map(([label, val]) => (
+              <div key={label} className="flex flex-col items-center justify-center w-16 h-20 md:w-20 md:h-24 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl shadow-inner">
+                <span className="text-2xl md:text-4xl font-black tabular-nums">{String(val).padStart(2, '0')}</span>
+                <span className="text-[9px] md:text-[10px] font-bold text-white/60 uppercase tracking-widest mt-1">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-sm font-bold text-white/70">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-purple-300" /> {formatDate(m.utcDate)}
+            </div>
+            {m.venue && (
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-purple-300" /> {m.venue}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Big Logos */}
+        <div className="flex-1 w-full flex items-center justify-center gap-4 md:gap-8 relative">
+          <div className="text-center w-28 md:w-40 z-10">
+            <div className="w-28 h-28 md:w-40 md:h-40 bg-white/5 backdrop-blur-sm rounded-full p-6 border border-white/10 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center mb-4 mx-auto relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              {m.homeCrest 
+                ? <img src={m.homeCrest} alt={m.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" />
+                : <span className="text-3xl font-black text-white">{m.homeTeam?.slice(0,3).toUpperCase()}</span>}
+            </div>
+            <p className="font-black text-sm md:text-base truncate drop-shadow-md">{m.homeTeam}</p>
+          </div>
+          
+          <div className="text-2xl md:text-3xl font-black text-white/30 italic z-10 shrink-0">VS</div>
+          
+          <div className="text-center w-28 md:w-40 z-10">
+            <div className="w-28 h-28 md:w-40 md:h-40 bg-white/5 backdrop-blur-sm rounded-full p-6 border border-white/10 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center mb-4 mx-auto relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              {m.awayCrest 
+                ? <img src={m.awayCrest} alt={m.awayTeam} className="w-full h-full object-contain filter drop-shadow-2xl" />
+                : <span className="text-3xl font-black text-white">{m.awayTeam?.slice(0,3).toUpperCase()}</span>}
+            </div>
+            <p className="font-black text-sm md:text-base truncate drop-shadow-md">{m.awayTeam}</p>
+          </div>
+        </div>
+
       </div>
-      <p className="text-xs text-white/50 mt-3 font-bold">{formatDate(timeLeft.match.utcDate)}</p>
     </div>
   );
 }
@@ -103,40 +154,62 @@ function MatchCard({ match, onClick }) {
   const done = isFinished(match.status);
   const live = isLive(match.status);
 
+  // Styling override for premium dark mode
+  const badgeCls = st.label === 'UPCOMING' 
+    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
+    : st.label === 'FT'
+      ? 'bg-gray-800 text-gray-300 border border-gray-600'
+      : live ? 'bg-red-500/20 text-red-500 border border-red-500/50 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+      : st.cls;
+
   return (
     <div
-      className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-5 border-2 border-gray-100 dark:border-gray-700 hover:border-indigo-500 transition-all hover:shadow-xl hover:-translate-y-1 group relative overflow-hidden cursor-pointer"
+      className="bg-white dark:bg-[#131527] rounded-3xl p-5 border border-gray-200 dark:border-[#2a2d4a] hover:border-indigo-500 dark:hover:border-indigo-500 transition-all hover:shadow-[0_10px_40px_rgba(99,102,241,0.15)] hover:-translate-y-1 group relative overflow-hidden cursor-pointer"
       onClick={onClick}
     >
-      {live && <div className="absolute inset-0 bg-red-500/5 animate-pulse pointer-events-none" />}
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-[10px] font-black text-gray-400 tracking-widest">{formatDate(match.utcDate)}</span>
-        <span className={`text-[10px] font-black px-2 py-1 rounded-md tracking-wider ${st.cls}`}>
+      {/* Subtle background glow on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+      
+      {/* Header: Date & Status */}
+      <div className="flex justify-between items-center mb-5 relative z-10">
+        <span className="text-[10px] md:text-xs font-black text-gray-500 dark:text-gray-400 tracking-widest">
+          {formatDate(match.utcDate)}
+        </span>
+        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full tracking-wider ${badgeCls}`}>
           {live && match.minute ? `${match.minute}'` : st.label}
         </span>
       </div>
-      {[
-        { team: match.homeTeam, crest: match.homeCrest, score: match.homeScore },
-        { team: match.awayTeam, crest: match.awayCrest, score: match.awayScore },
-      ].map(({ team, crest, score }, i) => (
-        <div key={i} className="flex justify-between items-center bg-white dark:bg-gray-800 p-3 rounded-xl mb-2 shadow-sm border border-gray-100 dark:border-gray-600 group-hover:border-indigo-500/20 transition-colors last:mb-0">
-          <div className="flex items-center gap-3">
-            {crest
-              ? <img src={crest} alt={team} className="w-7 h-7 object-contain" />
-              : <div className="w-7 h-7 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center text-xs font-black text-indigo-600">{team?.slice(0,2).toUpperCase()}</div>
-            }
-            <span className="font-black text-sm text-gray-900 dark:text-white uppercase truncate max-w-[110px]">{team || 'TBD'}</span>
+
+      {/* Teams */}
+      <div className="space-y-4 relative z-10">
+        {[
+          { team: match.homeTeam, crest: match.homeCrest, score: match.homeScore },
+          { team: match.awayTeam, crest: match.awayCrest, score: match.awayScore },
+        ].map(({ team, crest, score }, i) => (
+          <div key={i} className="flex justify-between items-center group-hover:transform group-hover:translate-x-1 transition-transform">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+                {crest
+                  ? <img src={crest} alt={team} className="w-full h-full object-contain" />
+                  : <div className="text-[10px] font-black text-gray-400">{team?.slice(0,3).toUpperCase()}</div>
+                }
+              </div>
+              <span className="font-bold text-sm text-gray-900 dark:text-white truncate max-w-[140px] drop-shadow-sm">{team || 'TBD'}</span>
+            </div>
+            <span className={`font-black text-xl w-6 text-center shrink-0 ${live ? 'text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]' : 'text-gray-900 dark:text-white'}`}>
+              {done || live ? (score ?? '-') : '-'}
+            </span>
           </div>
-          <span className={`font-black text-2xl ${live ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
-            {done || live ? (score ?? '-') : '-'}
-          </span>
-        </div>
-      ))}
-      {match.matchday && (
-        <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-          {match.matchday}
-        </div>
-      )}
+        ))}
+      </div>
+
+      {/* Footer: Location */}
+      <div className="mt-5 pt-3 border-t border-gray-100 dark:border-[#2a2d4a] flex items-center gap-1.5 relative z-10 text-gray-500 dark:text-gray-400">
+        <Target className="w-3.5 h-3.5 opacity-70" />
+        <span className="text-[10px] md:text-xs font-bold truncate">
+          {match.venue || 'TBA'}
+        </span>
+      </div>
     </div>
   );
 }
@@ -165,83 +238,117 @@ function GoalModal({ match, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
       <div
-        className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md p-6 border border-gray-100 dark:border-gray-700"
+        className="relative bg-white dark:bg-[#0a0c1a] rounded-[2rem] shadow-2xl shadow-indigo-900/20 w-full max-w-[420px] p-6 md:p-8 border border-gray-100 dark:border-indigo-500/20 overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <X className="w-5 h-5 text-gray-500" />
+        <button onClick={onClose} className="absolute top-5 right-5 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-10">
+          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
 
-        {/* Match header */}
-        <div className="text-center mb-6">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">{formatDate(match.utcDate)}</p>
-          <div className="flex items-center justify-center gap-4">
-            <div className="text-center">
-              {match.homeCrest && <img src={match.homeCrest} alt={match.homeTeam} className="w-10 h-10 object-contain mx-auto mb-1" />}
-              <p className="text-xs font-black text-gray-700 dark:text-gray-200 truncate max-w-[90px]">{match.homeTeam}</p>
+        {/* Ambient Glow */}
+        <div className="absolute -top-32 -left-32 w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] pointer-events-none" />
+
+        {/* Match Header */}
+        <div className="text-center mb-8 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-white/5 border border-transparent dark:border-white/10 mb-6">
+            <Calendar className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+            <p className="text-[10px] font-black text-gray-500 dark:text-gray-300 uppercase tracking-widest">{formatDate(match.utcDate)}</p>
+          </div>
+          
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-center w-24">
+              <div className="w-16 h-16 mx-auto bg-gray-50 dark:bg-white/5 rounded-full p-3 mb-2 shadow-sm border border-transparent dark:border-white/10">
+                {match.homeCrest ? <img src={match.homeCrest} alt={match.homeTeam} className="w-full h-full object-contain" /> : <div className="text-xl font-black text-gray-400">{match.homeTeam?.slice(0,3).toUpperCase()}</div>}
+              </div>
+              <p className="text-xs font-black text-gray-800 dark:text-white truncate">{match.homeTeam}</p>
             </div>
-            <div className="text-4xl font-black text-gray-900 dark:text-white">
-              {match.homeScore ?? '-'} <span className="text-gray-300">:</span> {match.awayScore ?? '-'}
+            <div className="flex flex-col items-center">
+              <div className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">
+                {match.homeScore ?? '-'} <span className="text-gray-300 dark:text-gray-700 mx-1">:</span> {match.awayScore ?? '-'}
+              </div>
             </div>
-            <div className="text-center">
-              {match.awayCrest && <img src={match.awayCrest} alt={match.awayTeam} className="w-10 h-10 object-contain mx-auto mb-1" />}
-              <p className="text-xs font-black text-gray-700 dark:text-gray-200 truncate max-w-[90px]">{match.awayTeam}</p>
+            <div className="text-center w-24">
+              <div className="w-16 h-16 mx-auto bg-gray-50 dark:bg-white/5 rounded-full p-3 mb-2 shadow-sm border border-transparent dark:border-white/10">
+                {match.awayCrest ? <img src={match.awayCrest} alt={match.awayTeam} className="w-full h-full object-contain" /> : <div className="text-xl font-black text-gray-400">{match.awayTeam?.slice(0,3).toUpperCase()}</div>}
+              </div>
+              <p className="text-xs font-black text-gray-800 dark:text-white truncate">{match.awayTeam}</p>
             </div>
+          </div>
+
+          <div className="mt-6">
+            <span className="inline-block px-4 py-1 rounded-full text-[10px] font-black tracking-[0.2em] bg-indigo-100 text-indigo-700 dark:bg-gradient-to-r dark:from-indigo-600/30 dark:to-purple-600/30 dark:text-purple-300 border border-indigo-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+              {STATUS_MAP[match.status]?.label === 'FT' ? 'FULL TIME' : STATUS_MAP[match.status]?.label ?? match.status}
+            </span>
           </div>
         </div>
 
-        {loading ? (
-          <div className="space-y-2">
-            {[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700 rounded-xl animate-pulse" />)}
-          </div>
-        ) : events === null ? (
-          <div className="text-center py-6">
-            <p className="text-4xl mb-3">📭</p>
-            <p className="font-bold text-gray-500 dark:text-gray-400 text-sm">Data gol belum tersedia</p>
-            <p className="text-xs text-gray-400 mt-1">Scraper VPS memperbarui data tiap malam</p>
-          </div>
-        ) : goals.length === 0 ? (
-          <p className="text-center text-gray-400 font-bold text-sm py-4">Belum ada gol tercatat.</p>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">⚽ Pencetak Gol</p>
-            {goals.map((g, i) => (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${
-                g.team === 'home'
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30'
-                  : 'bg-orange-50 dark:bg-orange-900/20 flex-row-reverse'
-              }`}>
-                <span className="text-lg">
-                  {g.detail === 'penalty' ? '⚽🟡' : g.detail === 'ownGoal' ? '⚽🔴' : '⚽'}
-                </span>
-                <div className={g.team === 'away' ? 'text-right' : ''}>
-                  <p className="font-black text-sm text-gray-900 dark:text-white">{g.player}</p>
-                  {g.assist && <p className="text-[11px] text-gray-400 font-bold">Assist: {g.assist}</p>}
-                  {g.detail === 'penalty'  && <p className="text-[10px] text-yellow-600 font-black">PENALTI</p>}
-                  {g.detail === 'ownGoal'  && <p className="text-[10px] text-red-500 font-black">GOL BUNUH DIRI</p>}
-                </div>
-                <span className="ml-auto text-xs font-black text-gray-400 shrink-0">{g.minute}{g.extra ? `+${g.extra}` : "'"}</span>
+        {/* Content */}
+        <div className="relative z-10 border-t border-gray-100 dark:border-white/10 pt-6">
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 dark:bg-white/5 rounded-2xl animate-pulse" />)}
+            </div>
+          ) : events === null ? (
+            <div className="text-center py-8">
+              <p className="text-4xl mb-3 opacity-50">📭</p>
+              <p className="font-bold text-gray-500 dark:text-gray-400 text-sm">Data gol belum tersedia</p>
+            </div>
+          ) : goals.length === 0 ? (
+            <p className="text-center text-gray-400 font-bold text-sm py-4">Belum ada gol tercatat.</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="w-4 h-4 text-indigo-500 dark:text-purple-400" />
+                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Pencetak Gol</p>
               </div>
-            ))}
-          </div>
-        )}
-
-        {!loading && cards.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">🟨 Kartu</p>
-            <div className="flex flex-wrap gap-2">
-              {cards.map((c, i) => (
-                <span key={i} className={`text-[11px] font-bold px-2 py-1 rounded-lg ${
-                  c.detail === 'yellow' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {c.detail === 'yellow' ? '🟨' : '🟥'} {c.player} {c.minute}'
-                </span>
+              {goals.map((g, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-2xl bg-gray-50 dark:bg-[#131527] border border-gray-200 dark:border-[#2a2d4a]">
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-indigo-900/40 border border-gray-100 dark:border-indigo-500/30 flex flex-col items-center justify-center shrink-0 shadow-sm text-indigo-600 dark:text-indigo-400">
+                    <span className="text-[10px] font-black leading-none">{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-black text-sm text-gray-900 dark:text-white truncate">{g.player}</p>
+                      {g.detail === 'penalty' && <span className="text-[9px] font-black text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded">PEN</span>}
+                      {g.detail === 'ownGoal' && <span className="text-[9px] font-black text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">OG</span>}
+                    </div>
+                    {g.assist && <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold truncate">Assist: {g.assist}</p>}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className="inline-block px-2.5 py-1 rounded-lg bg-gray-200 dark:bg-white/5 text-xs font-black text-gray-700 dark:text-indigo-300">
+                      {g.minute}{g.extra ? `+${g.extra}` : "'"}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+
+          {!loading && cards.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-white/10">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-3 h-4 bg-yellow-400 rounded-sm shadow-sm" />
+                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Kartu</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {cards.map((c, i) => (
+                  <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
+                    c.detail === 'yellow' 
+                      ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-500/30 text-yellow-700 dark:text-yellow-500' 
+                      : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-500'
+                  }`}>
+                    <div className={`w-2 h-3 rounded-[2px] ${c.detail === 'yellow' ? 'bg-yellow-400' : 'bg-red-500'}`} />
+                    <span className="text-[11px] font-bold">{c.player}</span>
+                    <span className="text-[11px] font-black ml-1">{c.minute}'</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -481,20 +588,23 @@ export default function League() {
           {!loadFix && <NextMatchCountdown fixtures={fixtures} />}
 
           {/* Main Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-6 md:p-10 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-[#0a0c1a] rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-2xl dark:shadow-indigo-900/10 p-6 md:p-10 border border-gray-100 dark:border-indigo-500/10 relative overflow-hidden">
+            
+            {/* Subtle ambient light for dark mode */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none"></div>
 
             {/* Tab bar */}
-            <div className="flex flex-wrap gap-3 mb-8">
+            <div className="flex flex-wrap gap-3 mb-8 relative z-10">
               {[
                 { key: 'fixtures',  label: 'Jadwal',   icon: <Calendar className="w-4 h-4" /> },
                 { key: 'standings', label: 'Klasemen', icon: <Trophy className="w-4 h-4" /> },
                 { key: 'scorers',   label: 'Top Skor', icon: <Target className="w-4 h-4" /> },
               ].map(t => (
                 <button key={t.key} onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-full font-black text-sm uppercase tracking-wider transition-all ${
+                  className={`flex items-center gap-2 px-6 py-3 rounded-full font-black text-sm uppercase tracking-wider transition-all border ${
                     tab === t.key
-                      ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30 -translate-y-0.5'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      ? 'bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 border-transparent text-white shadow-xl shadow-indigo-500/30 dark:shadow-[0_0_20px_rgba(147,51,234,0.3)] -translate-y-0.5'
+                      : 'bg-gray-100 dark:bg-white/5 border-transparent dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
                   }`}>
                   {t.icon} {t.label}
                 </button>
@@ -504,27 +614,27 @@ export default function League() {
             {/* ── Fixtures ── */}
             {tab === 'fixtures' && (
               <>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                  <div className="flex gap-3">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 relative z-10">
+                  <div className="flex gap-3 bg-gray-100 dark:bg-[#131527] p-1.5 rounded-full border border-transparent dark:border-white/5">
                     <button onClick={() => setFixtureTab('upcoming')}
-                      className={`px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wider transition-all ${
+                      className={`px-5 py-2 rounded-full font-black text-[11px] md:text-xs uppercase tracking-widest transition-all ${
                         fixtureTab === 'upcoming'
-                          ? 'bg-green-500 text-white shadow-xl shadow-green-500/30 -translate-y-0.5'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                          ? 'bg-white dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-transparent dark:border-green-500/30 shadow-sm dark:shadow-[0_0_15px_rgba(34,197,94,0.15)]'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border border-transparent'
                       }`}>Akan Datang</button>
                     <button onClick={() => setFixtureTab('previous')}
-                      className={`px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wider transition-all ${
+                      className={`px-5 py-2 rounded-full font-black text-[11px] md:text-xs uppercase tracking-widest transition-all ${
                         fixtureTab === 'previous'
-                          ? 'bg-red-500 text-white shadow-xl shadow-red-500/30 -translate-y-0.5'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                          ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-transparent dark:border-gray-500/30 shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border border-transparent'
                       }`}>Selesai</button>
                   </div>
                   <div className="relative w-full md:w-64">
                     <input type="text" placeholder="Cari klub..." value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-full text-sm font-bold focus:outline-none focus:border-indigo-500 dark:text-white transition-colors"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-[#131527] border-2 border-gray-100 dark:border-[#2a2d4a] rounded-full text-sm font-bold focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 dark:text-white transition-colors"
                     />
-                    <Search className="absolute left-4 top-3.5 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-4 top-3 text-gray-400 w-4 h-4" />
                   </div>
                 </div>
 
