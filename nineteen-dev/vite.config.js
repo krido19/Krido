@@ -52,6 +52,12 @@ export default defineConfig({
           'Accept': 'application/json'
         },
         rewrite: (path) => path.replace(/^\/pakasir/, '/api'),
+      },
+      '/fdo': {
+        target: 'https://api.football-data.org/v4',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/fdo/, ''),
       }
     }
   }

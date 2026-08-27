@@ -6,13 +6,14 @@ import TourTooltip from './TourTooltip';
 import {
   LayoutDashboard, User, Briefcase, Activity,
   Package, Zap, ShoppingCart, MessageSquare,
-  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard, HelpCircle, FileText, Trophy
+  LogOut, ExternalLink, Menu, X, ChevronRight, CreditCard, HelpCircle, FileText, Trophy, CalendarCheck
 } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+  { to: '/dashboard/planning', icon: CalendarCheck, label: 'Planning' },
   { to: '/profile', icon: User, label: 'Profile' },
   { to: '/portfolio', icon: Briefcase, label: 'Portfolio' },
   { to: '/dashboard/activities', icon: Activity, label: 'Activities' },

@@ -22,6 +22,8 @@ const Navbar = ({ transparent = false }) => {
     { href: '/apps', label: t('nav_apps', 'Apps') },
     { href: '/blog', label: t('nav_blog', 'DevLog') },
     { href: '/world-cup', label: 'World Cup' },
+    { href: '/league', label: '🏆 Liga Eropa' },
+
   ];
 
   const isActive = (href) => location.pathname === href;

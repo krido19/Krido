@@ -7,6 +7,7 @@ import AppJoyride from '../../components/AppJoyride';
 import { useTour } from '../../hooks/useTour';
 import { createPayment, getPaymentMethods } from '../../utils/bayargg';
 import { createTransaction } from '../../utils/pakasir';
+import { createPayment as createGenpayPayment } from '../../utils/genpay';
 import { supabase } from '../../supabaseClient';
 
 const Field = ({ label, required, hint, children }) => (
@@ -34,6 +35,11 @@ const PAKASIR_METHODS = [
     { id: 'permata_va', label: 'Permata VA', limit: 'Manual VA' },
     { id: 'maybank_va', label: 'Maybank VA', limit: 'Manual VA' },
     { id: 'atm_bersama_va', label: 'ATM Bersama', limit: 'Manual VA' },
+];
+
+const GENPAY_METHODS = [
+    { id: 'qris', label: 'QRIS', limit: 'Otomatis' },
+    { id: 'cc', label: 'Credit Card', limit: 'Otomatis' },
 ];
 
 const formatCurrency = (amount) =>
@@ -110,6 +116,40 @@ const CreatePayment = () => {
                 };
                 const res = await createPayment(payload);
                 setResult({ ...res, _provider: 'bayargg' });
+            } else if (provider === 'genpay') {
+                const res = await createGenpayPayment({
+                    amount,
+                    payment_method: form.payment_method,
+                    description: form.description
+                });
+                
+                const { error: insertError } = await supabase.from('payment_logs').insert({
+                    invoice_id: res.order_id,
+                    provider: 'genpay',
+                    amount: amount,
+                    final_amount: amount,
+                    payment_method: form.payment_method || 'qris',
+                    customer_name: form.customer_name || null,
+                    customer_email: form.customer_email || null,
+                    description: form.description || null,
+                    status: 'pending',
+                    payment_url: res.payment_url,
+                    order_id: urlOrderId || null,
+                });
+                if (insertError) throw new Error('Gagal menyimpan log pembayaran: ' + insertError.message);
+
+                window.open(res.payment_url, '_blank', 'noopener,noreferrer');
+
+                setResult({
+                    _provider: 'genpay',
+                    payment_url: res.payment_url,
+                    order_id: res.order_id,
+                    amount: res.amount,
+                    final_amount: res.amount,
+                    qris_string: null,
+                    va_number: null,
+                    payment_method: res.payment_method,
+                });
             } else {
                 // Pakasir: URL-based (API POST transactioncreate diblokir Cloudflare dari proxy)
                 const orderId = `INV${Date.now()}`;
@@ -173,7 +213,7 @@ const CreatePayment = () => {
 
     const handleDone = () => navigate('/dashboard/payments');
 
-    const currentMethods = provider === 'bayargg' ? BAYARGG_METHODS : PAKASIR_METHODS;
+    const currentMethods = provider === 'bayargg' ? BAYARGG_METHODS : provider === 'genpay' ? GENPAY_METHODS : PAKASIR_METHODS;
     const selectedMethod = currentMethods.find((m) => m.id === form.payment_method);
 
     return (
@@ -237,6 +277,16 @@ const CreatePayment = () => {
                         >
                             Pakasir
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setProvider('genpay');
+                                set('payment_method', 'qris');
+                            }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold border-2 transition-all ${provider === 'genpay' ? 'border-primary bg-blue-50 text-primary' : 'border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                        >
+                            GenPay
+                        </button>
                     </div>
                 </div>
 
@@ -270,7 +320,7 @@ const CreatePayment = () => {
                     <Field label="Metode Pembayaran">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {currentMethods.map((m) => {
-                                const isAvail = provider === 'pakasir' || availableMethods.length === 0 || availableMethods.includes(m.id);
+                                const isAvail = provider === 'pakasir' || provider === 'genpay' || availableMethods.length === 0 || availableMethods.includes(m.id);
                                 const isPremium = provider === 'bayargg' && m.id !== 'qris' && !hasSubscription;
                                 const disabled = !isAvail || isPremium;
                                 return (
@@ -380,13 +430,13 @@ const CreatePayment = () => {
                 </div>
             </form>
 
-            {/* Success Modal */}
             {result && (() => {
-                const isPakasir = result._provider === 'pakasir';
+                const isUrlBased = ['pakasir', 'genpay'].includes(result._provider);
+                const providerName = result._provider === 'genpay' ? 'GenPay' : 'Pakasir';
 
-                // Pakasir URL-based approach
-                if (isPakasir) {
-                    const pakasirUrl = result.payment_url;
+                // URL-based approach
+                if (isUrlBased) {
+                    const paymentUrl = result.payment_url;
                     return (
                         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                             <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
@@ -394,7 +444,7 @@ const CreatePayment = () => {
                                     <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <Check className="w-7 h-7 text-emerald-600" />
                                     </div>
-                                    <h3 className="text-lg font-extrabold text-foreground">Link Pakasir Dibuat!</h3>
+                                    <h3 className="text-lg font-extrabold text-foreground">Link {providerName} Dibuat!</h3>
                                     <p className="text-sm text-gray-400 mt-1">Invoice <span className="font-mono font-bold text-primary">{result.order_id}</span></p>
                                 </div>
 
@@ -405,7 +455,7 @@ const CreatePayment = () => {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-500">Provider</span>
-                                        <span className="font-semibold text-blue-600">Pakasir</span>
+                                        <span className="font-semibold text-blue-600">{providerName}</span>
                                     </div>
                                 </div>
 
@@ -431,7 +481,7 @@ const CreatePayment = () => {
                                         <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Scan QR untuk Bayar</p>
                                         <div className="p-3 bg-white border-2 border-gray-100 rounded-xl shadow-sm">
                                             <QRCodeSVG
-                                                value={result.qris_string || pakasirUrl}
+                                                value={result.qris_string || paymentUrl}
                                                 size={200}
                                                 bgColor="#ffffff"
                                                 fgColor="#111827"
@@ -448,13 +498,13 @@ const CreatePayment = () => {
                                 <div className="mb-5">
                                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Link Pembayaran</p>
                                     <div className="bg-blue-50 rounded-lg p-3 mb-2">
-                                        <p className="text-xs text-primary font-mono truncate">{pakasirUrl}</p>
+                                        <p className="text-xs text-primary font-mono truncate">{paymentUrl}</p>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                navigator.clipboard.writeText(pakasirUrl);
+                                                navigator.clipboard.writeText(paymentUrl);
                                                 setCopied(true);
                                                 setTimeout(() => setCopied(false), 2000);
                                             }}
@@ -463,7 +513,7 @@ const CreatePayment = () => {
                                             {copied ? <><Check className="w-4 h-4 text-emerald-600" /> Disalin!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
                                         </button>
                                         <a
-                                            href={pakasirUrl}
+                                            href={paymentUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
@@ -564,7 +614,7 @@ const CreatePayment = () => {
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Metode</span>
                                     <span className="font-semibold text-foreground">
-                                        {(isPakasir ? PAKASIR_METHODS : BAYARGG_METHODS).find((m) => m.id === paymentMethod)?.label || paymentMethod || '—'}
+                                        {(isUrlBased ? (result._provider === 'genpay' ? GENPAY_METHODS : PAKASIR_METHODS) : BAYARGG_METHODS).find((m) => m.id === paymentMethod)?.label || paymentMethod || '—'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -574,7 +624,7 @@ const CreatePayment = () => {
                             </div>
 
                             {/* Link Bayar */}
-                            {paymentUrl && !isPakasir && (
+                            {paymentUrl && !isUrlBased && (
                                 <div className="mb-5">
                                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Link Pembayaran</p>
                                     <div className="flex items-center gap-2 bg-blue-50 rounded-lg p-3">

@@ -7,7 +7,13 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { initEventsScheduler } from './lib/eventsCache.js';
+
 const queryClient = new QueryClient();
+
+// Auto-fetch match events jam 05:00 & 20:00 WIB
+initEventsScheduler();
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
